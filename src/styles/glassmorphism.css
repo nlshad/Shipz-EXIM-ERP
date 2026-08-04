@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg-sidebar: #0D111D;
+  --bg-list-col: #EEF4FF;
+  --bg-document: #FFFFFF;
+  --accent-indigo: #4F46E5;
+  --accent-purple: #6366F1;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+  --border-light: #E2E8F0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-list-col);
+  color: var(--text-dark);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* 3-Column Layout Utilities */
+.sidebar-navy {
+  background-color: #0D111D;
+  color: #94A3B8;
+}
+
+.sidebar-item-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-left: 3px solid #6366F1;
+}
+
+.list-column-ice {
+  background-color: #EEF4FF;
+  border-right: 1px solid #E0E7FF;
+}
+
+.card-invoice {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-invoice-active {
+  background: #FFFFFF;
+  border: 2px solid #4F46E5;
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.15);
+  border-radius: 12px;
+}
+
+.document-canvas {
+  background: #FFFFFF;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+}
+
+/* Floating Smart Tools CBM Optimizer Widget */
+.smart-tools-widget {
+  background: rgba(238, 244, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid #C7D2FE;
+  box-shadow: 0 20px 30px -5px rgba(79, 70, 229, 0.2);
+  border-radius: 14px;
+}
+
+/* Custom Scrollbar for middle & document columns */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
