@@ -94,7 +94,7 @@ export const DeclarationsEngine: React.FC<DeclarationsEngineProps> = ({ document
 
   const handleSaveDocumentModal = (action: 'save' | 'saveNext') => {
     if (!selectedTemplate) return;
-    const newDocName = `${selectedTemplate.label.replace(/[^a-[#A-Z0-9]/gi, '_')}.pdf`;
+    const newDocName = `${selectedTemplate.label.replace(/[^a-zA-Z0-9#]/gi, '_')}.pdf`;
     
     setInvoiceFolders((prev) =>
       prev.map((f) => {

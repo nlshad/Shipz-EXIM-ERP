@@ -275,7 +275,7 @@ export const INITIAL_INCENTIVES: IncentiveRecord[] = [
     hsnCode: '84713010',
     productDescription: 'Embedded Controller Sub-Assembly Units',
     fobValueInr: 12450000,
-    scheme: 'Duty Drawback',
+    scheme: 'DutyDrawback',
     ratePercentage: 1.8,
     maxCapPerKgInr: 12.0,
     calculatedIncentiveInr: 224100,

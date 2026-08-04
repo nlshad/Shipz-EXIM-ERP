@@ -83,6 +83,7 @@ export const BLDraftEngine: React.FC = () => {
   const [openDocMenuId, setOpenDocMenuId] = useState<string | null>(null);
 
   // Modal State
+  const [selectedRecord, setSelectedRecord] = useState<BLDraftRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
 
