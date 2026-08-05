@@ -18,62 +18,24 @@ export interface BLDraftRecord {
   otherNotifyParty?: string;
 }
 
-const INITIAL_BL_RECORDS: BLDraftRecord[] = [
-  {
-    id: 'bl-01',
-    piNo: 'PI/6/25-26',
-    invoiceNo: 'INV/02/25-26',
-    shippingLine: 'Maersk Line',
-    bookingNo: 'BK-9942018',
-    containerNo: 'MSKU-8820194',
-    sealNo: 'SL-MDR-9921',
-    consignee: 'Global Trade Partners LLC',
-    blType: 'To Order BL',
-    vesselNo: 'MAERSK MC-KINNEY',
-    voyageNo: 'V.05A',
-    movement: 'FCL/FCL',
-    freight: 'Freight Prepaid',
-    notifyParty: 'FastForward Logistics Inc.',
-    otherNotifyParty: 'Apex Customs Brokerage',
-  },
-  {
-    id: 'bl-02',
-    piNo: 'PI/2026/042',
-    invoiceNo: 'INV/01/25-26',
-    shippingLine: 'MSC Shipping',
-    bookingNo: 'BK-7710294',
-    containerNo: 'MSCU-1092841',
-    sealNo: 'SL-SEZ-8812',
-    consignee: 'BERLIN (Indonesia)',
-    blType: 'Express Release',
-    vesselNo: 'MSC OSCAR',
-    voyageNo: 'V.24B',
-    movement: 'FCL/FCL',
-    freight: 'Freight Collect',
-    notifyParty: 'Same as Consignee',
-    otherNotifyParty: 'PT Indonesia Trans',
-  },
-  {
-    id: 'bl-03',
-    piNo: 'PI/2026/041',
-    invoiceNo: 'INV/03/25-26',
-    shippingLine: 'CMA CGM',
-    bookingNo: 'BK-5542109',
-    containerNo: 'CMAU-9920145',
-    sealNo: 'SL-VTZ-3321',
-    consignee: 'Jony (Canada)',
-    blType: 'Seaway Bill',
-    vesselNo: 'CMA CGM ANTOINE',
-    voyageNo: 'V.102',
-    movement: 'FCL/FCL',
-    freight: 'Freight Prepaid',
-    notifyParty: 'Logistics Agent CA',
-    otherNotifyParty: 'None',
-  },
-];
+const INITIAL_BL_RECORDS: BLDraftRecord[] = [];
 
 export const BLDraftEngine: React.FC = () => {
-  const [blRecords, setBlRecords] = useState<BLDraftRecord[]>(INITIAL_BL_RECORDS);
+  const [blRecords, setBlRecords] = useState<BLDraftRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_bl_records');
+      return saved ? JSON.parse(saved) : INITIAL_BL_RECORDS;
+    } catch (e) {
+      return INITIAL_BL_RECORDS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('shipz_bl_records', JSON.stringify(blRecords));
+    } catch (e) {}
+  }, [blRecords]);
+
   const [tableSearch, setTableSearch] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [sortField, setSortField] = useState<keyof BLDraftRecord>('piNo');
@@ -83,7 +45,6 @@ export const BLDraftEngine: React.FC = () => {
   const [openDocMenuId, setOpenDocMenuId] = useState<string | null>(null);
 
   // Modal State
-  const [selectedRecord, setSelectedRecord] = useState<BLDraftRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
 

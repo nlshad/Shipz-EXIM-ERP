@@ -49,39 +49,7 @@ export const DeclarationsEngine: React.FC<DeclarationsEngineProps> = ({ document
   });
 
   // Mock list of generated documents grouped under Commercial Invoices
-  const [invoiceFolders, setInvoiceFolders] = useState([
-    {
-      id: 'inv-02',
-      invoiceNo: 'INV/02/25-26',
-      consignee: 'Jony (Canada)',
-      date: '06/20/2025 3:56 pm',
-      generatedDocs: [
-        { name: 'Drawback_Declaration_APPENDIX_III.pdf', date: '06/20/2025 4:10 pm', size: '245 KB' },
-        { name: 'VGM_Declaration_SOLAS.pdf', date: '06/20/2025 4:15 pm', size: '180 KB' },
-        { name: 'Shipping_Instructions_SI.pdf', date: '06/20/2025 4:20 pm', size: '310 KB' },
-      ],
-    },
-    {
-      id: 'inv-01',
-      invoiceNo: 'INV/01/25-26',
-      consignee: 'BERLIN (Indonesia)',
-      date: '06/18/2025 11:20 am',
-      generatedDocs: [
-        { name: 'Export_Value_Declaration_Rule7.pdf', date: '06/18/2025 11:45 am', size: '210 KB' },
-        { name: 'Fumigation_Certificate.pdf', date: '06/18/2025 12:00 pm', size: '195 KB' },
-      ],
-    },
-    {
-      id: 'inv-03',
-      invoiceNo: 'INV/03/25-26',
-      consignee: 'Global Trade Partners LLC',
-      date: '06/15/2025 09:30 am',
-      generatedDocs: [
-        { name: 'Non_DG_Declaration.pdf', date: '06/15/2025 10:00 am', size: '160 KB' },
-        { name: 'SCOMET_Declaration.pdf', date: '06/15/2025 10:15 am', size: '175 KB' },
-      ],
-    },
-  ]);
+  const [invoiceFolders, setInvoiceFolders] = useState<any[]>([]);
 
   const toggleFolder = (id: string) => {
     setExpandedFolders((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -94,7 +62,7 @@ export const DeclarationsEngine: React.FC<DeclarationsEngineProps> = ({ document
 
   const handleSaveDocumentModal = (action: 'save' | 'saveNext') => {
     if (!selectedTemplate) return;
-    const newDocName = `${selectedTemplate.label.replace(/[^a-zA-Z0-9#]/gi, '_')}.pdf`;
+    const newDocName = `${selectedTemplate.label.replace(/[^a-[#A-Z0-9]/gi, '_')}.pdf`;
     
     setInvoiceFolders((prev) =>
       prev.map((f) => {

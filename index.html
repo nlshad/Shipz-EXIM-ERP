@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ExportFlow ERP - Integrated EXIM Platform</title>
-  
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -35,10 +38,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Custom Styles & Flaticon UIcons Regular -->
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-straight/css/uicons-regular-straight.css">
+  <link rel="stylesheet"
+    href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+  <link rel="stylesheet"
+    href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-straight/css/uicons-regular-straight.css">
   <link rel="stylesheet" href="./src/styles/glassmorphism.css">
-  
+
   <style>
     @media print {
       body {
@@ -46,16 +51,25 @@
         color: #000000 !important;
         overflow: visible !important;
       }
-      body > * {
+
+      body>* {
         visibility: hidden !important;
       }
-      #root, #root > * {
+
+      #root,
+      #root>* {
         visibility: hidden !important;
       }
-      #quotation-pdf-modal-container, #quotation-pdf-modal-container *, #proforma-pdf-modal-container, #proforma-pdf-modal-container * {
+
+      #quotation-pdf-modal-container,
+      #quotation-pdf-modal-container *,
+      #proforma-pdf-modal-container,
+      #proforma-pdf-modal-container * {
         visibility: visible !important;
       }
-      #quotation-pdf-modal-container, #proforma-pdf-modal-container {
+
+      #quotation-pdf-modal-container,
+      #proforma-pdf-modal-container {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -69,10 +83,13 @@
         overflow: visible !important;
         z-index: 999999 !important;
       }
+
       .no-print {
         display: none !important;
       }
-      #quotation-pdf-canvas, #proforma-pdf-canvas {
+
+      #quotation-pdf-canvas,
+      #proforma-pdf-canvas {
         box-shadow: none !important;
         border: 1px solid #cbd5e1 !important;
         width: 100% !important;
@@ -80,6 +97,7 @@
         padding: 0 !important;
         margin: 0 auto !important;
       }
+
       @page {
         size: A4 portrait;
         margin: 8mm;
@@ -87,7 +105,9 @@
     }
   </style>
 </head>
-<body class="bg-[#EEF4FF] text-slate-900 font-sans antialiased h-screen overflow-hidden selection:bg-indigo-600 selection:text-white">
+
+<body
+  class="bg-[#EEF4FF] text-slate-900 font-sans antialiased h-screen overflow-hidden selection:bg-indigo-600 selection:text-white">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -116,239 +136,13 @@
       { id: 'allergen', label: 'Allergen Declaration', category: 'Regulatory' },
     ];
 
-    const INITIAL_QUOTATIONS = [
-      {
-        id: 'qt-03',
-        quotationNo: 'QT/3/25-26',
-        consignee: 'Jony',
-        products: 'Sodium Benzoate (3000.0000 KG), Citric Acid Anhydrous (4000.0000 KG), Degaser 200 (1000.0000 Litre)',
-        country: 'Canada',
-        port: 'Montreal',
-        status: 'Accepted',
-        amount: '12900.00 (USD)',
-        balanceDue: '12900.00 (USD)',
-        convRate: '85.00',
-        date: '2025-08-13',
-        buyerOrderNo: 'PO-99201',
-        orderDate: '2025-08-13',
-        companyAddress: 'Gujarat SEZ Unit',
-        vesselFlightNo: 'MSC OSCAR V.24B',
-        currency: 'USD'
-      },
-      {
-        id: 'qt-02',
-        quotationNo: 'QT/2/25-26',
-        consignee: 'BERLIN',
-        products: 'PAF (Potassium Aluminium Fluoride) (1800.0000 KG), Nitric Acid (3500.0000 Litre)',
-        country: 'Indonesia',
-        port: 'Tanjung Priok',
-        status: 'Accepted',
-        amount: '14130.00 (USD)',
-        balanceDue: '14130.00 (USD)',
-        convRate: '85.00',
-        date: '2025-08-12',
-        buyerOrderNo: 'PO-77102',
-        orderDate: '2025-08-12',
-        companyAddress: 'Andhra Pradesh Unit',
-        vesselFlightNo: 'EVER GIVEN V.102',
-        currency: 'USD'
-      },
-      {
-        id: 'qt-01',
-        quotationNo: 'QT/1/25-26',
-        consignee: 'Jony',
-        products: 'Emamectin Benzoate (1000.0000 KG), Citric Acid Anhydrous (1000.0000 KG)',
-        country: 'Canada',
-        port: 'Montreal',
-        status: 'Accepted',
-        amount: '56450.00 (USD)',
-        balanceDue: '56450.00 (USD)',
-        convRate: '85.00',
-        date: '2025-08-10',
-        buyerOrderNo: 'PO-55109',
-        orderDate: '2025-08-10',
-        companyAddress: 'Gujarat SEZ Unit',
-        vesselFlightNo: 'MAERSK MC-KINNEY V.05A',
-        currency: 'USD'
-      }
-    ];
+    const INITIAL_QUOTATIONS = [];
 
-    const INITIAL_PROFORMA_INVOICES = [
-      {
-        id: 'pi-01',
-        invNumber: 'PI/6/25-26',
-        consignee: 'Global Trade Partners LLC',
-        country: 'United States',
-        port: 'Port of Los Angeles',
-        date: 'Jun 18, 2025',
-        status: 'Accepted',
-        statusColor: 'bg-emerald-100 text-emerald-700 border border-emerald-300',
-        amountFx: 142500.00,
-        currencyFx: 'USD',
-        balanceDueFx: 142500.00,
-        convRate: 83.50,
-        amountInr: 11898750.00,
-        receipts: 0.00,
-        expenses: 4200.00,
-        exporter: 'ExportFlow Ltd. (Andhra Pradesh)',
-        exporterAddr: 'Plot 45, Industrial SEZ, Visakhapatnam, Andhra Pradesh, India 530012',
-        consigneeAddr: '789 Logistics Way, Suite 400, Port Authority, Los Angeles, CA 90001, USA',
-        cbm: '45.2 m³',
-        fillPercent: 85,
-        products: [
-          { description: 'Degaser 200 (Aluminium Degassing)', qty: 10, unit: 'Litre', rate: 200, total: 2000 },
-          { description: 'Sodium Benzoate High Purity', qty: 3000, unit: 'KG', rate: 3.5, total: 10500 },
-          { description: 'Citric Acid Anhydrous USP', qty: 4000, unit: 'KG', rate: 3.25, total: 13000 }
-        ]
-      },
-      {
-        id: 'pi-02',
-        invNumber: 'PI/2026/042',
-        consignee: 'EuroCorp Logistics NV',
-        country: 'Germany',
-        port: 'Hamburg',
-        date: 'Oct 22, 2026',
-        status: 'Pending',
-        statusColor: 'bg-amber-100 text-amber-700 border border-amber-300',
-        amountFx: 88200.00,
-        currencyFx: 'USD',
-        balanceDueFx: 88200.00,
-        convRate: 85.00,
-        amountInr: 7497000.00,
-        receipts: 0.00,
-        expenses: 2800.00,
-        exporter: 'ExportFlow Ltd.',
-        exporterAddr: '128 Global Trade Center, Financial District, Singapore 049315',
-        consigneeAddr: 'Hafenstrasse 12, 20457 Hamburg, Germany',
-        cbm: '28.4 m³',
-        fillPercent: 62,
-        products: [
-          { description: 'Potassium Aluminium Fluoride (PAF)', qty: 1800, unit: 'KG', rate: 45, total: 81000 },
-          { description: 'Nitric Acid 68% Grade', qty: 3500, unit: 'Litre', rate: 2.05, total: 7175 }
-        ]
-      }
-    ];
+    const INITIAL_PROFORMA_INVOICES = [];
 
-    const INITIAL_BL_DRAFTS = [
-      {
-        id: 'bl-01',
-        piNo: 'PI/6/25-26',
-        invoiceNo: 'INV/02/25-26',
-        shippingLine: 'Maersk Line',
-        bookingNo: 'BK-9942018',
-        containerNo: 'MSKU-8820194',
-        sealNo: 'SL-MDR-9921',
-        consignee: 'Global Trade Partners LLC',
-        blType: 'To Order BL',
-        vesselNo: 'MAERSK MC-KINNEY',
-        voyageNo: 'V.05A',
-        movement: 'FCL/FCL',
-        freight: 'Freight Prepaid',
-        notifyParty: 'FastForward Logistics Inc.',
-        otherNotifyParty: 'Apex Customs Brokerage',
-      },
-      {
-        id: 'bl-02',
-        piNo: 'PI/2026/042',
-        invoiceNo: 'INV/01/25-26',
-        shippingLine: 'MSC Shipping',
-        bookingNo: 'BK-7710294',
-        containerNo: 'MSCU-1092841',
-        sealNo: 'SL-SEZ-8812',
-        consignee: 'BERLIN (Indonesia)',
-        blType: 'Express Release',
-        vesselNo: 'MSC OSCAR',
-        voyageNo: 'V.24B',
-        movement: 'FCL/FCL',
-        freight: 'Freight Collect',
-        notifyParty: 'Same as Consignee',
-        otherNotifyParty: 'PT Indonesia Trans',
-      }
-    ];
+    const INITIAL_BL_DRAFTS = [];
 
-    const INITIAL_PACKING_LISTS = [
-      {
-        id: 'pkl-01',
-        pklNo: 'PKL/01/25-26',
-        piInvoiceNo: 'PI/6/25-26 (INV/02/25-26)',
-        consignee: 'Global Trade Partners LLC',
-        totalPackages: '120 MS Drums',
-        netWeight: '24,000.00 KG',
-        grossWeight: '25,800.00 KG',
-        cbm: '45.20 m³',
-        status: 'Finalized',
-        date: '2025-06-20',
-        companyUnit: 'Andhra Pradesh Unit',
-        containerNo: 'MSKU-8820194',
-        sealNo: 'SL-MDR-9921',
-        vessel: 'MAERSK MC-KINNEY V.05A',
-        items: [
-          {
-            id: 'pkli-1',
-            boxRange: 'Box 1 - 60',
-            product: 'Degaser 200 (Aluminium Degassing)',
-            packageType: 'MS Drum (200L)',
-            qtyPerPkg: 1,
-            unit: 'Drum',
-            netWtPerPkg: 200,
-            grossWtPerPkg: 215,
-            dimensions: '58 x 58 x 88 cm',
-            cbmPerPkg: 0.30,
-            totalNetWt: '12000.00',
-            totalGrossWt: '12900.00',
-            totalCbm: '18.00'
-          },
-          {
-            id: 'pkli-2',
-            boxRange: 'Box 61 - 120',
-            product: 'Sodium Benzoate High Purity',
-            packageType: 'HDPE Bag (25KG)',
-            qtyPerPkg: 1,
-            unit: 'Bag',
-            netWtPerPkg: 200,
-            grossWtPerPkg: 215,
-            dimensions: '58 x 58 x 88 cm',
-            cbmPerPkg: 0.30,
-            totalNetWt: '12000.00',
-            totalGrossWt: '12900.00',
-            totalCbm: '18.00'
-          }
-        ]
-      },
-      {
-        id: 'pkl-02',
-        pklNo: 'PKL/02/25-26',
-        piInvoiceNo: 'PI/2026/042 (INV/01/25-26)',
-        consignee: 'BERLIN (Indonesia)',
-        totalPackages: '72 Drums',
-        netWeight: '14,400.00 KG',
-        grossWeight: '15,480.00 KG',
-        cbm: '28.40 m³',
-        status: 'Draft',
-        date: '2025-06-18',
-        companyUnit: 'Gujarat SEZ Unit',
-        containerNo: 'MSCU-1092841',
-        sealNo: 'SL-SEZ-8812',
-        vessel: 'MSC OSCAR V.24B',
-        items: [
-          {
-            id: 'pkli-3',
-            boxRange: 'Box 1 - 72',
-            product: 'Potassium Aluminium Fluoride (PAF)',
-            packageType: 'MS Drum',
-            qtyPerPkg: 1,
-            unit: 'Drum',
-            netWtPerPkg: 200,
-            grossWtPerPkg: 215,
-            dimensions: '58 x 58 x 88 cm',
-            cbmPerPkg: 0.39,
-            totalNetWt: '14400.00',
-            totalGrossWt: '15480.00',
-            totalCbm: '28.40'
-          }
-        ]
-      }
-    ];
+    const INITIAL_PACKING_LISTS = [];
 
     const SETTINGS_SUB_MENUS = [
       { id: 'companyInfo', label: 'Company Info', iconClass: 'fi fi-rr-building', category: 'Corporate' },
@@ -374,12 +168,22 @@
       { id: 'cloudinary', label: 'Cloudinary Settings', iconClass: 'fi fi-rr-cloud-upload', category: 'Integrations' }
     ];
 
+    const loadSavedState = (key, fallback) => {
+      try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : fallback;
+      } catch (e) {
+        console.warn('Error loading ' + key + ' from localStorage', e);
+        return fallback;
+      }
+    };
+
     function App() {
       const [activeEngine, setActiveEngine] = useState('quotations');
-      const [quotations, setQuotations] = useState(INITIAL_QUOTATIONS);
-      const [proformaInvoices, setProformaInvoices] = useState(INITIAL_PROFORMA_INVOICES);
-      const [blRecords, setBlRecords] = useState(INITIAL_BL_DRAFTS);
-      const [packingLists, setPackingLists] = useState(INITIAL_PACKING_LISTS);
+      const [quotations, setQuotations] = useState(() => loadSavedState('shipz_quotations', INITIAL_QUOTATIONS));
+      const [proformaInvoices, setProformaInvoices] = useState(() => loadSavedState('shipz_proforma_invoices', INITIAL_PROFORMA_INVOICES));
+      const [blRecords, setBlRecords] = useState(() => loadSavedState('shipz_bl_records', INITIAL_BL_DRAFTS));
+      const [packingLists, setPackingLists] = useState(() => loadSavedState('shipz_packing_lists', INITIAL_PACKING_LISTS));
       const [selectedPiId, setSelectedPiId] = useState('pi-01');
       const [piViewMode, setPiViewMode] = useState('grid'); // 'grid' or 'split'
 
@@ -403,76 +207,15 @@
       const [isExportDocsExpanded, setIsExportDocsExpanded] = useState(true);
       const [isGridOptionsOpen, setIsGridOptionsOpen] = useState(false);
 
-      // Authentication System States
-      const [currentUser, setCurrentUser] = useState(() => {
-        try {
-          const saved = localStorage.getItem('shipz_auth_user');
-          return saved ? JSON.parse(saved) : null;
-        } catch (e) {
-          return null;
-        }
-      });
-      const [loginEmail, setLoginEmail] = useState('');
-      const [loginPassword, setLoginPassword] = useState('');
-      const [isAuthLoading, setIsAuthLoading] = useState(false);
-      const [authTab, setAuthTab] = useState('signin');
-      const [authError, setAuthError] = useState('');
-
-      const handleLogin = (e, provider = 'email', customUser = null) => {
-        if (e) e.preventDefault();
-        setIsAuthLoading(true);
-        setAuthError('');
-
-        setTimeout(() => {
-          let userToSave = customUser;
-
-          if (!userToSave) {
-            if (provider === 'google') {
-              userToSave = {
-                name: 'Rajesh Sharma',
-                email: 'rajesh.sharma@mglobalindia.com',
-                role: 'Export Director & Admin',
-                company: 'MGLOBAL IMPEX-INDIA PVT LTD',
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                provider: 'google'
-              };
-            } else {
-              const targetEmail = loginEmail.trim() || 'demo.exim@mglobalindia.com';
-              userToSave = {
-                name: targetEmail.split('@')[0].replace(/[._]/g, ' ').toUpperCase(),
-                email: targetEmail,
-                role: 'EXIM Operations Lead',
-                company: 'MGLOBAL IMPEX-INDIA PVT LTD',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                provider: 'email'
-              };
-            }
-          }
-
-          localStorage.setItem('shipz_auth_user', JSON.stringify(userToSave));
-          setCurrentUser(userToSave);
-          setIsAuthLoading(false);
-          setToastNotice(`Welcome back, ${userToSave.name}! Enterprise session active.`);
-          setTimeout(() => setToastNotice(null), 4000);
-        }, 500);
-      };
-
-      const handleLogout = () => {
-        if (window.confirm('Are you sure you want to sign out of ExportFlow ERP?')) {
-          localStorage.removeItem('shipz_auth_user');
-          setCurrentUser(null);
-        }
-      };
-
       // Settings Navigation & Submenu States
       const [activeSettingsSubMenu, setActiveSettingsSubMenu] = useState('companyInfo');
       const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
 
       // Company Branding Upload States
-      const [companyLogo, setCompanyLogo] = useState(null);
-      const [companySeal, setCompanySeal] = useState(null);
-      const [companySignature, setCompanySignature] = useState(null);
-      const [companyLetterhead, setCompanyLetterhead] = useState('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80');
+      const [companyLogo, setCompanyLogo] = useState(() => loadSavedState('shipz_logo', null));
+      const [companySeal, setCompanySeal] = useState(() => loadSavedState('shipz_seal', null));
+      const [companySignature, setCompanySignature] = useState(() => loadSavedState('shipz_signature', null));
+      const [companyLetterhead, setCompanyLetterhead] = useState(() => loadSavedState('shipz_letterhead', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80'));
       const [isLetterheadMode, setIsLetterheadMode] = useState(true);
       const [signatoryName, setSignatoryName] = useState('Rajesh Sharma');
       const [signatoryDesignation, setSignatoryDesignation] = useState('Authorized Signatory & Director');
@@ -486,31 +229,25 @@
         }
       };
 
+      // Auto-save to LocalStorage Effect Hooks
+      React.useEffect(() => { try { localStorage.setItem('shipz_quotations', JSON.stringify(quotations)); } catch(e){} }, [quotations]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_proforma_invoices', JSON.stringify(proformaInvoices)); } catch(e){} }, [proformaInvoices]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_bl_records', JSON.stringify(blRecords)); } catch(e){} }, [blRecords]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_packing_lists', JSON.stringify(packingLists)); } catch(e){} }, [packingLists]);
+      React.useEffect(() => { try { if (companyLogo) localStorage.setItem('shipz_logo', JSON.stringify(companyLogo)); } catch(e){} }, [companyLogo]);
+      React.useEffect(() => { try { if (companySeal) localStorage.setItem('shipz_seal', JSON.stringify(companySeal)); } catch(e){} }, [companySeal]);
+      React.useEffect(() => { try { if (companySignature) localStorage.setItem('shipz_signature', JSON.stringify(companySignature)); } catch(e){} }, [companySignature]);
+
       // ==========================================
       // MASTER DATA SETTINGS STATES (15 SUB-MENUS)
       // ==========================================
-      const [masterAddresses, setMasterAddresses] = useState([
-        { id: 'ADDR-001', label: 'Primary Registered Office', address: 'Suite No. 1101, Greenscape Shakti Ventures, Plot 12, Sec 15, CBD Belapur, Navi Mumbai, MH - 400614', city: 'Navi Mumbai', state: 'Maharashtra', gstin: '27AARCM7825K1ZP', stateCode: '27 (MH)', status: 'Active', isDefault: true },
-        { id: 'ADDR-002', label: 'Gujarat SEZ Export Unit', address: 'Plot 88/A, Special Economic Zone, Mundra Port Complex, Kutch, Gujarat - 370421', city: 'Mundra', state: 'Gujarat', gstin: '24AARCM7825K1ZQ', stateCode: '24 (GJ)', status: 'Active', isDefault: false },
-        { id: 'ADDR-003', label: 'JNPT Nhava Sheva CFS Warehouse', address: 'CFS Zone 4, Uran Dronagiri Node, Navi Mumbai, MH - 400702', city: 'Navi Mumbai', state: 'Maharashtra', gstin: '27AARCM7825K1ZP', stateCode: '27 (MH)', status: 'Active', isDefault: false },
-        { id: 'ADDR-004', label: 'Visakhapatnam Port Unit', address: 'Industrial Park Gate 2, Visakhapatnam Port Trust Area, AP - 530035', city: 'Visakhapatnam', state: 'Andhra Pradesh', gstin: '37AARCM7825K1ZR', stateCode: '37 (AP)', status: 'Active', isDefault: false }
-      ]);
+      const [masterAddresses, setMasterAddresses] = useState(() => loadSavedState('shipz_master_addresses', [
+        { id: 'ADDR-001', label: 'Primary Registered Office', address: 'Suite No. 1101, Greenscape Shakti Ventures, Plot 12, Sec 15, CBD Belapur, Navi Mumbai, MH - 400614', city: 'Navi Mumbai', state: 'Maharashtra', gstin: '27AARCM7825K1ZP', stateCode: '27 (MH)', status: 'Active', isDefault: true }
+      ]));
 
-      const [masterProductsSettings, setMasterProductsSettings] = useState([
-        { id: 'PRD-001', name: 'Degaser 200', sku: 'SKU-DEG-200', hsn: '38249990', unit: 'Litre', rate: 200.00, netWt: 1.0, grossWt: 1.1, scheme: 'RoDTEP (3.1%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80' },
-        { id: 'PRD-002', name: 'Citric Acid Anhydrous', sku: 'SKU-CIT-001', hsn: '29181400', unit: 'TON', rate: 1500.00, netWt: 1000.0, grossWt: 1025.0, scheme: 'DBK (2.5%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=150&auto=format&fit=crop&q=80' },
-        { id: 'PRD-003', name: 'Sodium Benzoate Food Grade', sku: 'SKU-SOD-500', hsn: '29163100', unit: 'KG', rate: 2.80, netWt: 25.0, grossWt: 25.4, scheme: 'RoDTEP (1.8%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=150&auto=format&fit=crop&q=80' },
-        { id: 'PRD-004', name: 'Organic Cumin Seed Grade A', sku: 'SKU-CUM-100', hsn: '09093100', unit: 'KG', rate: 4.20, netWt: 50.0, grossWt: 50.8, scheme: 'RoSCTL (4.0%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=150&auto=format&fit=crop&q=80' },
-        { id: 'PRD-005', name: 'Guar Gum Powder 5000 CPS', sku: 'SKU-GUA-002', hsn: '13023290', unit: 'TON', rate: 2100.00, netWt: 1000.0, grossWt: 1020.0, scheme: 'RoDTEP (2.2%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=150&auto=format&fit=crop&q=80' },
-        { id: 'PRD-006', name: 'Refined Cottonseed Oil', sku: 'SKU-COT-099', hsn: '15122910', unit: 'Litre', rate: 1.45, netWt: 1.0, grossWt: 1.05, scheme: 'DBK (1.5%)', status: 'Active', imgUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=150&auto=format&fit=crop&q=80' }
-      ]);
+      const [masterProductsSettings, setMasterProductsSettings] = useState(() => loadSavedState('shipz_master_products', []));
 
-      const [masterCustomersSettings, setMasterCustomersSettings] = useState([
-        { id: 'CUST-001', name: 'Global Trade Partners LLC', code: 'GTP-USA', country: 'United States', port: 'Port of Los Angeles (USLAX)', terms: '30% Advance + 70% against BL Copy', taxId: 'US-9948201', contact: 'John Miller', email: 'john@globaltradepartners.com', phone: '+1 213 555 0192', status: 'Active' },
-        { id: 'CUST-002', name: 'BERLIN IMPEX INDONESIA', code: 'BII-IDN', country: 'Indonesia', port: 'Tanjung Priok, Jakarta (IDTPP)', terms: '100% Irrevocable LC at Sight', taxId: 'ID-8842019', contact: 'Budi Santoso', email: 'budi@berlinimpex.co.id', phone: '+62 21 555 3821', status: 'Active' },
-        { id: 'CUST-003', name: 'Jony Trading Co.', code: 'JTC-CAN', country: 'Canada', port: 'Port of Montreal (CAMTR)', terms: 'Net 30 Days Credit', taxId: 'CA-7712049', contact: 'Robert Jony', email: 'robert@jonytrading.ca', phone: '+1 514 555 8820', status: 'Active' },
-        { id: 'CUST-004', name: 'Emirates Foods LLC', code: 'EFL-UAE', country: 'United Arab Emirates', port: 'Jebel Ali, Dubai (AEJEA)', terms: 'CAD (Cash Against Documents)', taxId: 'AE-1002938', contact: 'Tariq Mansoor', email: 'tariq@emiratesfoods.ae', phone: '+971 4 881 2940', status: 'Active' }
-      ]);
+      const [masterCustomersSettings, setMasterCustomersSettings] = useState(() => loadSavedState('shipz_master_customers', []));
 
       const [masterUnits, setMasterUnits] = useState([
         { id: 'UNT-001', code: 'KG', title: 'Kilogram', precision: 3, category: 'Weight', status: 'Active' },
@@ -523,12 +260,7 @@
         { id: 'UNT-008', code: 'CTN', title: 'Corrugated Carton', precision: 0, category: 'Outer Box', status: 'Active' }
       ]);
 
-      const [masterVendors, setMasterVendors] = useState([
-        { id: 'VND-001', name: 'Maersk Line India Private Limited', code: 'MAERSK', category: 'Shipping Carrier', contact: 'Anil Kumar', email: 'booking@maersk.com', phone: '+91 22 6658 9000', taxId: '27AAACM0120E1Z3', status: 'Active' },
-        { id: 'VND-002', name: 'MSC Mediterranean Shipping Agency', code: 'MSC', category: 'Shipping Carrier', contact: 'Suresh Patel', email: 'export@msc.com', phone: '+91 22 6630 1100', taxId: '27AABCM8830F1Z9', status: 'Active' },
-        { id: 'VND-003', name: 'FastForward CHA & Customs Brokerage', code: 'FF-CHA', category: 'Customs House Agent', contact: 'Ramesh Shah', email: 'docs@fastforwardcha.com', phone: '+91 98200 45112', taxId: '27AABCF9021K1Z2', status: 'Active' },
-        { id: 'VND-004', name: 'SGS India Quality Inspection Services', code: 'SGS', category: 'Inspection Body', contact: 'Dr. Mehta', email: 'testing@sgs.com', phone: '+91 22 6150 7000', taxId: '27AAACS1002G1Z5', status: 'Active' }
-      ]);
+      const [masterVendors, setMasterVendors] = useState([]);
 
       const [masterPortsSettings, setMasterPortsSettings] = useState([
         { id: 'PRT-001', name: 'Nhava Sheva / JNPT', code: 'INNSA', country: 'India', type: 'Sea Port (Origin)', status: 'Active' },
@@ -539,12 +271,7 @@
         { id: 'PRT-006', name: 'Singapore Port', code: 'SGSIN', country: 'Singapore', type: 'Transshipment Hub', status: 'Active' }
       ]);
 
-      const [masterPackages, setMasterPackages] = useState([
-        { id: 'PKG-001', title: '20FT FCL Standard Container Stuffing', length: 589, width: 235, height: 239, cbm: 33.20, maxNetWt: 24000, tareWt: 2200, status: 'Active' },
-        { id: 'PKG-002', title: '40FT HC High-Cube Container Stuffing', length: 1203, width: 235, height: 269, cbm: 76.40, maxNetWt: 27500, tareWt: 3800, status: 'Active' },
-        { id: 'PKG-003', title: '80 Drum Palletized Liquid Loading', length: 120, width: 100, height: 110, cbm: 28.00, maxNetWt: 16000, tareWt: 1800, status: 'Active' },
-        { id: 'PKG-004', title: '20 Jumbo FIBC Bulk Bag Stuffing', length: 105, width: 105, height: 120, cbm: 32.00, maxNetWt: 20000, tareWt: 400, status: 'Active' }
-      ]);
+      const [masterPackages, setMasterPackages] = useState([]);
 
       const [masterPackageTypes, setMasterPackageTypes] = useState([
         { id: 'PKGT-001', title: 'HDPE Woven Bag (25KG)', code: 'BAG-25', reusable: 'No', category: 'Flexible Bag', status: 'Active' },
@@ -572,11 +299,15 @@
         { id: 'ST-006', code: 'DDP', title: 'DDP Destination Warehouse', description: 'Delivered Duty Paid to Buyer Door', freightPayer: 'Seller', status: 'Active', isDefault: false }
       ]);
 
-      const [masterDeliveryAddresses, setMasterDeliveryAddresses] = useState([
-        { id: 'DEL-001', customerName: 'Global Trade Partners LLC', locationTitle: 'Los Angeles Port Logistics Hub', fullAddress: '789 Logistics Way, Gate 4, Los Angeles, CA 90001, USA', city: 'Los Angeles', country: 'United States', status: 'Active' },
-        { id: 'DEL-002', customerName: 'BERLIN IMPEX INDONESIA', locationTitle: 'Jakarta Port Free Zone Warehouse', fullAddress: 'Kawasan Berikat Nusantara, Block A3, Tanjung Priok, Jakarta, Indonesia', city: 'Jakarta', country: 'Indonesia', status: 'Active' },
-        { id: 'DEL-003', customerName: 'Jony Trading Co.', locationTitle: 'Montreal Cargo Terminal 2', fullAddress: '1450 Rue Saint-Denis, Dock 12, Montreal, QC H2X 3J8, Canada', city: 'Montreal', country: 'Canada', status: 'Active' }
-      ]);
+      const [masterDeliveryAddresses, setMasterDeliveryAddresses] = useState(() => loadSavedState('shipz_master_delivery_addresses', []));
+
+      // Master Auto-Save to LocalStorage Effect Hooks
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_addresses', JSON.stringify(masterAddresses)); } catch(e){} }, [masterAddresses]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_products', JSON.stringify(masterProductsSettings)); } catch(e){} }, [masterProductsSettings]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_customers', JSON.stringify(masterCustomersSettings)); } catch(e){} }, [masterCustomersSettings]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_vendors', JSON.stringify(masterVendors)); } catch(e){} }, [masterVendors]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_packages', JSON.stringify(masterPackages)); } catch(e){} }, [masterPackages]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_delivery_addresses', JSON.stringify(masterDeliveryAddresses)); } catch(e){} }, [masterDeliveryAddresses]);
 
       const [masterPaymentTermsSettings, setMasterPaymentTermsSettings] = useState([
         { id: 'PT-001', title: '100% Irrevocable Letter of Credit (LC at Sight)', category: 'Letter of Credit', advancePct: 0, creditDays: 0, risk: 'Low Risk', status: 'Active', isDefault: true },
@@ -596,8 +327,8 @@
       ]);
 
       const [masterBankDetails, setMasterBankDetails] = useState([
-        { id: 'BNK-001', beneficiaryName: 'GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED', bankName: 'KOTAK MAHINDRA BANK LIMITED', branchName: 'CBD Belapur Trade Branch, Navi Mumbai, MH', accountNumber: '6748421381', swiftCode: 'KKBKINBB', ifscCode: 'KKBK0001358', adCode: '0400089', currency: 'USD', isPrimary: true, status: 'Active' },
-        { id: 'BNK-002', beneficiaryName: 'GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED', bankName: 'STATE BANK OF INDIA', branchName: 'Overseas Commercial Branch, Fort, Mumbai, MH', accountNumber: '38920194812', swiftCode: 'SBININBB104', ifscCode: 'SBIN0000300', adCode: '0210045', currency: 'INR', isPrimary: false, status: 'Active' }
+        { id: 'BNK-001', beneficiaryName: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED', bankName: 'KOTAK MAHINDRA BANK LIMITED', branchName: 'CBD Belapur Trade Branch, Navi Mumbai, MH', accountNumber: '6748421381', swiftCode: 'KKBKINBB', ifscCode: 'KKBK0001358', adCode: '0400089', currency: 'USD', isPrimary: true, status: 'Active' },
+        { id: 'BNK-002', beneficiaryName: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED', bankName: 'STATE BANK OF INDIA', branchName: 'Overseas Commercial Branch, Fort, Mumbai, MH', accountNumber: '38920194812', swiftCode: 'SBININBB104', ifscCode: 'SBIN0000300', adCode: '0210045', currency: 'INR', isPrimary: false, status: 'Active' }
       ]);
 
       const [masterExpenseTypes, setMasterExpenseTypes] = useState([
@@ -750,7 +481,7 @@
       const [isCreateDocDropdownOpen, setIsCreateDocDropdownOpen] = useState(false);
       const [selectedDocTemplate, setSelectedDocTemplate] = useState(null);
       const [expandedFolders, setExpandedFolders] = useState({});
-      
+
       // Modal States
       const [isCreateQtModalOpen, setIsCreateQtModalOpen] = useState(false);
       const [editingQtId, setEditingQtId] = useState(null);
@@ -919,12 +650,8 @@
         { id: 'ca-3', name: 'Maharashtra Unit (Nhava Sheva)', code: 'Maharashtra Unit' }
       ]);
 
-      const [masterConsignees, setMasterConsignees] = useState([
-        { id: 'c-1', name: 'Jony', country: 'Canada', address: 'Montreal, Canada' },
-        { id: 'c-2', name: 'BERLIN', country: 'Indonesia', address: 'Jakarta, Indonesia' },
-        { id: 'c-3', name: 'Global Trade Partners LLC', country: 'United States', address: '789 Logistics Way, Suite 400, Los Angeles, CA 90001' },
-        { id: 'c-4', name: 'Apex Imports FZE', country: 'United Arab Emirates', address: 'Jebel Ali Free Zone, Building 4, Dubai' }
-      ]);
+      const [masterConsignees, setMasterConsignees] = useState(() => loadSavedState('shipz_master_consignees', []));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_consignees', JSON.stringify(masterConsignees)); } catch(e){} }, [masterConsignees]);
 
       const [masterPorts, setMasterPorts] = useState([
         // Asia & Middle East
@@ -1078,21 +805,9 @@
         { id: 'p-sh-1', name: 'Jamestown', country: 'Saint Helena', code: 'SHJHN' }
       ]);
 
-      const [masterNotifyParties, setMasterNotifyParties] = useState([
-        'Same as Consignee',
-        'Jony',
-        'BERLIN',
-        'Global Trade Partners LLC',
-        'Apex Imports FZE',
-        'FastForward Logistics Inc.'
-      ]);
+      const [masterNotifyParties, setMasterNotifyParties] = useState(['Same as Consignee']);
 
-      const [masterOtherNotifyParties, setMasterOtherNotifyParties] = useState([
-        'None',
-        'Logistics Agent CA',
-        'Apex Customs Brokerage',
-        'Pacific Freight Forwarders'
-      ]);
+      const [masterOtherNotifyParties, setMasterOtherNotifyParties] = useState(['None']);
 
       const [masterIncoterms, setMasterIncoterms] = useState(['FOB Mundra', 'CIF Montreal', 'EXW Factory', 'CFR Jakarta', 'FOB Visakhapatnam']);
       const [masterPaymentTerms, setMasterPaymentTerms] = useState(['100% LC at Sight', '30% Advance, 70% against BL', 'Net 60 Days', 'DP at Sight']);
@@ -1141,7 +856,7 @@
       const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
       const [newFolderNameInput, setNewFolderNameInput] = useState('');
       const [connectionTesting, setConnectionTesting] = useState(false);
-      
+
       // Cloudinary DAM Sync State & Real API Handler
       const [cloudinaryConfig, setCloudinaryConfig] = useState({
         cloudName: 'k0pdvq8b',
@@ -1175,15 +890,8 @@
       ]);
       const [driveTags, setDriveTags] = useState(['#Packaging', '#Logistics', '#Labels', '#Degaser', '#Batch2026']);
 
-      const [driveAssets, setDriveAssets] = useState([
-        { id: 'drv-1', title: 'Degaser 200 Product Photo', fileName: 'degaser_200.jpg', fileType: 'image', category: 'Product Photo', folder: 'Product Images', tags: ['#Degaser', '#Labels'], url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789120/mglobal_erp_uploads/degaser_200.jpg', publicId: 'mglobal_erp_uploads/degaser_200', cloudinarySynced: true, uploadDate: '2026-08-01 10:30', fileSizeMb: '1.20' },
-        { id: 'drv-2', title: 'Citric Acid Anhydrous Bag', fileName: 'citric_acid_bag.jpg', fileType: 'image', category: 'Product Photo', folder: 'Product Images', tags: ['#Packaging'], url: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789121/mglobal_erp_uploads/citric_acid_bag.jpg', publicId: 'mglobal_erp_uploads/citric_acid_bag', cloudinarySynced: true, uploadDate: '2026-08-02 14:15', fileSizeMb: '2.10' },
-        { id: 'drv-3', title: 'Sodium Benzoate Drum', fileName: 'sodium_benzoate.jpg', fileType: 'image', category: 'Product Photo', folder: 'Product Images', tags: ['#Packaging', '#Logistics'], url: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789122/mglobal_erp_uploads/sodium_benzoate.jpg', publicId: 'mglobal_erp_uploads/sodium_benzoate', cloudinarySynced: true, uploadDate: '2026-08-02 16:45', fileSizeMb: '1.85' },
-        { id: 'drv-4', title: 'Refined Sugar Sack', fileName: 'refined_sugar.jpg', fileType: 'image', category: 'Product Photo', folder: 'Product Images', tags: ['#Packaging'], url: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789123/mglobal_erp_uploads/refined_sugar.jpg', publicId: 'mglobal_erp_uploads/refined_sugar', cloudinarySynced: true, uploadDate: '2026-08-03 09:20', fileSizeMb: '2.50' },
-        { id: 'drv-5', title: 'COA Batch Certificate #9921', fileName: 'COA_Batch_9921.pdf', fileType: 'pdf', category: 'Compliance PDF', folder: 'Quality & COA', tags: ['#Batch2026'], url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789124/mglobal_erp_uploads/coa_batch_9921.pdf', publicId: 'mglobal_erp_uploads/coa_batch_9921', cloudinarySynced: true, uploadDate: '2026-08-03 11:10', fileSizeMb: '0.42' },
-        { id: 'drv-6', title: 'Guar Gum Powder Packaging', fileName: 'guar_gum.jpg', fileType: 'image', category: 'Product Photo', folder: 'Product Images', tags: ['#Packaging'], url: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789125/mglobal_erp_uploads/guar_gum.jpg', publicId: 'mglobal_erp_uploads/guar_gum', cloudinarySynced: true, uploadDate: '2026-08-04 12:05', fileSizeMb: '1.92' },
-        { id: 'drv-7', title: 'Shipping Container Photo', fileName: 'container_stuffing.jpg', fileType: 'image', category: 'Stuffing Photo', folder: 'Shipping Docs', tags: ['#Logistics'], url: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=80', cloudinaryUrl: 'https://res.cloudinary.com/mglobal-impex-cloud/image/upload/f_auto,q_auto/v1722789126/mglobal_erp_uploads/container_stuffing.jpg', publicId: 'mglobal_erp_uploads/container_stuffing', cloudinarySynced: true, uploadDate: '2026-08-04 15:30', fileSizeMb: '2.05' }
-      ]);
+      const [driveAssets, setDriveAssets] = useState(() => loadSavedState('shipz_drive_assets', []));
+      React.useEffect(() => { try { localStorage.setItem('shipz_drive_assets', JSON.stringify(driveAssets)); } catch(e){} }, [driveAssets]);
 
       const handleUploadFileToDriveAndSelect = async (e) => {
         const file = e.target.files?.[0];
@@ -1941,11 +1649,11 @@
 
         if (element && window.html2pdf) {
           const opt = {
-            margin:       [6, 6, 6, 6],
-            filename:     filename,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: [6, 6, 6, 6],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
           window.html2pdf().set(opt).from(element).save();
           return;
@@ -1981,11 +1689,11 @@
 
         if (element && window.html2pdf) {
           const opt = {
-            margin:       [4, 4, 4, 4],
-            filename:     filename,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: [4, 4, 4, 4],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
           window.html2pdf().set(opt).from(element).save();
           return;
@@ -2803,202 +2511,6 @@
         { id: 'reports', label: 'Reports', iconClass: 'fi fi-rr-chart-pie', color: 'text-emerald-400' }
       ];
 
-      if (!currentUser) {
-        return (
-          <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden font-sans">
-            {/* BACKGROUND DECORATIVE GLOW & GRID */}
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-sky-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div className="w-full max-w-4xl bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 overflow-hidden z-10">
-              {/* LEFT COLUMN: BRANDING & SECURITY COMPLIANCE */}
-              <div className="p-8 md:p-10 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-600/40">
-                      ⚡
-                    </div>
-                    <div>
-                      <h1 className="text-xl font-black text-white tracking-tight leading-none">ExportFlow <span className="text-indigo-400">ERP</span></h1>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Enterprise EXIM Platform</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-4">
-                    <h2 className="text-2xl font-black tracking-tight text-white leading-tight">
-                      Secure Access Gate for Global Trade & Logistics
-                    </h2>
-                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                      Multi-tenant compliance engine for Export Quotations, Proforma Invoices, Duty Drawback, e-Way Bills & Customs Automation.
-                    </p>
-                  </div>
-
-                  {/* SECURITY BADGES */}
-                  <div className="space-y-2 pt-2">
-                    <div className="flex items-center space-x-2 text-xs font-semibold text-slate-300">
-                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">✓</span>
-                      <span>256-Bit SSL Encrypted Enterprise Portal</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs font-semibold text-slate-300">
-                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">✓</span>
-                      <span>Automated DGFT & Customs Audit Logging</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs font-semibold text-slate-300">
-                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">✓</span>
-                      <span>Role-Based Access Control (RBAC)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* BOTTOM METRICS */}
-                <div className="pt-8 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-                  <div>STATUS: <span className="text-emerald-400 font-bold">● SYSTEM ONLINE</span></div>
-                  <div>VER: <span className="text-slate-200 font-bold">v2.4.0 PRO</span></div>
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: AUTHENTICATION FORM & GOOGLE SIGN IN */}
-              <div className="p-8 md:p-10 flex flex-col justify-between bg-slate-900 text-white space-y-6">
-                <div>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-                    <h3 className="text-lg font-bold text-white">Sign In to Workspace</h3>
-                    <div className="flex bg-slate-800 p-1 rounded-xl text-xs font-bold">
-                      <button
-                        type="button"
-                        onClick={() => setAuthTab('signin')}
-                        className={`px-3 py-1.5 rounded-lg transition-all ${authTab === 'signin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                      >
-                        Sign In
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAuthTab('register')}
-                        className={`px-3 py-1.5 rounded-lg transition-all ${authTab === 'register' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                      >
-                        Register
-                      </button>
-                    </div>
-                  </div>
-
-                  {authError && (
-                    <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-bold">
-                      ⚠️ {authError}
-                    </div>
-                  )}
-
-                  {/* GOOGLE SIGN IN BUTTON */}
-                  <div className="space-y-4">
-                    <button
-                      type="button"
-                      onClick={(e) => handleLogin(e, 'google')}
-                      disabled={isAuthLoading}
-                      className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center space-x-3 transition-all text-xs border border-slate-200 cursor-pointer"
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                      </svg>
-                      <span>Sign in with Google Account</span>
-                    </button>
-
-                    <div className="relative flex py-2 items-center">
-                      <div className="flex-grow border-t border-slate-800"></div>
-                      <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">or email authentication</span>
-                      <div className="flex-grow border-t border-slate-800"></div>
-                    </div>
-
-                    {/* EMAIL & PASSWORD FORM */}
-                    <form onSubmit={(e) => handleLogin(e, 'email')} className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1">Corporate Email Address</label>
-                        <input
-                          type="email"
-                          required
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          placeholder="name@mglobalindia.com"
-                          className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="block text-xs font-bold text-slate-300">Account Password</label>
-                          <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Password reset link sent to your registered email.'); }} className="text-[10px] font-bold text-indigo-400 hover:underline">Forgot?</a>
-                        </div>
-                        <input
-                          type="password"
-                          required
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          placeholder="••••••••••••"
-                          className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={isAuthLoading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 text-xs flex items-center justify-center space-x-2 transition-all mt-2 cursor-pointer"
-                      >
-                        {isAuthLoading ? (
-                          <span>Verifying Credentials...</span>
-                        ) : (
-                          <>
-                            <span>Authorize & Enter Portal</span>
-                            <span>➔</span>
-                          </>
-                        )}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-
-                {/* DEMO QUICK SIGN IN BUTTONS */}
-                <div className="pt-4 border-t border-slate-800 space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Quick Demo Profiles:</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleLogin(null, 'email', {
-                        name: 'Rajesh Sharma',
-                        email: 'rajesh.sharma@mglobalindia.com',
-                        role: 'Export Director & Admin',
-                        company: 'MGLOBAL IMPEX-INDIA PVT LTD',
-                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                        provider: 'google'
-                      })}
-                      className="p-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left transition-all cursor-pointer"
-                    >
-                      <div className="font-bold text-[11px] text-white">Rajesh Sharma</div>
-                      <div className="text-[9px] text-indigo-400 font-semibold">Export Director</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleLogin(null, 'email', {
-                        name: 'Ananya Patel',
-                        email: 'ananya.p@mglobalindia.com',
-                        role: 'EXIM Operations Lead',
-                        company: 'MGLOBAL IMPEX-INDIA PVT LTD',
-                        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-                        provider: 'email'
-                      })}
-                      className="p-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left transition-all cursor-pointer"
-                    >
-                      <div className="font-bold text-[11px] text-white">Ananya Patel</div>
-                      <div className="text-[9px] text-emerald-400 font-semibold">EXIM Ops Lead</div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
       return (
         <div className="flex h-screen bg-[#EEF4FF] overflow-hidden">
           {/* SIDEBAR */}
@@ -3054,33 +2566,18 @@
               {/* SETTINGS DIRECT CLICK ACTION BUTTON */}
               <button
                 onClick={() => setActiveEngine('settings')}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${
-                  activeEngine === 'settings' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
+                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-semibold text-xs transition-all ${activeEngine === 'settings' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
               >
                 <i className="fi fi-rr-settings text-sm text-slate-400 flex items-center"></i>
                 <span>Settings</span>
               </button>
               <div className="flex items-center space-x-3 px-3 py-1.5 text-slate-400 hover:text-white cursor-pointer font-semibold">Support</div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10 mt-1">
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <img
-                    src={currentUser ? currentUser.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full object-cover border border-indigo-400 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-white truncate">{currentUser ? currentUser.name : 'Rajesh Sharma'}</h4>
-                    <p className="text-[10px] text-slate-400 font-medium truncate">{currentUser ? currentUser.role : 'Export Director'}</p>
-                  </div>
+              <div className="flex items-center space-x-3 p-2 rounded-xl bg-white/5 border border-white/5 mt-1">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-indigo-400" />
+                <div>
+                  <h4 className="text-xs font-bold text-white">Admin User</h4>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  title="Sign Out"
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all text-xs font-bold shrink-0 flex items-center space-x-1"
-                >
-                  <i className="fi fi-rr-sign-out-alt text-xs"></i>
-                </button>
               </div>
             </div>
           </aside>
@@ -3091,7 +2588,7 @@
             {/* MASTER SETTINGS PAGE (NAVY SIDEBAR MENU STYLE) */}
             {activeEngine === 'settings' && (
               <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24 bg-[#EEF4FF]">
-                
+
                 {/* TOP HEADER BAR */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
                   <div>
@@ -3117,7 +2614,7 @@
 
                 {/* TWO-COLUMN LAYOUT: LEFT NAVY SIDEBAR MENU + RIGHT CONTENT */}
                 <div className="flex flex-col md:flex-row gap-6 items-start">
-                  
+
                   {/* LEFT ASIDE NAVY SIDEBAR-STYLE MENU (CONSTRAINED ABOVE TASKBAR POSITION) */}
                   <aside className="w-full md:w-80 bg-[#0B0F19] text-white p-5 rounded-2xl shadow-xl border border-white/10 flex flex-col flex-shrink-0 sticky top-4 max-h-[calc(100vh-230px)] space-y-4">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -3155,11 +2652,10 @@
                               <button
                                 key={sub.id}
                                 onClick={() => setActiveSettingsSubMenu(sub.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${
-                                  activeSettingsSubMenu === sub.id
-                                    ? 'sidebar-item-active font-bold text-white bg-indigo-600 shadow-md'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${activeSettingsSubMenu === sub.id
+                                  ? 'sidebar-item-active font-bold text-white bg-indigo-600 shadow-md'
+                                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                  }`}
                               >
                                 <div className="flex items-center space-x-2.5 truncate">
                                   <i className={`${sub.iconClass} text-sm ${activeSettingsSubMenu === sub.id ? 'text-white' : 'text-indigo-400'}`}></i>
@@ -3236,7 +2732,7 @@
                           </h4>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            
+
                             {/* CARD 1: COMPANY LOGO */}
                             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col justify-between space-y-3">
                               <div>
@@ -3542,7 +3038,7 @@
                                       <button onClick={() => handleTriggerDelete(r)} className="px-2 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-md text-[11px]">Del</button>
                                     </td>
                                   </tr>
-                              ))}
+                                ))}
                             </tbody>
                           </table>
                         </div>
@@ -3674,7 +3170,7 @@
                                       <button onClick={() => handleTriggerDelete(r)} className="px-2 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-md text-[11px]">Del</button>
                                     </td>
                                   </tr>
-                              ))}
+                                ))}
                             </tbody>
                           </table>
                         </div>
@@ -4220,11 +3716,10 @@
                           </div>
 
                           <div className="shrink-0 flex items-center space-x-2">
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border flex items-center space-x-1.5 ${
-                              cloudinaryConfig.status === 'Connected & Ready'
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                            }`}>
+                            <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border flex items-center space-x-1.5 ${cloudinaryConfig.status === 'Connected & Ready'
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              }`}>
                               <i className={`fi ${cloudinaryConfig.status === 'Connected & Ready' ? 'fi-rr-check-circle text-emerald-400' : 'fi-rr-cross-circle text-rose-400'}`}></i>
                               <span>Status: {cloudinaryConfig.status}</span>
                             </span>
@@ -4443,9 +3938,8 @@
                     <button
                       onClick={() => setActiveEngine('settings')}
                       title="Master Settings Portal"
-                      className={`p-2 hover:bg-slate-100 rounded-xl text-slate-600 font-bold transition-all ${
-                        activeEngine === 'settings' ? 'bg-indigo-100 text-indigo-700' : ''
-                      }`}
+                      className={`p-2 hover:bg-slate-100 rounded-xl text-slate-600 font-bold transition-all ${activeEngine === 'settings' ? 'bg-indigo-100 text-indigo-700' : ''
+                        }`}
                     >
                       ⚙️
                     </button>
@@ -4502,8 +3996,19 @@
                           <th onClick={() => handleSort('convRate')} className="py-3 px-3 text-center cursor-pointer select-none">Conv. Rate {sortField === 'convRate' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
-                        {sortedAndFilteredQuotations.map((qt) => (
+                        <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
+                          {sortedAndFilteredQuotations.length === 0 && (
+                            <tr>
+                              <td colSpan={12} className="py-12 text-center text-slate-400">
+                                <div className="flex flex-col items-center justify-center space-y-2">
+                                  <i className="fi fi-rr-inbox text-3xl text-slate-300"></i>
+                                  <p className="text-sm font-semibold text-slate-600">No Quotations Found</p>
+                                  <p className="text-xs text-slate-400">Click <strong>+ Add New Quotation</strong> to create your first quotation record.</p>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {sortedAndFilteredQuotations.map((qt) => (
                           <React.Fragment key={qt.id}>
                             <tr className="hover:bg-slate-50/80 transition-all relative">
                               <td className="py-3 px-2 text-center">
@@ -4715,6 +4220,17 @@
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
+                          {filteredAndSortedPi.length === 0 && (
+                            <tr>
+                              <td colSpan={13} className="py-12 text-center text-slate-400">
+                                <div className="flex flex-col items-center justify-center space-y-2">
+                                  <i className="fi fi-rr-inbox text-3xl text-slate-300"></i>
+                                  <p className="text-sm font-semibold text-slate-600">No Proforma Invoices Found</p>
+                                  <p className="text-xs text-slate-400">Click <strong>+ Add New</strong> to generate a new Proforma Invoice.</p>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
                           {filteredAndSortedPi.map((pi) => (
                             <React.Fragment key={pi.id}>
                               <tr className="hover:bg-slate-50/80 transition-all relative">
@@ -5189,9 +4705,8 @@
                       <button
                         type="button"
                         onClick={() => setDriveViewMode('grid')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                          driveViewMode === 'grid' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${driveViewMode === 'grid' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                          }`}
                       >
                         <i className="fi fi-rr-apps text-xs"></i>
                         <span>Grid</span>
@@ -5199,9 +4714,8 @@
                       <button
                         type="button"
                         onClick={() => setDriveViewMode('table')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                          driveViewMode === 'table' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${driveViewMode === 'table' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                          }`}
                       >
                         <i className="fi fi-rr-list text-xs"></i>
                         <span>Table</span>
@@ -5222,7 +4736,7 @@
 
                 {/* DUAL-PANE CONTAINER */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  
+
                   {/* LEFT PANEL: FOLDERS & QUICK TAGS */}
                   <div className="space-y-4">
                     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-4">
@@ -5247,19 +4761,17 @@
                             key={f.id}
                             type="button"
                             onClick={() => { setDriveSelectedFolder(f.name); setDriveSelectedTag(null); }}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                              driveSelectedFolder === f.name && !driveSelectedTag
-                                ? 'bg-indigo-600 text-white font-extrabold shadow-md'
-                                : 'text-slate-600 hover:bg-slate-50'
-                            }`}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${driveSelectedFolder === f.name && !driveSelectedTag
+                              ? 'bg-indigo-600 text-white font-extrabold shadow-md'
+                              : 'text-slate-600 hover:bg-slate-50'
+                              }`}
                           >
                             <div className="flex items-center space-x-2.5 truncate">
                               <i className={`${f.icon} text-sm ${driveSelectedFolder === f.name && !driveSelectedTag ? 'text-white' : 'text-indigo-500'}`}></i>
                               <span className="truncate">{f.name}</span>
                             </div>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                              driveSelectedFolder === f.name && !driveSelectedTag ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${driveSelectedFolder === f.name && !driveSelectedTag ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                              }`}>
                               {f.count}
                             </span>
                           </button>
@@ -5280,11 +4792,10 @@
                             key={t}
                             type="button"
                             onClick={() => setDriveSelectedTag(driveSelectedTag === t ? null : t)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                              driveSelectedTag === t
-                                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${driveSelectedTag === t
+                              ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                              }`}
                           >
                             {t}
                           </button>
@@ -5295,7 +4806,7 @@
 
                   {/* RIGHT PANEL: ASSETS DISPLAY (GRID / TABLE VIEW) */}
                   <div className="lg:col-span-3 space-y-4">
-                    
+
                     {/* FILTER & SORT BAR */}
                     <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
                       <div className="flex items-center space-x-2">
@@ -5342,9 +4853,8 @@
                             <div
                               key={asset.id}
                               onClick={() => setSelectedDriveAsset(asset)}
-                              className={`drive-asset-card overflow-hidden shadow-xs cursor-pointer flex flex-col justify-between ${
-                                selectedDriveAsset?.id === asset.id ? 'border-2 border-indigo-600 ring-2 ring-indigo-500/20' : ''
-                              }`}
+                              className={`drive-asset-card overflow-hidden shadow-xs cursor-pointer flex flex-col justify-between ${selectedDriveAsset?.id === asset.id ? 'border-2 border-indigo-600 ring-2 ring-indigo-500/20' : ''
+                                }`}
                             >
                               <div>
                                 <div className="aspect-video bg-slate-100 overflow-hidden relative">
@@ -5757,12 +5267,12 @@
                 </div>
 
                 <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-                    <button onClick={() => handleConvertToCommercialInvoice(selectedPiView)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm">🔄 Convert to Commercial Invoice</button>
-                    <div className="flex space-x-2">
-                      <button onClick={() => handleOpenPiPdf(selectedPiView)} className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center space-x-1"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
-                      <button onClick={() => handleDownloadPiPdfFile(selectedPiView)} className="px-4 py-2 border border-slate-300 hover:bg-slate-100 font-bold text-xs rounded-lg">Print PDF</button>
-                      <button onClick={() => setSelectedPiView(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg">Close</button>
-                    </div>
+                  <button onClick={() => handleConvertToCommercialInvoice(selectedPiView)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm">🔄 Convert to Commercial Invoice</button>
+                  <div className="flex space-x-2">
+                    <button onClick={() => handleOpenPiPdf(selectedPiView)} className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center space-x-1"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
+                    <button onClick={() => handleDownloadPiPdfFile(selectedPiView)} className="px-4 py-2 border border-slate-300 hover:bg-slate-100 font-bold text-xs rounded-lg">Print PDF</button>
+                    <button onClick={() => setSelectedPiView(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg">Close</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5988,7 +5498,7 @@
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Sales Broker</span>
                           <span className="font-semibold text-slate-800">
-                            {selectedQuotationView.salesBroker === 'Yes' 
+                            {selectedQuotationView.salesBroker === 'Yes'
                               ? `${selectedQuotationView.brokerName || 'Broker'} (${selectedQuotationView.brokerCommission || '0'}%)`
                               : 'No Broker'}
                           </span>
@@ -6172,7 +5682,7 @@
           {isCreateQtModalOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col relative">
-                
+
                 {/* TOAST NOTICE BANNER */}
                 {toastNotice && (
                   <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold text-center flex items-center justify-between sticky top-0 z-30 shadow-md">
@@ -6616,7 +6126,7 @@
                             </tr>
                           ) : (
                             qtFormData.lineItems.map((item, idx) => {
-                              const totalAmt = ( (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0) ).toFixed(2);
+                              const totalAmt = ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)).toFixed(2);
                               return (
                                 <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                   <td className="py-3 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
@@ -6700,13 +6210,13 @@
                     <i className="fi fi-rr-disk text-xs"></i>
                     <span>Save As Draft</span>
                   </button>
-                  
+
                   {/* Save */}
                   <button type="button" onClick={handleSaveQuotationFinal} className="px-5 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-colors flex items-center space-x-1.5">
                     <i className="fi fi-rr-check text-xs"></i>
                     <span>Save & Finalize</span>
                   </button>
-                  
+
                   {/* Close (Rose Red Button #F43F5E) */}
                   <button type="button" onClick={() => setIsCreateQtModalOpen(false)} className="px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md transition-colors">
                     Close
@@ -7097,7 +6607,7 @@
                             </tr>
                           ) : (
                             piFormData.lineItems.map((item, idx) => {
-                              const totalAmt = ( (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0) ).toFixed(2);
+                              const totalAmt = ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)).toFixed(2);
                               return (
                                 <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                   <td className="py-3 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
@@ -7765,6 +7275,27 @@
             const totalAmountWords = convertNumberToWords(totalAmountFx);
             const pdfFilename = getPiPdfFilename(pi);
 
+            const selectedBank = masterBankDetails.find(b => 
+              b.id === pi.bank || 
+              b.id === pi.bankAccount || 
+              b.accountNumber === pi.bank || 
+              b.bankName === pi.bank ||
+              (pi.bank && b.bankName.toLowerCase().includes(String(pi.bank).toLowerCase()))
+            ) || masterBankDetails.find(b => b.isPrimary) || masterBankDetails[0] || {
+              beneficiaryName: 'GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED',
+              bankName: 'KOTAK MAHINDRA BANK LTD',
+              accountNumber: '6748421381',
+              swiftCode: 'KKBKINBB',
+              ifscCode: 'KKBK0001358',
+              branchName: 'CBD Belapur, Navi Mumbai, India'
+            };
+
+            const bankShortName = selectedBank.bankName.toUpperCase().includes('KOTAK') 
+              ? 'KOTAK MAHINDRA' 
+              : selectedBank.bankName.toUpperCase().includes('STATE BANK') || selectedBank.bankName.toUpperCase().includes('SBI')
+              ? 'STATE BANK OF INDIA' 
+              : selectedBank.bankName;
+
             return (
               <div id="proforma-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
                 <div className="bg-slate-100 rounded-2xl shadow-2xl border border-slate-300 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden">
@@ -7907,17 +7438,27 @@
                                   <div>DATE : <span className="font-mono">{pi.date || '04/08/2026'}</span></div>
                                 </div>
 
-                                <div className="bg-[#D9EBF7] p-1 font-bold text-slate-900 border-b border-slate-400 uppercase text-[8.5px] tracking-wider">
-                                  OUR BANK ACCOUNT DETAILS
+                                <div className="bg-[#D9EBF7] p-1 font-bold text-slate-900 border-b border-slate-400 uppercase text-[8.5px] tracking-wider flex justify-between items-center">
+                                  <span>OUR BANK ACCOUNT DETAILS ({bankShortName})</span>
                                 </div>
-                                <div className="p-1.5 space-y-0.5 text-[8.5px]">
-                                  <div><span className="text-slate-600">BENEFICIARY NAME :</span> <b className="text-slate-900">GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED</b></div>
-                                  <div><span className="text-slate-600">BENEFICIARY BANK :</span> <b className="text-slate-900">KOTAK MAHINDRA BANK LTD</b></div>
-                                  <div><span className="text-slate-600">BRANCH :</span> <span className="font-medium text-slate-800">CBD Belapur, Navi Mumbai, India</span></div>
-                                  <div className="grid grid-cols-2 gap-1 font-mono text-[8.5px]">
-                                    <div><span className="text-slate-600">BANK A/C NO :</span> <b>6748421381</b></div>
-                                    <div><span className="text-slate-600">SWIFT CODE :</span> <b className="text-sky-800">KKBKINBB</b></div>
+                                <div className="p-1.5 space-y-1 text-[8.5px]">
+                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px] block">BENEFICIARY NAME:</span> <b className="text-slate-900 block font-extrabold leading-tight">{selectedBank.beneficiaryName}</b></div>
+                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px]">BENEFICIARY BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
+                                  <div className="bg-slate-50 border border-slate-300 rounded-md p-1 my-1 grid grid-cols-3 gap-1 font-mono text-[8px]">
+                                    <div>
+                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">A/C NO</span>
+                                      <b className="text-slate-900 text-[8.5px]">{selectedBank.accountNumber}</b>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">IFSC CODE</span>
+                                      <b className="text-indigo-900 text-[8px]">{selectedBank.ifscCode || 'N/A'}</b>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">SWIFT CODE</span>
+                                      <b className="text-sky-800 text-[8px]">{selectedBank.swiftCode || 'N/A'}</b>
+                                    </div>
                                   </div>
+                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px]">BRANCH:</span> <span className="font-semibold text-slate-800">{selectedBank.branchName}</span></div>
                                 </div>
                               </div>
                             </div>
@@ -8007,7 +7548,7 @@
                                     <img src={companySeal} alt="Official Stamp" className="h-14 object-contain opacity-80 absolute" />
                                   ) : (
                                     <div className="w-14 h-14 rounded-full border-2 border-indigo-700/60 flex items-center justify-center text-[7px] font-black text-indigo-900 uppercase text-center p-1 transform -rotate-12 bg-sky-50/40">
-                                      MGLOBAL IMPEX<br/>CBD BELAPUR<br/>SEAL
+                                      MGLOBAL IMPEX<br />CBD BELAPUR<br />SEAL
                                     </div>
                                   )}
                                   <svg className="w-24 h-10 text-indigo-900 z-10 opacity-90" viewBox="0 0 200 60" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -8076,23 +7617,38 @@
                               </div>
                             </div>
 
-                            {/* ZONE 4: LOGISTICS PARAMETERS */}
-                            <div className="grid grid-cols-4 border-b border-slate-900 text-[8.5px] text-center bg-slate-50/50 divide-x divide-slate-900">
-                              <div className="p-1">
-                                <span className="text-slate-500 block text-[7.5px]">PRE-CARRIAGE BY</span>
-                                <b>{pi.preCarriageBy || 'BY SEA'}</b>
+                            {/* ZONE 4: LOGISTICS & BANK DETAILS (MATCHING IMAGE 2 EXACTLY) */}
+                            <div className="grid grid-cols-2 border-b border-slate-900">
+                              {/* LEFT: LOGISTICS & SHIPPING */}
+                              <div className="p-2 border-r border-slate-900 space-y-1 text-[8.5px]">
+                                <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 uppercase tracking-wider text-[9px]">LOGISTICS & SHIPPING</div>
+                                <div className="grid grid-cols-2 gap-1 pt-0.5">
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">PRE-CARRIAGE</span><b>{pi.preCarriageBy || 'BY SEA'}</b></div>
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">RECEIPT PLACE</span><b>{pi.placeOfReceipt || 'ICD AHMEDABAD'}</b></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1">
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">PORT OF LOADING</span><b>{pi.placeOfLoading || 'NHAVA SHEVA'}</b></div>
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">DESTINATION PORT</span><b>{pi.port}</b></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1">
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">COUNTRY ORIGIN</span><b>INDIA</b></div>
+                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">FINAL DESTINATION</span><b>{pi.country || 'Canada'}</b></div>
+                                </div>
                               </div>
-                              <div className="p-1">
-                                <span className="text-slate-500 block text-[7.5px]">FINAL DESTINATION</span>
-                                <b>{pi.port} ({pi.country})</b>
-                              </div>
-                              <div className="p-1">
-                                <span className="text-slate-500 block text-[7.5px]">COUNTRY OF ORIGIN</span>
-                                <b>INDIA</b>
-                              </div>
-                              <div className="p-1">
-                                <span className="text-slate-500 block text-[7.5px]">DESTINATION COUNTRY</span>
-                                <b>{pi.country || 'USA'}</b>
+
+                              {/* RIGHT: BANK DETAILS (KOTAK MAHINDRA / SELECTED BANK) - MATCHING IMAGE 1 & 2 */}
+                              <div className="p-2 space-y-1 bg-white text-[8.5px]">
+                                <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 uppercase tracking-wider text-[9px] flex justify-between items-center">
+                                  <span>BANK DETAILS ({bankShortName})</span>
+                                </div>
+                                <div><span className="text-slate-500 font-bold block text-[7.5px] uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 block font-extrabold leading-tight">{selectedBank.beneficiaryName}</b></div>
+                                <div><span className="text-slate-500 font-bold text-[7.5px] uppercase">BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
+                                <div className="bg-slate-50 border border-slate-300 rounded p-1 my-1 grid grid-cols-3 gap-1 font-mono text-[8px]">
+                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">A/C NO</span><b className="text-slate-900 text-[8.5px]">{selectedBank.accountNumber}</b></div>
+                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">IFSC CODE</span><b className="text-indigo-900 text-[8px]">{selectedBank.ifscCode || 'N/A'}</b></div>
+                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">SWIFT CODE</span><b className="text-sky-800 text-[8px]">{selectedBank.swiftCode || 'N/A'}</b></div>
+                                </div>
+                                <div><span className="text-slate-500 font-bold text-[7.5px] uppercase">BRANCH:</span> <span className="font-semibold text-slate-800">{selectedBank.branchName}</span></div>
                               </div>
                             </div>
 
@@ -8216,20 +7772,20 @@
                     <>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Address Label / Title *</label>
-                        <input type="text" placeholder="e.g. Primary Head Office" value={masterFormData.label || ''} onChange={e => setMasterFormData({...masterFormData, label: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                        <input type="text" placeholder="e.g. Primary Head Office" value={masterFormData.label || ''} onChange={e => setMasterFormData({ ...masterFormData, label: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
                       </div>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Full Address Details *</label>
-                        <textarea rows="3" placeholder="Suite, Building, Street, Area..." value={masterFormData.address || ''} onChange={e => setMasterFormData({...masterFormData, address: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-medium"></textarea>
+                        <textarea rows="3" placeholder="Suite, Building, Street, Area..." value={masterFormData.address || ''} onChange={e => setMasterFormData({ ...masterFormData, address: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-medium"></textarea>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">GSTIN Number</label>
-                          <input type="text" value={masterFormData.gstin || ''} onChange={e => setMasterFormData({...masterFormData, gstin: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
+                          <input type="text" value={masterFormData.gstin || ''} onChange={e => setMasterFormData({ ...masterFormData, gstin: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
                         </div>
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">State Code</label>
-                          <input type="text" value={masterFormData.stateCode || ''} onChange={e => setMasterFormData({...masterFormData, stateCode: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
+                          <input type="text" value={masterFormData.stateCode || ''} onChange={e => setMasterFormData({ ...masterFormData, stateCode: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
                         </div>
                       </div>
                     </>
@@ -8239,16 +7795,16 @@
                     <>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Product Name *</label>
-                        <input type="text" value={masterFormData.name || ''} onChange={e => setMasterFormData({...masterFormData, name: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                        <input type="text" value={masterFormData.name || ''} onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">HSN Code *</label>
-                          <input type="text" value={masterFormData.hsn || ''} onChange={e => setMasterFormData({...masterFormData, hsn: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
+                          <input type="text" value={masterFormData.hsn || ''} onChange={e => setMasterFormData({ ...masterFormData, hsn: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
                         </div>
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">SKU Reference</label>
-                          <input type="text" placeholder="e.g. SKU-DEG-200" value={masterFormData.sku || ''} onChange={e => setMasterFormData({...masterFormData, sku: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
+                          <input type="text" placeholder="e.g. SKU-DEG-200" value={masterFormData.sku || ''} onChange={e => setMasterFormData({ ...masterFormData, sku: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold" />
                         </div>
                       </div>
 
@@ -8261,7 +7817,7 @@
                           </span>
                           <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">Cloudinary Integrated</span>
                         </label>
-                        
+
                         <div className="flex items-center space-x-3">
                           <div className="w-16 h-16 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group">
                             {masterFormData.imgUrl ? (
@@ -8276,7 +7832,7 @@
                               type="text"
                               placeholder="Image URL or Cloudinary CDN link..."
                               value={masterFormData.imgUrl || ''}
-                              onChange={e => setMasterFormData({...masterFormData, imgUrl: e.target.value})}
+                              onChange={e => setMasterFormData({ ...masterFormData, imgUrl: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-bold"
                             />
                             <div className="flex items-center space-x-2">
@@ -8299,16 +7855,16 @@
                     <>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Customer Legal Name *</label>
-                        <input type="text" value={masterFormData.name || ''} onChange={e => setMasterFormData({...masterFormData, name: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                        <input type="text" value={masterFormData.name || ''} onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">Country *</label>
-                          <input type="text" value={masterFormData.country || ''} onChange={e => setMasterFormData({...masterFormData, country: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                          <input type="text" value={masterFormData.country || ''} onChange={e => setMasterFormData({ ...masterFormData, country: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
                         </div>
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">Tax ID / VAT</label>
-                          <input type="text" value={masterFormData.taxId || ''} onChange={e => setMasterFormData({...masterFormData, taxId: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
+                          <input type="text" value={masterFormData.taxId || ''} onChange={e => setMasterFormData({ ...masterFormData, taxId: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
                         </div>
                       </div>
                     </>
@@ -8318,7 +7874,7 @@
                     <>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Package Title *</label>
-                        <input type="text" value={masterFormData.title || ''} onChange={e => setMasterFormData({...masterFormData, title: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                        <input type="text" value={masterFormData.title || ''} onChange={e => setMasterFormData({ ...masterFormData, title: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
                       </div>
                       <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2">
                         <span className="font-bold text-indigo-900 block text-[11px]">Real-Time CBM Calculator</span>
@@ -8330,7 +7886,7 @@
                               const w = parseFloat(masterFormData.width || 0);
                               const h = parseFloat(masterFormData.height || 0);
                               const cbm = (l * w * h) / 1000000;
-                              setMasterFormData({...masterFormData, length: l, cbm: parseFloat(cbm.toFixed(2))});
+                              setMasterFormData({ ...masterFormData, length: l, cbm: parseFloat(cbm.toFixed(2)) });
                             }} className="w-full border border-slate-300 rounded px-2 py-1 font-mono font-bold" />
                           </div>
                           <div>
@@ -8340,7 +7896,7 @@
                               const w = parseFloat(e.target.value || 0);
                               const h = parseFloat(masterFormData.height || 0);
                               const cbm = (l * w * h) / 1000000;
-                              setMasterFormData({...masterFormData, width: w, cbm: parseFloat(cbm.toFixed(2))});
+                              setMasterFormData({ ...masterFormData, width: w, cbm: parseFloat(cbm.toFixed(2)) });
                             }} className="w-full border border-slate-300 rounded px-2 py-1 font-mono font-bold" />
                           </div>
                           <div>
@@ -8350,7 +7906,7 @@
                               const w = parseFloat(masterFormData.width || 0);
                               const h = parseFloat(e.target.value || 0);
                               const cbm = (l * w * h) / 1000000;
-                              setMasterFormData({...masterFormData, height: h, cbm: parseFloat(cbm.toFixed(2))});
+                              setMasterFormData({ ...masterFormData, height: h, cbm: parseFloat(cbm.toFixed(2)) });
                             }} className="w-full border border-slate-300 rounded px-2 py-1 font-mono font-bold" />
                           </div>
                         </div>
@@ -8370,7 +7926,7 @@
                           type="text"
                           placeholder="e.g. GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED"
                           value={masterFormData.beneficiaryName || ''}
-                          onChange={e => setMasterFormData({...masterFormData, beneficiaryName: e.target.value})}
+                          onChange={e => setMasterFormData({ ...masterFormData, beneficiaryName: e.target.value })}
                           className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs focus:border-indigo-500 focus:outline-none"
                           required
                         />
@@ -8381,7 +7937,7 @@
                           type="text"
                           placeholder="e.g. KOTAK MAHINDRA BANK LIMITED"
                           value={masterFormData.bankName || ''}
-                          onChange={e => setMasterFormData({...masterFormData, bankName: e.target.value})}
+                          onChange={e => setMasterFormData({ ...masterFormData, bankName: e.target.value })}
                           className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs focus:border-indigo-500 focus:outline-none"
                           required
                         />
@@ -8392,7 +7948,7 @@
                           type="text"
                           placeholder="e.g. CBD Belapur Trade Branch, Navi Mumbai, MH"
                           value={masterFormData.branchName || ''}
-                          onChange={e => setMasterFormData({...masterFormData, branchName: e.target.value})}
+                          onChange={e => setMasterFormData({ ...masterFormData, branchName: e.target.value })}
                           className="w-full border border-slate-300 rounded-lg px-3 py-2 font-medium text-xs focus:border-indigo-500 focus:outline-none"
                           required
                         />
@@ -8404,7 +7960,7 @@
                             type="text"
                             placeholder="e.g. 6748421381"
                             value={masterFormData.accountNumber || ''}
-                            onChange={e => setMasterFormData({...masterFormData, accountNumber: e.target.value})}
+                            onChange={e => setMasterFormData({ ...masterFormData, accountNumber: e.target.value })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-xs focus:border-indigo-500 focus:outline-none"
                             required
                           />
@@ -8415,7 +7971,7 @@
                             type="text"
                             placeholder="e.g. KKBKINBB"
                             value={masterFormData.swiftCode || ''}
-                            onChange={e => setMasterFormData({...masterFormData, swiftCode: e.target.value.toUpperCase()})}
+                            onChange={e => setMasterFormData({ ...masterFormData, swiftCode: e.target.value.toUpperCase() })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-xs focus:border-indigo-500 focus:outline-none"
                             required
                           />
@@ -8428,7 +7984,7 @@
                             type="text"
                             placeholder="e.g. KKBK0001358"
                             value={masterFormData.ifscCode || ''}
-                            onChange={e => setMasterFormData({...masterFormData, ifscCode: e.target.value.toUpperCase()})}
+                            onChange={e => setMasterFormData({ ...masterFormData, ifscCode: e.target.value.toUpperCase() })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-xs focus:border-indigo-500 focus:outline-none"
                           />
                         </div>
@@ -8438,7 +7994,7 @@
                             type="text"
                             placeholder="e.g. 0400089"
                             value={masterFormData.adCode || ''}
-                            onChange={e => setMasterFormData({...masterFormData, adCode: e.target.value})}
+                            onChange={e => setMasterFormData({ ...masterFormData, adCode: e.target.value })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-xs focus:border-indigo-500 focus:outline-none"
                           />
                         </div>
@@ -8448,7 +8004,7 @@
 
                   <div className="pt-2 border-t border-slate-200">
                     <label className="block text-slate-700 font-bold mb-1">Record Active Status</label>
-                    <select value={masterFormData.status || 'Active'} onChange={e => setMasterFormData({...masterFormData, status: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold">
+                    <select value={masterFormData.status || 'Active'} onChange={e => setMasterFormData({ ...masterFormData, status: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold">
                       <option value="Active">Active Record</option>
                       <option value="Inactive">Inactive Record (Disabled)</option>
                     </select>
@@ -8527,7 +8083,7 @@
           {lineItemModalState.isOpen && (
             <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-[60] p-4 animate-fadeIn">
               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden flex flex-col relative">
-                
+
                 {/* SUB-MODAL HEADER */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
                   <div className="flex items-center space-x-2.5">
@@ -8546,7 +8102,7 @@
 
                 {/* SUB-MODAL BODY */}
                 <div className="p-6 space-y-6 text-xs text-slate-700 max-h-[78vh] overflow-y-auto">
-                  
+
                   {/* CARD 1: PRODUCT & COMMERCIAL PRICING */}
                   <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-4">
                     <h4 className="font-black text-slate-900 text-xs border-b border-slate-200 pb-2 flex items-center space-x-1.5 text-indigo-900">
@@ -8641,7 +8197,7 @@
                           <span>Total (USD)</span>
                           <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-mono font-bold">Auto</span>
                         </label>
-                        <input type="text" readOnly value={`$ ${( (parseFloat(lineItemModalState.itemData.quantity) || 0) * (parseFloat(lineItemModalState.itemData.price) || 0) ).toFixed(2)}`} className="w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-900" />
+                        <input type="text" readOnly value={`$ ${((parseFloat(lineItemModalState.itemData.quantity) || 0) * (parseFloat(lineItemModalState.itemData.price) || 0)).toFixed(2)}`} className="w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-900" />
                       </div>
                     </div>
 
@@ -8764,7 +8320,7 @@
                         </span>
                         <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">Cloudinary Integrated</span>
                       </label>
-                      
+
                       <div className="flex items-center space-x-3">
                         <div className="w-16 h-16 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group">
                           {quickAddFields.field4 ? (
@@ -8779,7 +8335,7 @@
                             type="text"
                             placeholder="Image URL or Cloudinary CDN link..."
                             value={quickAddFields.field4 || ''}
-                            onChange={e => setQuickAddFields({...quickAddFields, field4: e.target.value})}
+                            onChange={e => setQuickAddFields({ ...quickAddFields, field4: e.target.value })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-bold"
                           />
                           <div className="flex items-center space-x-2">
@@ -8925,4 +8481,5 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
+
 </html>

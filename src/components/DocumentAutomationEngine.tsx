@@ -52,97 +52,24 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
     shipmentPeriod: '15 to 20 Days from LC Opening',
   });
 
-  // Mock list of Proforma Invoices matching prompt requirement
-  const [proformaCards, setProformaCards] = useState([
-    {
-      id: 'pi-01',
-      invNumber: 'PI/6/25-26',
-      consignee: 'Global Trade Partners LLC',
-      date: 'Jun 18, 2025',
-      amount: '$142,500.00',
-      status: 'DRAFT',
-      statusColor: 'bg-amber-100 text-amber-700 border border-amber-300',
-      exporter: 'ExportFlow Ltd. (Andhra Pradesh)',
-      exporterAddr: 'Plot 45, Industrial SEZ, Visakhapatnam, Andhra Pradesh, India 530012',
-      consigneeAddr: '789 Logistics Way, Suite 400, Port Authority, Los Angeles, CA 90001, USA',
-      cbm: '45.2 m³',
-      fillPercent: 85,
-    },
-    {
-      id: 'pi-02',
-      invNumber: 'PI/2026/042',
-      consignee: 'EuroCorp Logistics NV',
-      date: 'Oct 22, 2026',
-      amount: '$88,200.00',
-      status: 'DRAFT',
-      statusColor: 'bg-amber-100 text-amber-700 border border-amber-300',
-      exporter: 'ExportFlow Ltd.',
-      exporterAddr: '128 Global Trade Center, Financial District, Singapore 049315',
-      consigneeAddr: 'Hafenstrasse 12, 20457 Hamburg, Germany',
-      cbm: '28.4 m³',
-      fillPercent: 62,
-    },
-    {
-      id: 'pi-03',
-      invNumber: 'PI/2026/041',
-      consignee: 'Pacific Rim Trading Co.',
-      date: 'Oct 20, 2026',
-      amount: '$210,000.00',
-      status: 'ISSUED',
-      statusColor: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
-      exporter: 'ExportFlow Textiles Div.',
-      exporterAddr: '45 Silk Road Avenue, Shanghai, China',
-      consigneeAddr: 'Port of Tokyo SEZ, Japan',
-      cbm: '68.0 m³',
-      fillPercent: 98,
-    },
-    {
-      id: 'pi-04',
-      invNumber: 'PI/2026/040',
-      consignee: 'Nordic Imports AB',
-      date: 'Oct 15, 2026',
-      amount: '$54,300.00',
-      status: 'CLEARED',
-      statusColor: 'bg-blue-100 text-blue-700 border border-blue-200',
-      exporter: 'ExportFlow Ltd.',
-      exporterAddr: '128 Global Trade Center, Singapore',
-      consigneeAddr: 'Sveavagen 44, Stockholm, Sweden',
-      cbm: '18.2 m³',
-      fillPercent: 42,
-    },
-  ]);
+  // Proforma Invoices
+  const [proformaCards, setProformaCards] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_proforma_invoices');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
-  // Mock list of Commercial Invoices
-  const commercialCards = [
-    {
-      id: 'doc-89',
-      invNumber: 'INV/2026/089',
-      consignee: 'Global Trade Partners LLC',
-      date: 'Oct 24, 2026',
-      amount: '$142,500.00',
-      status: 'DRAFT',
-      statusColor: 'bg-slate-100 text-slate-600',
-      exporter: 'ExportFlow Textiles Div.',
-      exporterAddr: '45 Silk Road Avenue, Industrial Park, Sector 4, Shanghai, China 200000',
-      consigneeAddr: '789 Logistics Way, Suite 400, Port Authority, Los Angeles, CA 90001, USA',
-      cbm: '45.2 m³',
-      fillPercent: 85,
-    },
-    {
-      id: 'doc-88',
-      invNumber: 'INV/2026/088',
-      consignee: 'EuroCorp Logistics NV',
-      date: 'Oct 22, 2026',
-      amount: '$88,200.00',
-      status: 'DRAFT',
-      statusColor: 'bg-amber-100 text-amber-700 border border-amber-300',
-      exporter: 'ExportFlow Ltd.',
-      exporterAddr: '128 Global Trade Center, Financial District, Singapore 049315',
-      consigneeAddr: 'Hafenstrasse 12, 20457 Hamburg, Germany',
-      cbm: '28.4 m³',
-      fillPercent: 62,
-    },
-  ];
+  useEffect(() => {
+    try {
+      localStorage.setItem('shipz_proforma_invoices', JSON.stringify(proformaCards));
+    } catch (e) {}
+  }, [proformaCards]);
+
+  // Commercial Invoices
+  const commercialCards: any[] = [];
 
   const currentCards = isProformaMode ? proformaCards : commercialCards;
   const activeCard = currentCards.find((c) => c.id === selectedDocId) || currentCards[0];

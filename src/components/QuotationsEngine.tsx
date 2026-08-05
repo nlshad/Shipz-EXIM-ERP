@@ -53,56 +53,20 @@ export const QuotationsEngine: React.FC = () => {
   const [shareModalQt, setShareModalQt] = useState<QuotationRecord | null>(null);
 
   // Initial Quotations List
-  const [quotations, setQuotations] = useState<QuotationRecord[]>([
-    {
-      id: 'qt-03',
-      quotationNo: 'QT/3/25-26',
-      consignee: 'Jony',
-      products: 'Sodium Benzoate (3000.0000 KG), Citric Acid Anhydrous (4000.0000 KG), Degaser 200 (1000.0000 Litre)',
-      country: 'Canada',
-      port: 'Montreal',
-      status: 'Accepted',
-      amount: '12900.00 (USD)',
-      balanceDue: '12900.00 (USD)',
-      convRate: '85.00',
-      date: '08/13/2025',
-      companyAddress: 'Gujarat SEZ Unit',
-      vesselFlightNo: 'MSC OSCAR V.24B',
-      currency: 'USD',
-    },
-    {
-      id: 'qt-02',
-      quotationNo: 'QT/2/25-26',
-      consignee: 'BERLIN',
-      products: 'PAF (Potassium Aluminium Fluoride) (1800.0000 KG), Nitric Acid (3500.0000 Litre), Hydrogen Peroxide (4500.0000 Litre)',
-      country: 'Indonesia',
-      port: 'Tanjung Priok',
-      status: 'Accepted',
-      amount: '14130.00 (USD)',
-      balanceDue: '14130.00 (USD)',
-      convRate: '85.00',
-      date: '08/12/2025',
-      companyAddress: 'Andhra Pradesh Unit',
-      vesselFlightNo: 'EVER GIVEN V.102',
-      currency: 'USD',
-    },
-    {
-      id: 'qt-01',
-      quotationNo: 'QT/1/25-26',
-      consignee: 'Jony',
-      products: 'Emamectin Benzoate (1000.0000 KG), Citric Acid Anhydrous (1000.0000 KG)',
-      country: 'Canada',
-      port: 'Montreal',
-      status: 'Accepted',
-      amount: '56450.00 (USD)',
-      balanceDue: '56450.00 (USD)',
-      convRate: '85.00',
-      date: '08/10/2025',
-      companyAddress: 'Gujarat SEZ Unit',
-      vesselFlightNo: 'MAERSK MC-KINNEY V.05A',
-      currency: 'USD',
-    },
-  ]);
+  const [quotations, setQuotations] = useState<QuotationRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_quotations');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('shipz_quotations', JSON.stringify(quotations));
+    } catch (e) {}
+  }, [quotations]);
 
   // Complete Form State matching ALL 5 sections of user schema (Cleared default values on create)
   const getEmptyFormData = () => ({
