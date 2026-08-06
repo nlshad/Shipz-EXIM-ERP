@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SalespersonMaster } from '../types';
 
 export interface QuotationRecord {
   id: string;
