@@ -839,26 +839,27 @@ export const QuotationsEngine: React.FC = () => {
                   <span>Convert to Proforma Invoice (PI)</span>
                 </button>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={() => handleDownloadPdf(selectedQuotationView)}
-                    className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all"
+                    className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-lg shadow-xs flex items-center space-x-1.5 transition-all"
                   >
                     <i className="fi fi-rr-download text-xs"></i>
                     <span>Download PDF</span>
                   </button>
                   <button
-                    onClick={() => handleDownloadPdf(selectedQuotationView)}
-                    className="px-4 py-2.5 border border-slate-300 hover:bg-slate-100 font-bold text-xs text-slate-700 rounded-xl transition-all flex items-center space-x-1.5"
+                    onClick={() => window.print()}
+                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-lg transition-all flex items-center space-x-1.5"
                   >
                     <i className="fi fi-rr-print text-xs"></i>
-                    <span>Print PDF</span>
+                    <span>Print</span>
                   </button>
                   <button
                     onClick={() => setSelectedQuotationView(null)}
-                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all"
+                    className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all ml-1"
+                    title="Close Modal"
                   >
-                    Close
+                    ✕
                   </button>
                 </div>
               </div>
