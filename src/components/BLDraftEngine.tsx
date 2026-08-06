@@ -47,6 +47,7 @@ export const BLDraftEngine: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<BLDraftRecord | null>(null);
 
   // Form Fields
   const [formData, setFormData] = useState<Partial<BLDraftRecord>>({
@@ -569,6 +570,36 @@ export const BLDraftEngine: React.FC = () => {
               >
                 Save & Next
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {selectedRecord && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden">
+            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Bill of Lading Draft Record</span>
+                <h3 className="text-base font-bold">BL Draft Details: {selectedRecord.piNo}</h3>
+              </div>
+              <button onClick={() => setSelectedRecord(null)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">PI NO / INVOICE</span><strong className="text-indigo-900 font-mono text-sm">{selectedRecord.piNo}</strong> / {selectedRecord.invoiceNo}</div>
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">SHIPPING LINE</span><strong className="text-slate-900">{selectedRecord.shippingLine}</strong></div>
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">BOOKING NO</span><strong className="font-mono">{selectedRecord.bookingNo}</strong></div>
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">CONTAINER / SEAL NO</span><strong className="font-mono">{selectedRecord.containerNo}</strong> / <span className="font-mono">{selectedRecord.sealNo}</span></div>
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">CONSIGNEE</span><strong>{selectedRecord.consignee}</strong></div>
+                <div><span className="text-slate-500 font-bold block text-[10px] uppercase">VESSEL / VOYAGE</span>{selectedRecord.vesselNo || 'N/A'} {selectedRecord.voyageNo || ''}</div>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 bg-slate-100 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setSelectedRecord(null)} className="px-4 py-2 bg-slate-800 text-white font-bold rounded-lg text-xs">Close</button>
             </div>
           </div>
         </div>
