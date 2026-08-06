@@ -7,10 +7,7 @@ interface MasterSettingsProps {
   onUpdateProduct: (product: ProductMaster) => void;
 }
 
-const DEFAULT_SALESPERSONS: SalespersonMaster[] = [
-  { id: 'sp-1', name: 'Rajesh Sharma', phone: '+91 98200 12345', email: 'rajesh@mglobal.in', status: 'Active' },
-  { id: 'sp-2', name: 'Anita Mehta', phone: '+91 98333 44556', email: 'anita@mglobal.in', status: 'Active' }
-];
+const DEFAULT_SALESPERSONS: SalespersonMaster[] = [];
 
 export const MasterSettings: React.FC<MasterSettingsProps> = ({
   products,

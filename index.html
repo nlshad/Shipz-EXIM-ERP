@@ -173,10 +173,10 @@
     ];
 
     // Automated Cache Migration & Stale Dummy Data Purger
-    const SHIPZ_CACHE_VERSION = 'v2.3_clean_purge_legacy';
+    const SHIPZ_CACHE_VERSION = 'v2.5_clear_all_salesperson_dummies';
     try {
       if (localStorage.getItem('shipz_cache_version') !== SHIPZ_CACHE_VERSION) {
-        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons'].forEach(k => localStorage.removeItem(k));
+        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2'].forEach(k => localStorage.removeItem(k));
         localStorage.setItem('shipz_cache_version', SHIPZ_CACHE_VERSION);
       }
     } catch(e){}
@@ -189,7 +189,10 @@
         if (Array.isArray(parsed)) {
           const cleaned = parsed.filter(item => {
             if (typeof item === 'string') {
-              return !['FOB Mundra', 'FOB Nhava Sheva', 'CIF Montreal', 'CFR Jakarta', 'FOB Visakhapatnam', '100% LC at Sight', '30% Advance, 70% against BL'].includes(item);
+              return !['FOB Mundra', 'FOB Nhava Sheva', 'CIF Montreal', 'CFR Jakarta', 'FOB Visakhapatnam', '100% LC at Sight', '30% Advance, 70% against BL', 'Rajesh Sharma', 'Anita Mehta', 'Rajesh Sharma (Director)'].includes(item);
+            }
+            if (item && item.name) {
+              return !['Rajesh Sharma', 'Anita Mehta'].includes(item.name);
             }
             return true;
           });
@@ -273,10 +276,7 @@
 
       const [masterCustomersSettings, setMasterCustomersSettings] = useState(() => loadSavedState('shipz_master_customers', []));
 
-      const [masterSalespersonsSettings, setMasterSalespersonsSettings] = useState(() => loadSavedState('shipz_master_salespersons_v2', [
-        { id: 'SP-001', name: 'Rajesh Sharma', phone: '+91 98200 12345', email: 'rajesh@mglobal.in', status: 'Active' },
-        { id: 'SP-002', name: 'Anita Mehta', phone: '+91 98333 44556', email: 'anita@mglobal.in', status: 'Active' }
-      ]));
+      const [masterSalespersonsSettings, setMasterSalespersonsSettings] = useState(() => loadSavedState('shipz_master_salespersons_v2', []));
       React.useEffect(() => { try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(masterSalespersonsSettings)); } catch(e){} }, [masterSalespersonsSettings]);
 
       const [masterUnits, setMasterUnits] = useState([
@@ -868,7 +868,7 @@
 
       const [masterIncoterms, setMasterIncoterms] = useState(() => loadSavedState('shipz_master_incoterms', ['FOB - Free on Board', 'CIF - Cost, Insurance & Freight', 'CFR - Cost & Freight', 'EXW - Ex Works', 'DDP - Delivered Duty Paid', 'FCA - Free Carrier']));
       const [masterPaymentTerms, setMasterPaymentTerms] = useState(() => loadSavedState('shipz_master_payment_terms', ['100% LC at Sight', '30% Advance + 70% Against B/L', '100% Advance TT', 'DA 30 Days', 'DA 60 Days', 'DP at Sight']));
-      const [masterSalespersons, setMasterSalespersons] = useState(() => loadSavedState('shipz_master_salespersons', ['Rajesh Sharma (Director)']));
+      const [masterSalespersons, setMasterSalespersons] = useState(() => loadSavedState('shipz_master_salespersons', []));
       const [masterMaterials, setMasterMaterials] = useState(['Steel Drum', 'Poly Bag', 'Fiber Drum', 'Corrugated Box', 'Wooden Pallet']);
       const [masterProducts, setMasterProducts] = useState(masterProductsSettings);
 

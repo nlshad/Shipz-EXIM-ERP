@@ -1296,7 +1296,6 @@ export const QuotationsEngine: React.FC = () => {
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
                         <option value="">-- Select Salesperson --</option>
-                        <option value="Rajesh Sharma (Director)">Rajesh Sharma (Director)</option>
                       </select>
                       <button title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
                     </div>
