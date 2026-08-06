@@ -126,6 +126,7 @@ export interface ProductMaster {
   netWeightKg: number;
   grossWeightKg: number;
   qualitySpecs: string;
+  imgUrl?: string;
 }
 
 export type ShipmentStage = 'Container Booked' | 'CFS Reached' | 'Container Stuffed' | 'In Transit' | 'Delivered';

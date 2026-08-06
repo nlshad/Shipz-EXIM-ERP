@@ -62,7 +62,7 @@ export const DeclarationsEngine: React.FC<DeclarationsEngineProps> = ({ document
 
   const handleSaveDocumentModal = (action: 'save' | 'saveNext') => {
     if (!selectedTemplate) return;
-    const newDocName = `${selectedTemplate.label.replace(/[^a-[#A-Z0-9]/gi, '_')}.pdf`;
+    const newDocName = `${selectedTemplate.label.replace(/[^a-z0-9]/gi, '_')}.pdf`;
     
     setInvoiceFolders((prev) =>
       prev.map((f) => {
@@ -234,7 +234,7 @@ export const DeclarationsEngine: React.FC<DeclarationsEngineProps> = ({ document
                             Generated Documents in {f.invoiceNo}:
                           </div>
                           <div className="space-y-1">
-                            {f.generatedDocs.map((doc, idx) => (
+                            {f.generatedDocs.map((doc: any, idx: number) => (
                               <div
                                 key={idx}
                                 className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs"
