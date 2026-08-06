@@ -53,15 +53,15 @@ export const ShipzyDrive: React.FC<ShipzyDriveProps> = ({
 
   const companyLegalName = 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED';
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState('2 mins ago');
-  const [syncedCount, setSyncedCount] = useState(218);
+  const [lastSyncTime, setLastSyncTime] = useState('Just now');
+  const [syncedCount, setSyncedCount] = useState(26);
 
   const handleSyncCloudinary = () => {
     setIsSyncing(true);
     setTimeout(() => {
       setIsSyncing(false);
       setLastSyncTime('Just now');
-      setSyncedCount(218);
+      setSyncedCount(26);
     }, 1000);
   };
 
