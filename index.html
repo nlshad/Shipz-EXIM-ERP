@@ -173,10 +173,14 @@
     ];
 
     // Automated Cache Migration & Stale Dummy Data Purger
-    const SHIPZ_CACHE_VERSION = 'v2.5_clear_all_salesperson_dummies';
+    const SHIPZ_CACHE_VERSION = 'v2.6_clear_signatory_dummies';
     try {
       if (localStorage.getItem('shipz_cache_version') !== SHIPZ_CACHE_VERSION) {
         ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2'].forEach(k => localStorage.removeItem(k));
+        const savedSigName = localStorage.getItem('shipz_signatory_name');
+        if (savedSigName && savedSigName.includes('Rajesh Sharma')) localStorage.removeItem('shipz_signatory_name');
+        const savedSigDesig = localStorage.getItem('shipz_signatory_designation');
+        if (savedSigDesig && savedSigDesig.includes('Authorized Signatory & Director')) localStorage.removeItem('shipz_signatory_designation');
         localStorage.setItem('shipz_cache_version', SHIPZ_CACHE_VERSION);
       }
     } catch(e){}
@@ -244,8 +248,8 @@
       const [companySignature, setCompanySignature] = useState(() => loadSavedState('shipz_signature', null));
       const [companyLetterhead, setCompanyLetterhead] = useState(() => loadSavedState('shipz_letterhead', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80'));
       const [isLetterheadMode, setIsLetterheadMode] = useState(true);
-      const [signatoryName, setSignatoryName] = useState('Rajesh Sharma');
-      const [signatoryDesignation, setSignatoryDesignation] = useState('Authorized Signatory & Director');
+      const [signatoryName, setSignatoryName] = useState(() => loadSavedState('shipz_signatory_name', ''));
+      const [signatoryDesignation, setSignatoryDesignation] = useState(() => loadSavedState('shipz_signatory_designation', ''));
 
       const handleImageUpload = (e, setter) => {
         const file = e.target.files[0];
@@ -264,6 +268,8 @@
       React.useEffect(() => { try { if (companyLogo) localStorage.setItem('shipz_logo', JSON.stringify(companyLogo)); } catch(e){} }, [companyLogo]);
       React.useEffect(() => { try { if (companySeal) localStorage.setItem('shipz_seal', JSON.stringify(companySeal)); } catch(e){} }, [companySeal]);
       React.useEffect(() => { try { if (companySignature) localStorage.setItem('shipz_signature', JSON.stringify(companySignature)); } catch(e){} }, [companySignature]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_signatory_name', JSON.stringify(signatoryName)); } catch(e){} }, [signatoryName]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_signatory_designation', JSON.stringify(signatoryDesignation)); } catch(e){} }, [signatoryDesignation]);
 
       // ==========================================
       // MASTER DATA SETTINGS STATES (15 SUB-MENUS)
@@ -7551,7 +7557,7 @@
                             )}
                           </div>
                           <span className="text-[8px] font-bold text-slate-700 uppercase border-t border-slate-300 w-full pt-0.5">{signatoryDesignation || 'AUTHORISED SIGNATORY'}</span>
-                          <span className="text-[7px] text-slate-500 font-semibold">{signatoryName || 'Rajesh Sharma'}</span>
+                          {signatoryName && <span className="text-[7px] text-slate-500 font-semibold">{signatoryName}</span>}
                         </div>
                       </div>
                     </div>
