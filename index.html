@@ -645,9 +645,7 @@
 
       // Master Data Lists for Quick-Adds & Cascading Dependencies
       const [masterCompanyAddresses, setMasterCompanyAddresses] = useState([
-        { id: 'ca-1', name: 'Gujarat SEZ Unit (SEZ Tax Free Zone)', code: 'Gujarat SEZ Unit' },
-        { id: 'ca-2', name: 'Andhra Pradesh Unit (Visakhapatnam Port)', code: 'Andhra Pradesh Unit' },
-        { id: 'ca-3', name: 'Maharashtra Unit (Nhava Sheva)', code: 'Maharashtra Unit' }
+        { id: 'ca-1', name: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED (Navi Mumbai Office)', code: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED - Suite No. 1101, Greenscape Shakti Ventures, CBD Belapur, Navi Mumbai, MH-400614' }
       ]);
 
       const [masterConsignees, setMasterConsignees] = useState(() => loadSavedState('shipz_master_consignees', []));
@@ -809,9 +807,9 @@
 
       const [masterOtherNotifyParties, setMasterOtherNotifyParties] = useState(['None']);
 
-      const [masterIncoterms, setMasterIncoterms] = useState(['FOB Mundra', 'CIF Montreal', 'EXW Factory', 'CFR Jakarta', 'FOB Visakhapatnam']);
-      const [masterPaymentTerms, setMasterPaymentTerms] = useState(['100% LC at Sight', '30% Advance, 70% against BL', 'Net 60 Days', 'DP at Sight']);
-      const [masterSalespersons, setMasterSalespersons] = useState(['Rajesh Sharma', 'Ankit Mehta', 'Priya Patel', 'Vikram Singh']);
+      const [masterIncoterms, setMasterIncoterms] = useState(() => loadSavedState('shipz_master_incoterms', ['FOB - Free on Board', 'CIF - Cost, Insurance & Freight', 'CFR - Cost & Freight', 'EXW - Ex Works', 'DDP - Delivered Duty Paid', 'FCA - Free Carrier']));
+      const [masterPaymentTerms, setMasterPaymentTerms] = useState(() => loadSavedState('shipz_master_payment_terms', ['100% LC at Sight', '30% Advance + 70% Against B/L', '100% Advance TT', 'DA 30 Days', 'DA 60 Days', 'DP at Sight']));
+      const [masterSalespersons, setMasterSalespersons] = useState(() => loadSavedState('shipz_master_salespersons', ['Rajesh Sharma (Director)']));
       const [masterMaterials, setMasterMaterials] = useState(['Steel Drum', 'Poly Bag', 'Fiber Drum', 'Corrugated Box', 'Wooden Pallet']);
       const [masterProducts, setMasterProducts] = useState(masterProductsSettings);
 
@@ -6646,14 +6644,10 @@
                         <label className="block text-slate-700 font-bold mb-1">Shipment Terms (Incoterms)</label>
                         <div className="flex space-x-1">
                           <select value={piFormData.shipmentTerms || ''} onChange={(e) => setPiFormData({ ...piFormData, shipmentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
-                            <option value="">-- Select Incoterms --</option>
-                            <option value="FOB Mundra">FOB Mundra</option>
-                            <option value="FOB Nhava Sheva">FOB Nhava Sheva</option>
-                            <option value="FOB Visakhapatnam">FOB Visakhapatnam</option>
-                            <option value="CIF Los Angeles">CIF Los Angeles</option>
-                            <option value="CIF Port of Destination">CIF Port of Destination</option>
-                            <option value="CFR Port of Destination">CFR Port of Destination</option>
-                            <option value="EXW Factory">EXW Factory</option>
+                            <option value="">-- Select Shipment Terms --</option>
+                            {masterIncoterms.map((it, i) => (
+                              <option key={`it-${i}`} value={it}>{it}</option>
+                            ))}
                           </select>
                           <button title="+ Add New Term" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
                         </div>
@@ -6666,10 +6660,9 @@
                         <div className="flex space-x-1">
                           <select value={piFormData.paymentTerms || ''} onChange={(e) => setPiFormData({ ...piFormData, paymentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Payment Terms --</option>
-                            <option value="100% LC at Sight">100% LC at Sight</option>
-                            <option value="30% Advance, 70% against B/L Copy">30% Advance, 70% against B/L Copy</option>
-                            <option value="100% Advance TT">100% Advance TT</option>
-                            <option value="DA 60 Days">DA 60 Days</option>
+                            {masterPaymentTerms.map((pt, i) => (
+                              <option key={`pt-${i}`} value={pt}>{pt}</option>
+                            ))}
                           </select>
                           <button title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
                         </div>
@@ -6679,9 +6672,9 @@
                         <div className="flex space-x-1">
                           <select value={piFormData.salesperson || ''} onChange={(e) => setPiFormData({ ...piFormData, salesperson: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Salesperson --</option>
-                            <option value="Rajesh Sharma">Rajesh Sharma</option>
-                            <option value="Aniti Mehta">Aniti Mehta</option>
-                            <option value="Vikram Patel">Vikram Patel</option>
+                            {masterSalespersons.map((sp, i) => (
+                              <option key={`sp-${i}`} value={sp}>{sp}</option>
+                            ))}
                           </select>
                           <button title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
                         </div>

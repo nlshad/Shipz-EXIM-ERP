@@ -938,9 +938,8 @@ export const QuotationsEngine: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                     >
-                      <option value="Gujarat">Gujarat SEZ Unit</option>
-                      <option value="Andhra Pradesh">Andhra Pradesh Unit</option>
-                      <option value="Maharashtra">Maharashtra Port Unit</option>
+                      <option value="">-- Select Company Address --</option>
+                      <option value="MGLOBAL IMPEX-INDIA PRIVATE LIMITED - Suite No. 1101, Greenscape Shakti Ventures, CBD Belapur, Navi Mumbai, MH-400614">MGLOBAL IMPEX-INDIA PRIVATE LIMITED (Navi Mumbai)</option>
                     </select>
                   </div>
                 </div>
@@ -1214,10 +1213,10 @@ export const QuotationsEngine: React.FC = () => {
                     <select
                       value={formData.bank}
                       onChange={(e) => setFormData({ ...formData, bank: e.target.value })}
-                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                     >
-                      <option value="State Bank of India">State Bank of India</option>
-                      <option value="HDFC Bank Trade Branch">HDFC Bank Trade Branch</option>
+                      <option value="">-- Select Bank Account --</option>
+                      <option value="KOTAK MAHINDRA BANK LTD — 6748421381 (CBD Belapur)">KOTAK MAHINDRA BANK LTD — 6748421381 (CBD Belapur)</option>
                     </select>
                   </div>
                 </div>
@@ -1254,9 +1253,13 @@ export const QuotationsEngine: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, shipmentTerms: e.target.value })}
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
-                        <option value="FOB Mundra">FOB Mundra</option>
-                        <option value="CIF Montreal">CIF Montreal</option>
-                        <option value="CFR Jakarta">CFR Jakarta</option>
+                        <option value="">-- Select Shipment Terms --</option>
+                        <option value="FOB - Free on Board">FOB - Free on Board</option>
+                        <option value="CIF - Cost, Insurance & Freight">CIF - Cost, Insurance & Freight</option>
+                        <option value="CFR - Cost & Freight">CFR - Cost & Freight</option>
+                        <option value="EXW - Ex Works">EXW - Ex Works</option>
+                        <option value="DDP - Delivered Duty Paid">DDP - Delivered Duty Paid</option>
+                        <option value="FCA - Free Carrier">FCA - Free Carrier</option>
                       </select>
                       <button title="+ Add New Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
                     </div>
@@ -1272,9 +1275,13 @@ export const QuotationsEngine: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
+                        <option value="">-- Select Payment Terms --</option>
                         <option value="100% LC at Sight">100% LC at Sight</option>
-                        <option value="30% Advance, 70% against BL">30% Advance, 70% against BL</option>
+                        <option value="30% Advance + 70% Against B/L">30% Advance + 70% Against B/L</option>
+                        <option value="100% Advance TT">100% Advance TT</option>
+                        <option value="DA 30 Days">DA 30 Days</option>
                         <option value="DA 60 Days">DA 60 Days</option>
+                        <option value="DP at Sight">DP at Sight</option>
                       </select>
                       <button title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
                     </div>
@@ -1288,8 +1295,8 @@ export const QuotationsEngine: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, salesperson: e.target.value })}
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
-                        <option value="Rajesh Sharma">Rajesh Sharma</option>
-                        <option value="Anita Desai">Anita Desai</option>
+                        <option value="">-- Select Salesperson --</option>
+                        <option value="Rajesh Sharma (Director)">Rajesh Sharma (Director)</option>
                       </select>
                       <button title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
                     </div>
