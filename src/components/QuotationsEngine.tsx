@@ -1297,7 +1297,25 @@ export const QuotationsEngine: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Shipment Terms (Incoterms)</label>
+                    <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                      <span>Shipment Terms (Incoterms)</span>
+                      <span
+                        className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline"
+                        onClick={() => {
+                          const term = prompt('Enter New Incoterm / Shipment Term:');
+                          if (term && term.trim()) {
+                            const newObj = { id: `ST-${Date.now()}`, code: term.slice(0, 4).toUpperCase().trim(), title: term.trim(), description: term.trim(), freightPayer: 'Seller', status: 'Active' };
+                            const saved = localStorage.getItem('shipz_master_incoterms_v2');
+                            const current = saved ? JSON.parse(saved) : [];
+                            const updated = [newObj, ...current];
+                            try { localStorage.setItem('shipz_master_incoterms_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, shipmentTerms: term.trim() }));
+                          }
+                        }}
+                      >
+                        + Quick Add
+                      </span>
+                    </label>
                     <div className="flex space-x-1">
                       <select
                         value={formData.shipmentTerms}
@@ -1305,21 +1323,64 @@ export const QuotationsEngine: React.FC = () => {
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
                         <option value="">-- Select Shipment Terms --</option>
-                        <option value="FOB - Free on Board">FOB - Free on Board</option>
-                        <option value="CIF - Cost, Insurance & Freight">CIF - Cost, Insurance & Freight</option>
-                        <option value="CFR - Cost & Freight">CFR - Cost & Freight</option>
-                        <option value="EXW - Ex Works">EXW - Ex Works</option>
-                        <option value="DDP - Delivered Duty Paid">DDP - Delivered Duty Paid</option>
-                        <option value="FCA - Free Carrier">FCA - Free Carrier</option>
+                        {(() => {
+                          try {
+                            const saved = localStorage.getItem('shipz_master_incoterms_v2');
+                            if (saved) {
+                              const list = JSON.parse(saved);
+                              return list.map((st: any) => (
+                                <option key={st.id || st.title} value={st.title || st.code}>
+                                  {st.title || st.code}
+                                </option>
+                              ));
+                            }
+                          } catch (e) {}
+                          return null;
+                        })()}
                       </select>
-                      <button title="+ Add New Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const term = prompt('Enter New Incoterm / Shipment Term:');
+                          if (term && term.trim()) {
+                            const newObj = { id: `ST-${Date.now()}`, code: term.slice(0, 4).toUpperCase().trim(), title: term.trim(), description: term.trim(), freightPayer: 'Seller', status: 'Active' };
+                            const saved = localStorage.getItem('shipz_master_incoterms_v2');
+                            const current = saved ? JSON.parse(saved) : [];
+                            const updated = [newObj, ...current];
+                            try { localStorage.setItem('shipz_master_incoterms_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, shipmentTerms: term.trim() }));
+                          }
+                        }}
+                        title="+ Add New Term"
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Payment Terms</label>
+                    <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                      <span>Payment Terms</span>
+                      <span
+                        className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline"
+                        onClick={() => {
+                          const term = prompt('Enter New Payment Term:');
+                          if (term && term.trim()) {
+                            const newObj = { id: `PT-${Date.now()}`, title: term.trim(), category: 'Custom', advancePct: 0, creditDays: 0, risk: 'Standard Trade', status: 'Active' };
+                            const saved = localStorage.getItem('shipz_master_payment_terms_v2');
+                            const current = saved ? JSON.parse(saved) : [];
+                            const updated = [newObj, ...current];
+                            try { localStorage.setItem('shipz_master_payment_terms_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, paymentTerms: term.trim() }));
+                          }
+                        }}
+                      >
+                        + Quick Add
+                      </span>
+                    </label>
                     <div className="flex space-x-1">
                       <select
                         value={formData.paymentTerms}
@@ -1327,14 +1388,39 @@ export const QuotationsEngine: React.FC = () => {
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
                         <option value="">-- Select Payment Terms --</option>
-                        <option value="100% LC at Sight">100% LC at Sight</option>
-                        <option value="30% Advance + 70% Against B/L">30% Advance + 70% Against B/L</option>
-                        <option value="100% Advance TT">100% Advance TT</option>
-                        <option value="DA 30 Days">DA 30 Days</option>
-                        <option value="DA 60 Days">DA 60 Days</option>
-                        <option value="DP at Sight">DP at Sight</option>
+                        {(() => {
+                          try {
+                            const saved = localStorage.getItem('shipz_master_payment_terms_v2');
+                            if (saved) {
+                              const list = JSON.parse(saved);
+                              return list.map((pt: any) => (
+                                <option key={pt.id || pt.title} value={pt.title}>
+                                  {pt.title}
+                                </option>
+                              ));
+                            }
+                          } catch (e) {}
+                          return null;
+                        })()}
                       </select>
-                      <button title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const term = prompt('Enter New Payment Term:');
+                          if (term && term.trim()) {
+                            const newObj = { id: `PT-${Date.now()}`, title: term.trim(), category: 'Custom', advancePct: 0, creditDays: 0, risk: 'Standard Trade', status: 'Active' };
+                            const saved = localStorage.getItem('shipz_master_payment_terms_v2');
+                            const current = saved ? JSON.parse(saved) : [];
+                            const updated = [newObj, ...current];
+                            try { localStorage.setItem('shipz_master_payment_terms_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, paymentTerms: term.trim() }));
+                          }
+                        }}
+                        title="+ Add New Payment Term"
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
 

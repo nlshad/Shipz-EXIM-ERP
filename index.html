@@ -173,10 +173,10 @@
     ];
 
     // Automated Cache Migration & Stale Dummy Data Purger
-    const SHIPZ_CACHE_VERSION = 'v2.7_clear_bank_dummies';
+    const SHIPZ_CACHE_VERSION = 'v2.8_clear_terms_dummies';
     try {
       if (localStorage.getItem('shipz_cache_version') !== SHIPZ_CACHE_VERSION) {
-        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2', 'shipz_master_bank_details'].forEach(k => localStorage.removeItem(k));
+        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2', 'shipz_master_bank_details', 'shipz_master_incoterms_v2', 'shipz_master_payment_terms_v2'].forEach(k => localStorage.removeItem(k));
         const savedSigName = localStorage.getItem('shipz_signatory_name');
         if (savedSigName && savedSigName.includes('Rajesh Sharma')) localStorage.removeItem('shipz_signatory_name');
         const savedSigDesig = localStorage.getItem('shipz_signatory_designation');
@@ -341,14 +341,8 @@
         { id: 'MAT-005', title: 'Steel Strapping Band 19mm', vendor: 'SteelBand India', unitCost: 22.00, stockOnHand: 85, reorderLevel: 20, status: 'Active' }
       ]);
 
-      const [masterShipmentTerms, setMasterShipmentTerms] = useState([
-        { id: 'ST-001', code: 'FOB', title: 'FOB - Free on Board', description: 'Free On Board (Seller pays freight to origin port)', freightPayer: 'Buyer', status: 'Active', isDefault: true },
-        { id: 'ST-002', code: 'CIF', title: 'CIF - Cost, Insurance & Freight', description: 'Cost, Insurance & Freight Prepaid to destination port', freightPayer: 'Seller', status: 'Active', isDefault: false },
-        { id: 'ST-003', code: 'CFR', title: 'CFR - Cost & Freight', description: 'Cost & Freight Prepaid to destination port', freightPayer: 'Seller', status: 'Active', isDefault: false },
-        { id: 'ST-004', code: 'EXW', title: 'EXW - Ex Works', description: 'Ex-Works Factory Loading Gate', freightPayer: 'Buyer', status: 'Active', isDefault: false },
-        { id: 'ST-005', code: 'DDP', title: 'DDP - Delivered Duty Paid', description: 'Delivered Duty Paid to Buyer Door', freightPayer: 'Seller', status: 'Active', isDefault: false },
-        { id: 'ST-006', code: 'FCA', title: 'FCA - Free Carrier', description: 'Free Carrier at Named Place', freightPayer: 'Buyer', status: 'Active', isDefault: false }
-      ]);
+      const [masterShipmentTerms, setMasterShipmentTerms] = useState(() => loadSavedState('shipz_master_incoterms_v2', []));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_incoterms_v2', JSON.stringify(masterShipmentTerms)); } catch(e){} }, [masterShipmentTerms]);
 
       const [masterDeliveryAddresses, setMasterDeliveryAddresses] = useState(() => loadSavedState('shipz_master_delivery_addresses', []));
 
@@ -360,13 +354,8 @@
       React.useEffect(() => { try { localStorage.setItem('shipz_master_packages', JSON.stringify(masterPackages)); } catch(e){} }, [masterPackages]);
       React.useEffect(() => { try { localStorage.setItem('shipz_master_delivery_addresses', JSON.stringify(masterDeliveryAddresses)); } catch(e){} }, [masterDeliveryAddresses]);
 
-      const [masterPaymentTermsSettings, setMasterPaymentTermsSettings] = useState([
-        { id: 'PT-001', title: '100% Irrevocable Letter of Credit (LC at Sight)', category: 'Letter of Credit', advancePct: 0, creditDays: 0, risk: 'Low Risk', status: 'Active', isDefault: true },
-        { id: 'PT-002', title: '30% Advance + 70% Balance against BL Copy', category: 'Part Advance', advancePct: 30, creditDays: 0, risk: 'Standard Trade', status: 'Active', isDefault: false },
-        { id: 'PT-003', title: 'Net 30 Days Credit from Shipping Date', category: 'Open Account', advancePct: 0, creditDays: 30, risk: 'Credit Insured', status: 'Active', isDefault: false },
-        { id: 'PT-004', title: 'CAD (Cash Against Documents via Bank)', category: 'Documentary Collection', advancePct: 0, creditDays: 0, risk: 'Bank Handled', status: 'Active', isDefault: false },
-        { id: 'PT-005', title: '100% Full Telegraphic Advance Transfer (T/T)', category: 'Prepayment', advancePct: 100, creditDays: 0, risk: 'Zero Risk', status: 'Active', isDefault: false }
-      ]);
+      const [masterPaymentTermsSettings, setMasterPaymentTermsSettings] = useState(() => loadSavedState('shipz_master_payment_terms_v2', []));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_payment_terms_v2', JSON.stringify(masterPaymentTermsSettings)); } catch(e){} }, [masterPaymentTermsSettings]);
 
       const [masterCurrencies, setMasterCurrencies] = useState([
         { id: 'CUR-001', code: 'USD', name: 'US Dollar', symbol: '$', rateToInr: 85.0000, isBase: false, autoSync: true, status: 'Active' },
@@ -885,8 +874,8 @@
 
       const [masterOtherNotifyParties, setMasterOtherNotifyParties] = useState(['None']);
 
-      const [masterIncoterms, setMasterIncoterms] = useState(() => loadSavedState('shipz_master_incoterms', ['FOB - Free on Board', 'CIF - Cost, Insurance & Freight', 'CFR - Cost & Freight', 'EXW - Ex Works', 'DDP - Delivered Duty Paid', 'FCA - Free Carrier']));
-      const [masterPaymentTerms, setMasterPaymentTerms] = useState(() => loadSavedState('shipz_master_payment_terms', ['100% LC at Sight', '30% Advance + 70% Against B/L', '100% Advance TT', 'DA 30 Days', 'DA 60 Days', 'DP at Sight']));
+      const [masterIncoterms, setMasterIncoterms] = useState(() => loadSavedState('shipz_master_incoterms', []));
+      const [masterPaymentTerms, setMasterPaymentTerms] = useState(() => loadSavedState('shipz_master_payment_terms', []));
       const [masterSalespersons, setMasterSalespersons] = useState(() => loadSavedState('shipz_master_salespersons', []));
       const [masterMaterials, setMasterMaterials] = useState(['Steel Drum', 'Poly Bag', 'Fiber Drum', 'Corrugated Box', 'Wooden Pallet']);
       const [masterProducts, setMasterProducts] = useState(masterProductsSettings);
@@ -2007,11 +1996,25 @@
             portOfDischarge: isPortDischargeInherited ? newPort.name : prev.portOfDischarge
           }));
         } else if (activeQuickAdd === 'incoterm') {
+          const newIncotermObj = { id: `ST-${Date.now()}`, code: val1.slice(0, 4).toUpperCase().trim(), title: val1, description: val1, freightPayer: 'Seller', status: 'Active' };
           setMasterIncoterms((prev) => [...prev, val1]);
+          setMasterShipmentTerms((prev) => [...prev, newIncotermObj]);
+          try {
+            const existing = JSON.parse(localStorage.getItem('shipz_master_incoterms_v2') || '[]');
+            localStorage.setItem('shipz_master_incoterms_v2', JSON.stringify([...existing, newIncotermObj]));
+          } catch(e){}
           setQtFormData((prev) => ({ ...prev, shipmentTerms: val1 }));
+          setPiFormData((prev) => ({ ...prev, shipmentTerms: val1 }));
         } else if (activeQuickAdd === 'paymentTerm') {
+          const newPtObj = { id: `PT-${Date.now()}`, title: val1, category: 'Custom', advancePct: 0, creditDays: 0, risk: 'Standard Trade', status: 'Active' };
           setMasterPaymentTerms((prev) => [...prev, val1]);
+          setMasterPaymentTermsSettings((prev) => [...prev, newPtObj]);
+          try {
+            const existing = JSON.parse(localStorage.getItem('shipz_master_payment_terms_v2') || '[]');
+            localStorage.setItem('shipz_master_payment_terms_v2', JSON.stringify([...existing, newPtObj]));
+          } catch(e){}
           setQtFormData((prev) => ({ ...prev, paymentTerms: val1 }));
+          setPiFormData((prev) => ({ ...prev, paymentTerms: val1 }));
         } else if (activeQuickAdd === 'salesperson') {
           const spName = val1;
           const spPhone = val2;
@@ -6346,8 +6349,13 @@
                         <div className="flex space-x-1">
                           <select value={qtFormData.shipmentTerms} onChange={(e) => setQtFormData({ ...qtFormData, shipmentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Shipment Terms --</option>
-                            {masterIncoterms.map((term, i) => (
-                              <option key={i} value={term}>{term}</option>
+                            {masterShipmentTerms.map((st) => (
+                              <option key={st.id || st.code || st.title} value={st.title || st.code}>
+                                {st.title || st.code}
+                              </option>
+                            ))}
+                            {masterIncoterms.filter(term => typeof term === 'string' && !masterShipmentTerms.some(st => (st.title === term || st.code === term))).map((term, i) => (
+                              <option key={`legacy-inc-${i}`} value={term}>{term}</option>
                             ))}
                           </select>
                           <button type="button" onClick={() => setActiveQuickAdd('incoterm')} title="+ Add New Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
@@ -6364,8 +6372,13 @@
                         <div className="flex space-x-1">
                           <select value={qtFormData.paymentTerms} onChange={(e) => setQtFormData({ ...qtFormData, paymentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Payment Terms --</option>
-                            {masterPaymentTerms.map((pt, i) => (
-                              <option key={i} value={pt}>{pt}</option>
+                            {masterPaymentTermsSettings.map((pt) => (
+                              <option key={pt.id || pt.title} value={pt.title}>
+                                {pt.title}
+                              </option>
+                            ))}
+                            {masterPaymentTerms.filter(pt => typeof pt === 'string' && !masterPaymentTermsSettings.some(p => p.title === pt)).map((pt, i) => (
+                              <option key={`legacy-pt-${i}`} value={pt}>{pt}</option>
                             ))}
                           </select>
                           <button type="button" onClick={() => setActiveQuickAdd('paymentTerm')} title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
@@ -6833,11 +6846,16 @@
                         <div className="flex space-x-1">
                           <select value={piFormData.shipmentTerms || ''} onChange={(e) => setPiFormData({ ...piFormData, shipmentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Shipment Terms --</option>
-                            {masterIncoterms.map((it, i) => (
-                              <option key={`it-${i}`} value={it}>{it}</option>
+                            {masterShipmentTerms.map((st) => (
+                              <option key={st.id || st.code || st.title} value={st.title || st.code}>
+                                {st.title || st.code}
+                              </option>
+                            ))}
+                            {masterIncoterms.filter(term => typeof term === 'string' && !masterShipmentTerms.some(st => (st.title === term || st.code === term))).map((term, i) => (
+                              <option key={`legacy-pi-inc-${i}`} value={term}>{term}</option>
                             ))}
                           </select>
-                          <button title="+ Add New Term" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
+                          <button type="button" onClick={() => setActiveQuickAdd('incoterm')} title="+ Add New Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
                         </div>
                       </div>
                     </div>
@@ -6848,11 +6866,16 @@
                         <div className="flex space-x-1">
                           <select value={piFormData.paymentTerms || ''} onChange={(e) => setPiFormData({ ...piFormData, paymentTerms: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Payment Terms --</option>
-                            {masterPaymentTerms.map((pt, i) => (
-                              <option key={`pt-${i}`} value={pt}>{pt}</option>
+                            {masterPaymentTermsSettings.map((pt) => (
+                              <option key={pt.id || pt.title} value={pt.title}>
+                                {pt.title}
+                              </option>
+                            ))}
+                            {masterPaymentTerms.filter(pt => typeof pt === 'string' && !masterPaymentTermsSettings.some(p => p.title === pt)).map((pt, i) => (
+                              <option key={`legacy-pi-pt-${i}`} value={pt}>{pt}</option>
                             ))}
                           </select>
-                          <button title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
+                          <button type="button" onClick={() => setActiveQuickAdd('paymentTerm')} title="+ Add New Payment Term" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
                         </div>
                       </div>
                       <div>
