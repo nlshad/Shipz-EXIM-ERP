@@ -1935,8 +1935,19 @@
           setMasterPaymentTerms((prev) => [...prev, val1]);
           setQtFormData((prev) => ({ ...prev, paymentTerms: val1 }));
         } else if (activeQuickAdd === 'salesperson') {
-          setMasterSalespersons((prev) => [...prev, val1]);
-          setQtFormData((prev) => ({ ...prev, salesperson: val1 }));
+          const spName = val1;
+          const spPhone = val2;
+          const spEmail = val3;
+          const newSpObj = { id: `sp-${Date.now()}`, name: spName, phone: spPhone, email: spEmail, status: 'Active' };
+          
+          setMasterSalespersons((prev) => [...prev, spName]);
+          try {
+            const existingV2 = JSON.parse(localStorage.getItem('shipz_master_salespersons_v2') || '[]');
+            localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify([...existingV2, newSpObj]));
+          } catch(e){}
+          
+          setQtFormData((prev) => ({ ...prev, salesperson: spName }));
+          setPiFormData((prev) => ({ ...prev, salesperson: spName }));
         } else if (activeQuickAdd === 'material') {
           setMasterMaterials((prev) => [...prev, val1]);
           if (activeLineItemIdx !== null) {
@@ -8475,19 +8486,21 @@
                       <input type="text" placeholder={activeQuickAdd === 'bank' ? 'e.g. KOTAK MAHINDRA BANK LIMITED' : 'Enter name...'} value={quickAddFields.field1} onChange={(e) => setQuickAddFields({ ...quickAddFields, field1: e.target.value })} className="w-full border border-slate-300 rounded px-3 py-2 text-xs font-semibold" />
                     </div>
 
-                    {(activeQuickAdd === 'companyAddress' || activeQuickAdd === 'consignee' || activeQuickAdd === 'port' || activeQuickAdd === 'bank') && (
+                    {(activeQuickAdd === 'companyAddress' || activeQuickAdd === 'consignee' || activeQuickAdd === 'port' || activeQuickAdd === 'bank' || activeQuickAdd === 'salesperson') && (
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">
-                          {activeQuickAdd === 'companyAddress' ? 'Unit Type / Details' : activeQuickAdd === 'bank' ? 'Beneficiary Name' : 'Country'}
+                          {activeQuickAdd === 'companyAddress' ? 'Unit Type / Details' : activeQuickAdd === 'bank' ? 'Beneficiary Name' : activeQuickAdd === 'salesperson' ? 'Phone Number' : 'Country'}
                         </label>
-                        <input type="text" placeholder={activeQuickAdd === 'companyAddress' ? 'e.g. Visakhapatnam Unit' : activeQuickAdd === 'bank' ? 'e.g. GREANSCAPE SHAKTI VENTURES EXIM PVT LTD' : 'Country name...'} value={quickAddFields.field2} onChange={(e) => setQuickAddFields({ ...quickAddFields, field2: e.target.value })} className="w-full border border-slate-300 rounded px-3 py-2 text-xs" />
+                        <input type="text" placeholder={activeQuickAdd === 'companyAddress' ? 'e.g. Visakhapatnam Unit' : activeQuickAdd === 'bank' ? 'e.g. GREANSCAPE SHAKTI VENTURES EXIM PVT LTD' : activeQuickAdd === 'salesperson' ? 'e.g. +91 98200 12345' : 'Country name...'} value={quickAddFields.field2} onChange={(e) => setQuickAddFields({ ...quickAddFields, field2: e.target.value })} className="w-full border border-slate-300 rounded px-3 py-2 text-xs" />
                       </div>
                     )}
 
-                    {(activeQuickAdd === 'consignee' || activeQuickAdd === 'bank') && (
+                    {(activeQuickAdd === 'consignee' || activeQuickAdd === 'bank' || activeQuickAdd === 'salesperson') && (
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">{activeQuickAdd === 'bank' ? 'Bank Account Number *' : 'Primary Address'}</label>
-                        <input type="text" placeholder={activeQuickAdd === 'bank' ? 'e.g. 6748421381' : 'City, Country address...'} value={quickAddFields.field3} onChange={(e) => setQuickAddFields({ ...quickAddFields, field3: e.target.value })} className="w-full border border-slate-300 rounded px-3 py-2 text-xs font-semibold" />
+                        <label className="block text-slate-700 font-bold mb-1">
+                          {activeQuickAdd === 'bank' ? 'Bank Account Number *' : activeQuickAdd === 'salesperson' ? 'Email Address' : 'Primary Address'}
+                        </label>
+                        <input type="text" placeholder={activeQuickAdd === 'bank' ? 'e.g. 6748421381' : activeQuickAdd === 'salesperson' ? 'e.g. sales@mglobal.in' : 'City, Country address...'} value={quickAddFields.field3} onChange={(e) => setQuickAddFields({ ...quickAddFields, field3: e.target.value })} className="w-full border border-slate-300 rounded px-3 py-2 text-xs font-semibold" />
                       </div>
                     )}
                   </div>

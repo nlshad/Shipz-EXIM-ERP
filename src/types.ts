@@ -198,3 +198,11 @@ export interface OperationalActivity {
   type: 'compliance' | 'shipment' | 'document' | 'ebrc' | 'expense';
   user: string;
 }
+
+export interface SalespersonMaster {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  status: 'Active' | 'Inactive';
+}
