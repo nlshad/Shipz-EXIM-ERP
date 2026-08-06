@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>ExportFlow ERP - Integrated EXIM Platform</title>
 
   <!-- Google Fonts -->
@@ -150,6 +153,7 @@
       { id: 'customizeFields', label: 'Customize Fields', iconClass: 'fi fi-rr-settings-sliders', category: 'System' },
       { id: 'products', label: 'Products', iconClass: 'fi fi-rr-box', category: 'Masters' },
       { id: 'customers', label: 'Customers', iconClass: 'fi fi-rr-users-alt', category: 'Masters' },
+      { id: 'salespersons', label: 'Salespersons', iconClass: 'fi fi-rr-user', category: 'Masters' },
       { id: 'port', label: 'Port', iconClass: 'fi fi-rr-anchor', category: 'Logistics' },
       { id: 'unit', label: 'Unit', iconClass: 'fi fi-rr-ruler-combined', category: 'Masters' },
       { id: 'packages', label: 'Packages', iconClass: 'fi fi-rr-boxes', category: 'Logistics' },
@@ -168,10 +172,30 @@
       { id: 'cloudinary', label: 'Cloudinary Settings', iconClass: 'fi fi-rr-cloud-upload', category: 'Integrations' }
     ];
 
+    // Automated Cache Migration & Stale Dummy Data Purger
+    const SHIPZ_CACHE_VERSION = 'v2.3_clean_purge_legacy';
+    try {
+      if (localStorage.getItem('shipz_cache_version') !== SHIPZ_CACHE_VERSION) {
+        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons'].forEach(k => localStorage.removeItem(k));
+        localStorage.setItem('shipz_cache_version', SHIPZ_CACHE_VERSION);
+      }
+    } catch(e){}
+
     const loadSavedState = (key, fallback) => {
       try {
         const saved = localStorage.getItem(key);
-        return saved ? JSON.parse(saved) : fallback;
+        if (!saved) return fallback;
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(item => {
+            if (typeof item === 'string') {
+              return !['FOB Mundra', 'FOB Nhava Sheva', 'CIF Montreal', 'CFR Jakarta', 'FOB Visakhapatnam', '100% LC at Sight', '30% Advance, 70% against BL'].includes(item);
+            }
+            return true;
+          });
+          return cleaned.length > 0 ? cleaned : fallback;
+        }
+        return parsed;
       } catch (e) {
         console.warn('Error loading ' + key + ' from localStorage', e);
         return fallback;
@@ -7774,9 +7798,9 @@
 
                             {/* ZONE 5: TERMS PARAMETERS */}
                             <div className="p-1.5 border-b border-slate-900 grid grid-cols-3 gap-2 text-[8.5px]">
-                              <div><span className="text-slate-500">SHIPMENT PERIOD:</span> <b>{pi.shipmentPeriod || 'WITHIN 15 DAYS'}</b></div>
-                              <div><span className="text-slate-500">INCOTERMS 2020:</span> <b className="text-indigo-900">{pi.incoterms || 'FOB NHAVA SHEVA'}</b></div>
-                              <div><span className="text-slate-500">PAYMENT TERMS:</span> <b>{pi.paymentTerms || '100% LC AT SIGHT'}</b></div>
+                              <div><span className="text-slate-500">SHIPMENT PERIOD:</span> <b>{pi.shipmentPeriod || 'N/A'}</b></div>
+                              <div><span className="text-slate-500">INCOTERMS 2020:</span> <b className="text-indigo-900">{pi.incoterms || pi.shipmentTerms || 'N/A'}</b></div>
+                              <div><span className="text-slate-500">PAYMENT TERMS:</span> <b>{pi.paymentTerms || 'N/A'}</b></div>
                             </div>
 
                             {/* LINE ITEMS TABLE */}
