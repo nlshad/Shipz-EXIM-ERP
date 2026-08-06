@@ -389,7 +389,7 @@
         if (subMenuId === 'packages') return masterPackages;
         if (subMenuId === 'packageType') return masterPackageTypes;
         if (subMenuId === 'packagingMaterials') return masterPackagingMaterials;
-        if (subMenuId === 'shipmentTerms') return masterShipmentTermsSettings;
+        if (subMenuId === 'shipmentTerms') return masterShipmentTerms;
         if (subMenuId === 'deliveryAddress') return masterDeliveryAddresses;
         if (subMenuId === 'paymentTerms') return masterPaymentTermsSettings;
         if (subMenuId === 'currency') return masterCurrencies;
@@ -464,7 +464,25 @@
         } else if (subMenuId === 'packagingMaterials') {
           setMasterPackagingMaterials(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
         } else if (subMenuId === 'shipmentTerms') {
-          setMasterShipmentTermsSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
+          if (!masterFormData.title) {
+            alert('Please enter Shipment Term Title (e.g. FOB - Free on Board)');
+            return;
+          }
+          const termTitle = masterFormData.title.trim();
+          const termCode = masterFormData.code ? masterFormData.code.trim().toUpperCase() : termTitle.slice(0, 4).toUpperCase();
+          const recordToSave = {
+            id: recordId || `ST-${Date.now()}`,
+            code: termCode,
+            title: termTitle,
+            description: masterFormData.description || termTitle,
+            freightPayer: masterFormData.freightPayer || 'Buyer',
+            status: masterFormData.status || 'Active'
+          };
+          setMasterShipmentTerms(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? recordToSave : r) : [recordToSave, ...prev]);
+          setMasterIncoterms(prev => {
+            const filtered = prev.filter(t => t !== editingRecord?.title && t !== editingRecord?.code);
+            return [...filtered, termTitle];
+          });
         } else if (subMenuId === 'deliveryAddress') {
           setMasterDeliveryAddresses(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
         } else if (subMenuId === 'paymentTerms') {
@@ -506,7 +524,7 @@
         else if (subMenuId === 'packages') setMasterPackages(updater);
         else if (subMenuId === 'packageType') setMasterPackageTypes(updater);
         else if (subMenuId === 'packagingMaterials') setMasterPackagingMaterials(updater);
-        else if (subMenuId === 'shipmentTerms') setMasterShipmentTermsSettings(updater);
+        else if (subMenuId === 'shipmentTerms') setMasterShipmentTerms(updater);
         else if (subMenuId === 'deliveryAddress') setMasterDeliveryAddresses(updater);
         else if (subMenuId === 'paymentTerms') setMasterPaymentTermsSettings(updater);
         else if (subMenuId === 'currency') setMasterCurrencies(updater);
@@ -533,7 +551,12 @@
         else if (subMenuId === 'packages') setMasterPackages(remover);
         else if (subMenuId === 'packageType') setMasterPackageTypes(remover);
         else if (subMenuId === 'packagingMaterials') setMasterPackagingMaterials(remover);
-        else if (subMenuId === 'shipmentTerms') setMasterShipmentTermsSettings(remover);
+        else if (subMenuId === 'shipmentTerms') {
+          setMasterShipmentTerms(remover);
+          if (deleteTargetRecord) {
+            setMasterIncoterms(prev => prev.filter(t => t !== deleteTargetRecord.title && t !== deleteTargetRecord.code));
+          }
+        }
         else if (subMenuId === 'deliveryAddress') setMasterDeliveryAddresses(remover);
         else if (subMenuId === 'paymentTerms') setMasterPaymentTermsSettings(remover);
         else if (subMenuId === 'currency') setMasterCurrencies(remover);
@@ -3771,28 +3794,45 @@
                       </div>
                     )}
 
-                    {/* 13. SHIPMENT TERMS */}
+                    {/* 13. SHIPMENT TERMS (INCOTERMS) */}
                     {activeSettingsSubMenu === 'shipmentTerms' && (
                       <div className="space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                           <div>
                             <h4 className="font-black text-slate-900 text-base flex items-center space-x-2">
                               <i className="fi fi-rr-ship text-indigo-600"></i>
-                              <span>Incoterms 2020 Freight Terms Master</span>
+                              <span>Incoterms 2020 Freight & Shipment Terms Master</span>
                             </h4>
+                            <p className="text-[11px] text-slate-500">Commercial trade terms defining freight payer, risk transfer, and delivery responsibilities.</p>
                           </div>
-                          <button onClick={() => handleOpenMasterDrawer('create')} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs shadow-md">+ Add Shipment Term</button>
+                          <button onClick={() => handleOpenMasterDrawer('create')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-md transition-all">
+                            <i className="fi fi-rr-plus text-xs"></i>
+                            <span>+ Add Shipment Term</span>
+                          </button>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {masterShipmentTermsSettings.map((r) => (
-                            <div key={r.id} className="p-3 bg-sky-50 border border-sky-200 rounded-xl space-y-1">
-                              <div className="flex justify-between items-start">
-                                <span className="font-bold text-sky-900 text-xs block">{r.title}</span>
-                                <button onClick={() => handleOpenMasterDrawer('edit', r)} className="text-sky-700"><i className="fi fi-rr-edit text-xs"></i></button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {masterShipmentTerms
+                            .filter(r => (masterStatusFilter === 'All' || r.status === masterStatusFilter) && (!masterSearchTerm || JSON.stringify(r).toLowerCase().includes(masterSearchTerm.toLowerCase())))
+                            .map((r) => (
+                              <div key={r.id || r.code} className="p-4 bg-sky-50/70 border border-sky-200 rounded-2xl space-y-2 relative">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <span className="font-mono font-black text-indigo-800 text-xs px-2 py-0.5 bg-indigo-100 rounded-md border border-indigo-200 inline-block mb-1">{r.code || 'ST'}</span>
+                                    <h5 className="font-bold text-slate-900 text-xs">{r.title}</h5>
+                                  </div>
+                                  <div className="flex space-x-1 shrink-0">
+                                    <button onClick={() => handleOpenMasterDrawer('edit', r)} title="Edit Record" className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"><i className="fi fi-rr-edit text-xs"></i></button>
+                                    <button onClick={() => handleOpenMasterDrawer('clone', r)} title="Clone Record" className="p-1.5 text-sky-600 hover:bg-sky-100 rounded-lg transition-colors"><i className="fi fi-rr-copy text-xs"></i></button>
+                                    <button onClick={() => handleTriggerDelete(r)} title="Delete Record" className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors"><i className="fi fi-rr-trash text-xs"></i></button>
+                                  </div>
+                                </div>
+                                {r.description && <p className="text-[11px] text-slate-600 font-medium leading-snug">{r.description}</p>}
+                                <div className="flex justify-between items-center pt-2 border-t border-sky-200 text-[10px]">
+                                  <span className="text-slate-500">Freight Payer: <strong className="text-slate-800">{r.freightPayer || 'Buyer'}</strong></span>
+                                  <span className={`px-2 py-0.5 rounded-full font-bold ${r.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>{r.status || 'Active'}</span>
+                                </div>
                               </div>
-                              <span className="text-[10px] text-sky-700 font-medium block">{r.description}</span>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -8281,6 +8321,67 @@
                         <div className="pt-1 text-[11px] font-mono font-bold text-indigo-700 flex justify-between">
                           <span>Calculated CBM:</span>
                           <span>{masterFormData.cbm || 0} m³</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {activeSettingsSubMenu === 'shipmentTerms' && (
+                    <>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs uppercase">INCOTERM / SHIPMENT TERM CODE <span className="text-rose-600 font-black">*</span></label>
+                        <input
+                          type="text"
+                          placeholder="e.g. FOB"
+                          value={masterFormData.code || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, code: e.target.value.toUpperCase() })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-xs focus:border-indigo-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs uppercase">SHIPMENT TERM TITLE <span className="text-rose-600 font-black">*</span></label>
+                        <input
+                          type="text"
+                          placeholder="e.g. FOB - Free on Board"
+                          value={masterFormData.title || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, title: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs focus:border-indigo-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs uppercase">DESCRIPTION / FREIGHT SCOPE</label>
+                        <textarea
+                          rows="3"
+                          placeholder="e.g. Free On Board (Seller pays freight to origin port)"
+                          value={masterFormData.description || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, description: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 font-medium text-xs focus:border-indigo-500 focus:outline-none"
+                        ></textarea>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1 text-xs uppercase">FREIGHT PAYER</label>
+                          <select
+                            value={masterFormData.freightPayer || 'Buyer'}
+                            onChange={e => setMasterFormData({ ...masterFormData, freightPayer: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs"
+                          >
+                            <option value="Buyer">Buyer (Freight Collect)</option>
+                            <option value="Seller">Seller (Freight Prepaid)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1 text-xs uppercase">STATUS</label>
+                          <select
+                            value={masterFormData.status || 'Active'}
+                            onChange={e => setMasterFormData({ ...masterFormData, status: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs"
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
                         </div>
                       </div>
                     </>
