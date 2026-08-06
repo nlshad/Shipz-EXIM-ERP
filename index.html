@@ -291,12 +291,12 @@
       ]);
 
       const [masterShipmentTerms, setMasterShipmentTerms] = useState([
-        { id: 'ST-001', code: 'FOB', title: 'FOB Mundra Port', description: 'Free On Board (Seller pays freight to origin port)', freightPayer: 'Buyer', status: 'Active', isDefault: true },
-        { id: 'ST-002', code: 'FOB', title: 'FOB Nhava Sheva (JNPT)', description: 'Free On Board JNPT Port', freightPayer: 'Buyer', status: 'Active', isDefault: false },
-        { id: 'ST-003', code: 'CIF', title: 'CIF Montreal Port', description: 'Cost, Insurance & Freight Prepaid to destination port', freightPayer: 'Seller', status: 'Active', isDefault: false },
-        { id: 'ST-004', code: 'CFR', title: 'CFR Jebel Ali Port', description: 'Cost & Freight Prepaid to Dubai', freightPayer: 'Seller', status: 'Active', isDefault: false },
-        { id: 'ST-005', code: 'EXW', title: 'EXW Factory Point', description: 'Ex-Works Factory Loading Gate', freightPayer: 'Buyer', status: 'Active', isDefault: false },
-        { id: 'ST-006', code: 'DDP', title: 'DDP Destination Warehouse', description: 'Delivered Duty Paid to Buyer Door', freightPayer: 'Seller', status: 'Active', isDefault: false }
+        { id: 'ST-001', code: 'FOB', title: 'FOB - Free on Board', description: 'Free On Board (Seller pays freight to origin port)', freightPayer: 'Buyer', status: 'Active', isDefault: true },
+        { id: 'ST-002', code: 'CIF', title: 'CIF - Cost, Insurance & Freight', description: 'Cost, Insurance & Freight Prepaid to destination port', freightPayer: 'Seller', status: 'Active', isDefault: false },
+        { id: 'ST-003', code: 'CFR', title: 'CFR - Cost & Freight', description: 'Cost & Freight Prepaid to destination port', freightPayer: 'Seller', status: 'Active', isDefault: false },
+        { id: 'ST-004', code: 'EXW', title: 'EXW - Ex Works', description: 'Ex-Works Factory Loading Gate', freightPayer: 'Buyer', status: 'Active', isDefault: false },
+        { id: 'ST-005', code: 'DDP', title: 'DDP - Delivered Duty Paid', description: 'Delivered Duty Paid to Buyer Door', freightPayer: 'Seller', status: 'Active', isDefault: false },
+        { id: 'ST-006', code: 'FCA', title: 'FCA - Free Carrier', description: 'Free Carrier at Named Place', freightPayer: 'Buyer', status: 'Active', isDefault: false }
       ]);
 
       const [masterDeliveryAddresses, setMasterDeliveryAddresses] = useState(() => loadSavedState('shipz_master_delivery_addresses', []));
@@ -2246,16 +2246,16 @@
           placeOfLoading: qt.placeOfLoading || 'NHAVA SHEVA',
           countryOfDischarge: qt.countryOfDischarge || qt.country || 'Canada',
           portOfDischarge: qt.portOfDischarge || qt.port || 'Montreal',
-          shipmentTerms: qt.shipmentTerms || 'FOB Mundra',
-          shipmentPeriod: qt.shipmentPeriod || 'Within 10+2 Days',
-          paymentTerms: qt.paymentTerms || '100% LC at Sight',
+          shipmentTerms: qt.shipmentTerms || '',
+          shipmentPeriod: qt.shipmentPeriod || '',
+          paymentTerms: qt.paymentTerms || '',
           currency: qt.currency || 'USD',
           conversionRate: qt.convRate || '85.0000',
-          bank: qt.bank || 'Kotak Mahindra Bank - A/C: 6748421381',
-          totalPackages: qt.totalPackages || '150 DRUMS',
-          totalNetWeight: qt.totalNetWeight || '150,000 KG',
-          totalGrossWeight: qt.totalGrossWeight || '151,500 KG',
-          salesperson: qt.salesperson || 'Rajesh Sharma',
+          bank: qt.bank || '',
+          totalPackages: qt.totalPackages || '',
+          totalNetWeight: qt.totalNetWeight || '',
+          totalGrossWeight: qt.totalGrossWeight || '',
+          salesperson: qt.salesperson || '',
           remarks: qt.remarks || 'EXPORT QUALITY GUARANTEED',
           lineItems: (qt.lineItems && qt.lineItems.length > 0) ? qt.lineItems : parsedItems.map((li, idx) => ({
             id: `li-edit-${idx}`,
@@ -2297,16 +2297,16 @@
           placeOfLoading: qt.placeOfLoading || 'NHAVA SHEVA',
           countryOfDischarge: qt.countryOfDischarge || qt.country || 'Canada',
           portOfDischarge: qt.portOfDischarge || qt.port || 'Montreal',
-          shipmentTerms: qt.shipmentTerms || 'FOB Mundra',
-          shipmentPeriod: qt.shipmentPeriod || 'Within 10+2 Days',
-          paymentTerms: qt.paymentTerms || '100% LC at Sight',
+          shipmentTerms: qt.shipmentTerms || '',
+          shipmentPeriod: qt.shipmentPeriod || '',
+          paymentTerms: qt.paymentTerms || '',
           currency: qt.currency || 'USD',
           conversionRate: qt.convRate || '85.0000',
-          bank: qt.bank || 'Kotak Mahindra Bank - A/C: 6748421381',
-          totalPackages: qt.totalPackages || '150 DRUMS',
-          totalNetWeight: qt.totalNetWeight || '150,000 KG',
-          totalGrossWeight: qt.totalGrossWeight || '151,500 KG',
-          salesperson: qt.salesperson || 'Rajesh Sharma',
+          bank: qt.bank || '',
+          totalPackages: qt.totalPackages || '',
+          totalNetWeight: qt.totalNetWeight || '',
+          totalGrossWeight: qt.totalGrossWeight || '',
+          salesperson: qt.salesperson || '',
           remarks: `Converted from Quotation ${qt.quotationNo}`,
           lineItems: (qt.lineItems && qt.lineItems.length > 0) ? qt.lineItems : parsedItems.map((li, idx) => ({
             id: `pili-cv-${idx}-${Date.now()}`,
@@ -2386,16 +2386,16 @@
           placeOfLoading: targetQt.placeOfLoading || 'NHAVA SHEVA',
           countryOfDischarge: targetQt.countryOfDischarge || targetQt.country || '',
           portOfDischarge: targetQt.portOfDischarge || targetQt.port || '',
-          shipmentTerms: targetQt.shipmentTerms || 'FOB Mundra',
-          shipmentPeriod: targetQt.shipmentPeriod || 'Within 10+2 Days',
-          paymentTerms: targetQt.paymentTerms || '100% LC at Sight',
+          shipmentTerms: targetQt.shipmentTerms || '',
+          shipmentPeriod: targetQt.shipmentPeriod || '',
+          paymentTerms: targetQt.paymentTerms || '',
           currency: targetQt.currency || 'USD',
           conversionRate: targetQt.convRate || '85.0000',
-          bank: targetQt.bank || (masterBankDetails[0] ? `${masterBankDetails[0].bankName} - A/C: ${masterBankDetails[0].accountNumber}` : ''),
+          bank: targetQt.bank || '',
           totalPackages: targetQt.totalPackages || '',
           totalNetWeight: targetQt.totalNetWeight || '',
           totalGrossWeight: targetQt.totalGrossWeight || '',
-          salesperson: targetQt.salesperson || 'Rajesh Sharma',
+          salesperson: targetQt.salesperson || '',
           buyerOrderNo: targetQt.buyerOrderNo || '',
           orderDate: targetQt.orderDate || targetQt.date || '',
           remarks: targetQt.remarks || `Auto-fetched from Linked Quotation ${targetQt.quotationNo}`,
@@ -5601,19 +5601,19 @@
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Payment Terms</span>
-                          <span className="font-bold text-slate-900">{selectedQuotationView.paymentTerms || '100% LC at Sight'}</span>
+                          <span className="font-bold text-slate-900">{selectedQuotationView.paymentTerms || 'N/A'}</span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Incoterms / Shipment Terms</span>
-                          <span className="font-bold text-indigo-700">{selectedQuotationView.shipmentTerms || 'FOB Nhava Sheva'}</span>
+                          <span className="font-bold text-indigo-700">{selectedQuotationView.shipmentTerms || 'N/A'}</span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Shipment Period / Lead Time</span>
-                          <span className="font-semibold text-slate-800">{selectedQuotationView.shipmentPeriod || 'Within 15 Days from LC approval'}</span>
+                          <span className="font-semibold text-slate-800">{selectedQuotationView.shipmentPeriod || 'N/A'}</span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Bank Account</span>
-                          <span className="font-medium text-slate-700">{selectedQuotationView.bank || 'Kotak Mahindra Bank - A/C 6748421381 (KKBKINBB)'}</span>
+                          <span className="font-medium text-slate-700">{selectedQuotationView.bank || 'N/A'}</span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase block">Required Documents</span>
@@ -5733,7 +5733,7 @@
 
           {/* QUOTATION SHARE MODAL */}
           {shareModalQt && (() => {
-            const shareText = `Hello, Please review Official Quotation ${shareModalQt.quotationNo} for ${shareModalQt.consignee}.\nTotal FOB Amount: ${shareModalQt.amount}\nIncoterms: ${shareModalQt.shipmentTerms || 'FOB Mundra'}\nPayment Terms: ${shareModalQt.paymentTerms || '100% LC at Sight'}\n\nGenerated via MGLOBAL EXIM ERP Engine.`;
+            const shareText = `Hello, Please review Official Quotation ${shareModalQt.quotationNo} for ${shareModalQt.consignee}.\nTotal FOB Amount: ${shareModalQt.amount}\nIncoterms: ${shareModalQt.shipmentTerms || 'N/A'}\nPayment Terms: ${shareModalQt.paymentTerms || 'N/A'}\n\nGenerated via MGLOBAL EXIM ERP Engine.`;
             const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
             const mailtoUrl = `mailto:client@importcorp.com?subject=${encodeURIComponent(`Official Quotation ${shareModalQt.quotationNo} - MGLOBAL IMPEX`)}&body=${encodeURIComponent(shareText)}`;
 
@@ -7338,9 +7338,9 @@
                       <div className="border border-slate-300 rounded p-2 bg-white text-[9px] grid grid-cols-3 gap-2">
                         <div className="col-span-2 space-y-1 border-r border-slate-200 pr-2">
                           <div className="grid grid-cols-3 gap-1 text-[8.5px]">
-                            <div><span className="text-slate-400 block text-[7.5px]">PAYMENT TERMS</span><b>{qt.paymentTerms || '100% LC at Sight'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">INCOTERMS</span><b>{qt.shipmentTerms || 'FOB Mundra'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">LEAD TIME</span><b>{qt.shipmentPeriod || 'Within 10+2 Days'}</b></div>
+                            <div><span className="text-slate-400 block text-[7.5px]">PAYMENT TERMS</span><b>{qt.paymentTerms || 'N/A'}</b></div>
+                            <div><span className="text-slate-400 block text-[7.5px]">INCOTERMS</span><b>{qt.shipmentTerms || 'N/A'}</b></div>
+                            <div><span className="text-slate-400 block text-[7.5px]">LEAD TIME</span><b>{qt.shipmentPeriod || 'N/A'}</b></div>
                           </div>
                           <p className="text-[8px] text-slate-500 leading-tight pt-0.5 border-t border-slate-100">
                             DECLARATION: WE HEREBY DECLARE GOODS ARE QUALITY TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
@@ -7641,9 +7641,9 @@
                             <div className="p-3 bg-[#D9EBF7]/40 border-t border-slate-400 grid grid-cols-3 gap-3">
                               <div className="col-span-2 space-y-1.5 text-[8.5px]">
                                 <div className="font-bold text-slate-900 uppercase underline">TERMS AND CONDITIONS</div>
-                                <div><span className="text-slate-600 font-semibold">PAYMENT TERMS :</span> <b className="text-slate-900">{pi.paymentTerms || '100% LC at Sight'}</b></div>
-                                <div><span className="text-slate-600 font-semibold">INCOTERMS :</span> <b className="text-indigo-800">{pi.incoterms || 'FOB Nhava Sheva'}</b></div>
-                                <div><span className="text-slate-600 font-semibold">SHIPMENT PERIOD :</span> <span className="font-medium text-slate-800">{pi.shipmentPeriod || 'Within 15 Days from LC approval'}</span></div>
+                                <div><span className="text-slate-600 font-semibold">PAYMENT TERMS :</span> <b className="text-slate-900">{pi.paymentTerms || 'N/A'}</b></div>
+                                <div><span className="text-slate-600 font-semibold">INCOTERMS :</span> <b className="text-indigo-800">{pi.incoterms || pi.shipmentTerms || 'N/A'}</b></div>
+                                <div><span className="text-slate-600 font-semibold">SHIPMENT PERIOD :</span> <span className="font-medium text-slate-800">{pi.shipmentPeriod || 'N/A'}</span></div>
                                 <p className="text-[8px] text-slate-600 italic border-t border-slate-300 pt-1">
                                   DECLARATION: WE HEREBY DECLARE GOODS ARE TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
                                 </p>

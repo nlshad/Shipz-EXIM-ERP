@@ -738,19 +738,19 @@ export const QuotationsEngine: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Payment Terms</span>
-                      <span className="font-bold text-slate-900">{(selectedQuotationView as any).paymentTerms || '100% LC at Sight'}</span>
+                      <span className="font-bold text-slate-900">{(selectedQuotationView as any).paymentTerms || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Incoterms / Shipment Terms</span>
-                      <span className="font-bold text-indigo-700">{(selectedQuotationView as any).shipmentTerms || 'FOB Nhava Sheva'}</span>
+                      <span className="font-bold text-indigo-700">{(selectedQuotationView as any).shipmentTerms || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Shipment Period / Lead Time</span>
-                      <span className="font-semibold text-slate-800">{(selectedQuotationView as any).shipmentPeriod || 'Within 15 Days from LC approval'}</span>
+                      <span className="font-semibold text-slate-800">{(selectedQuotationView as any).shipmentPeriod || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Bank Account</span>
-                      <span className="font-medium text-slate-700">{(selectedQuotationView as any).bank || 'Kotak Mahindra Bank - A/C 6748421381 (KKBKINBB)'}</span>
+                      <span className="font-medium text-slate-700">{(selectedQuotationView as any).bank || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Required Documents</span>
