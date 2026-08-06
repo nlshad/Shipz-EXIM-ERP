@@ -68,6 +68,40 @@ export const QuotationsEngine: React.FC = () => {
     } catch (e) {}
   }, [quotations]);
 
+  // Master Salespersons State with Real-Time LocalStorage and Event Sync
+  const [masterSalespersons, setMasterSalespersons] = useState<SalespersonMaster[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_master_salespersons_v2');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    const syncSalespersons = () => {
+      try {
+        const saved = localStorage.getItem('shipz_master_salespersons_v2');
+        if (saved) setMasterSalespersons(JSON.parse(saved));
+      } catch (e) {}
+    };
+    syncSalespersons();
+    window.addEventListener('shipz_salespersons_updated', syncSalespersons);
+    window.addEventListener('storage', syncSalespersons);
+    return () => {
+      window.removeEventListener('shipz_salespersons_updated', syncSalespersons);
+      window.removeEventListener('storage', syncSalespersons);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      try {
+        const saved = localStorage.getItem('shipz_master_salespersons_v2');
+        if (saved) setMasterSalespersons(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, [isCreateModalOpen]);
+
   // Complete Form State matching ALL 5 sections of user schema (Cleared default values on create)
   const getEmptyFormData = () => ({
     // 1. Header & General Info
@@ -1305,7 +1339,10 @@ export const QuotationsEngine: React.FC = () => {
                             const saved = localStorage.getItem('shipz_master_salespersons_v2');
                             const current: SalespersonMaster[] = saved ? JSON.parse(saved) : [];
                             const updated = [newSp, ...current];
-                            try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated)); } catch (e) {}
+                            try {
+                              localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated));
+                              window.dispatchEvent(new Event('shipz_salespersons_updated'));
+                            } catch (e) {}
                             setFormData((prev) => ({ ...prev, salesperson: newSp.name }));
                           }
                         }}
@@ -1320,20 +1357,11 @@ export const QuotationsEngine: React.FC = () => {
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
                         <option value="">-- Select Salesperson --</option>
-                        {(() => {
-                          try {
-                            const saved = localStorage.getItem('shipz_master_salespersons_v2');
-                            if (saved) {
-                              const list: SalespersonMaster[] = JSON.parse(saved);
-                              return list.map((sp) => (
-                                <option key={sp.id || sp.name} value={sp.name}>
-                                  {sp.name} {sp.phone ? `(${sp.phone})` : ''}
-                                </option>
-                              ));
-                            }
-                          } catch (e) {}
-                          return null;
-                        })()}
+                        {masterSalespersons.map((sp) => (
+                          <option key={sp.id || sp.name} value={sp.name}>
+                            {sp.name} {sp.phone ? `(${sp.phone})` : ''}
+                          </option>
+                        ))}
                       </select>
                       <button
                         type="button"
@@ -1350,7 +1378,10 @@ export const QuotationsEngine: React.FC = () => {
                             const saved = localStorage.getItem('shipz_master_salespersons_v2');
                             const current: SalespersonMaster[] = saved ? JSON.parse(saved) : [];
                             const updated = [newSp, ...current];
-                            try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated)); } catch (e) {}
+                            try {
+                              localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated));
+                              window.dispatchEvent(new Event('shipz_salespersons_updated'));
+                            } catch (e) {}
                             setFormData((prev) => ({ ...prev, salesperson: newSp.name }));
                           }
                         }}

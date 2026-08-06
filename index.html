@@ -279,6 +279,21 @@
       const [masterSalespersonsSettings, setMasterSalespersonsSettings] = useState(() => loadSavedState('shipz_master_salespersons_v2', []));
       React.useEffect(() => { try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(masterSalespersonsSettings)); } catch(e){} }, [masterSalespersonsSettings]);
 
+      React.useEffect(() => {
+        const syncSalespersons = () => {
+          try {
+            const saved = localStorage.getItem('shipz_master_salespersons_v2');
+            if (saved) setMasterSalespersonsSettings(JSON.parse(saved));
+          } catch(e){}
+        };
+        window.addEventListener('shipz_salespersons_updated', syncSalespersons);
+        window.addEventListener('storage', syncSalespersons);
+        return () => {
+          window.removeEventListener('shipz_salespersons_updated', syncSalespersons);
+          window.removeEventListener('storage', syncSalespersons);
+        };
+      }, []);
+
       const [masterUnits, setMasterUnits] = useState([
         { id: 'UNT-001', code: 'KG', title: 'Kilogram', precision: 3, category: 'Weight', status: 'Active' },
         { id: 'UNT-002', code: 'TON', title: 'Metric Tonne', precision: 3, category: 'Bulk Weight', status: 'Active' },

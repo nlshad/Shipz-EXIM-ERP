@@ -34,6 +34,7 @@ export const MasterSettings: React.FC<MasterSettingsProps> = ({
   useEffect(() => {
     try {
       localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(salespersons));
+      window.dispatchEvent(new Event('shipz_salespersons_updated'));
     } catch (e) { }
   }, [salespersons]);
 
