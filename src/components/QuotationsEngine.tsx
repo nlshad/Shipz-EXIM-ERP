@@ -1288,7 +1288,31 @@ export const QuotationsEngine: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Salesperson</label>
+                    <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                      <span>Salesperson</span>
+                      <span
+                        className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline"
+                        onClick={() => {
+                          const name = prompt('Enter New Salesperson Name:');
+                          if (name && name.trim()) {
+                            const newSp: SalespersonMaster = {
+                              id: `sp-${Date.now()}`,
+                              name: name.trim(),
+                              phone: '',
+                              email: '',
+                              status: 'Active'
+                            };
+                            const saved = localStorage.getItem('shipz_master_salespersons_v2');
+                            const current: SalespersonMaster[] = saved ? JSON.parse(saved) : [];
+                            const updated = [newSp, ...current];
+                            try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, salesperson: newSp.name }));
+                          }
+                        }}
+                      >
+                        + Quick Add
+                      </span>
+                    </label>
                     <div className="flex space-x-1">
                       <select
                         value={formData.salesperson}
@@ -1296,8 +1320,45 @@ export const QuotationsEngine: React.FC = () => {
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                       >
                         <option value="">-- Select Salesperson --</option>
+                        {(() => {
+                          try {
+                            const saved = localStorage.getItem('shipz_master_salespersons_v2');
+                            if (saved) {
+                              const list: SalespersonMaster[] = JSON.parse(saved);
+                              return list.map((sp) => (
+                                <option key={sp.id || sp.name} value={sp.name}>
+                                  {sp.name} {sp.phone ? `(${sp.phone})` : ''}
+                                </option>
+                              ));
+                            }
+                          } catch (e) {}
+                          return null;
+                        })()}
                       </select>
-                      <button title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs">+</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = prompt('Enter New Salesperson Name:');
+                          if (name && name.trim()) {
+                            const newSp: SalespersonMaster = {
+                              id: `sp-${Date.now()}`,
+                              name: name.trim(),
+                              phone: '',
+                              email: '',
+                              status: 'Active'
+                            };
+                            const saved = localStorage.getItem('shipz_master_salespersons_v2');
+                            const current: SalespersonMaster[] = saved ? JSON.parse(saved) : [];
+                            const updated = [newSp, ...current];
+                            try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(updated)); } catch (e) {}
+                            setFormData((prev) => ({ ...prev, salesperson: newSp.name }));
+                          }
+                        }}
+                        title="+ Add New Salesperson"
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 </div>

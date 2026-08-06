@@ -2000,6 +2000,7 @@
           const newSpObj = { id: `sp-${Date.now()}`, name: spName, phone: spPhone, email: spEmail, status: 'Active' };
           
           setMasterSalespersons((prev) => [...prev, spName]);
+          setMasterSalespersonsSettings((prev) => [...prev, newSpObj]);
           try {
             const existingV2 = JSON.parse(localStorage.getItem('shipz_master_salespersons_v2') || '[]');
             localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify([...existingV2, newSpObj]));
@@ -6359,8 +6360,13 @@
                         <div className="flex space-x-1">
                           <select value={qtFormData.salesperson} onChange={(e) => setQtFormData({ ...qtFormData, salesperson: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Salesperson --</option>
-                            {masterSalespersons.map((sp, i) => (
-                              <option key={i} value={sp}>{sp}</option>
+                            {masterSalespersonsSettings.map((sp) => (
+                              <option key={sp.id || sp.name} value={sp.name}>
+                                {sp.name} {sp.phone ? `(${sp.phone})` : ''}
+                              </option>
+                            ))}
+                            {masterSalespersons.filter(sp => typeof sp === 'string' && !masterSalespersonsSettings.some(s => s.name === sp)).map((sp, i) => (
+                              <option key={`legacy-sp-${i}`} value={sp}>{sp}</option>
                             ))}
                           </select>
                           <button type="button" onClick={() => setActiveQuickAdd('salesperson')} title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
@@ -6835,11 +6841,16 @@
                         <div className="flex space-x-1">
                           <select value={piFormData.salesperson || ''} onChange={(e) => setPiFormData({ ...piFormData, salesperson: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Salesperson --</option>
-                            {masterSalespersons.map((sp, i) => (
-                              <option key={`sp-${i}`} value={sp}>{sp}</option>
+                            {masterSalespersonsSettings.map((sp) => (
+                              <option key={sp.id || sp.name} value={sp.name}>
+                                {sp.name} {sp.phone ? `(${sp.phone})` : ''}
+                              </option>
+                            ))}
+                            {masterSalespersons.filter(sp => typeof sp === 'string' && !masterSalespersonsSettings.some(s => s.name === sp)).map((sp, i) => (
+                              <option key={`legacy-pi-sp-${i}`} value={sp}>{sp}</option>
                             ))}
                           </select>
-                          <button title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
+                          <button type="button" onClick={() => setActiveQuickAdd('salesperson')} title="+ Add New Salesperson" className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
                         </div>
                       </div>
                     </div>
