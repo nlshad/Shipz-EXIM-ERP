@@ -273,6 +273,12 @@
 
       const [masterCustomersSettings, setMasterCustomersSettings] = useState(() => loadSavedState('shipz_master_customers', []));
 
+      const [masterSalespersonsSettings, setMasterSalespersonsSettings] = useState(() => loadSavedState('shipz_master_salespersons_v2', [
+        { id: 'SP-001', name: 'Rajesh Sharma', phone: '+91 98200 12345', email: 'rajesh@mglobal.in', status: 'Active' },
+        { id: 'SP-002', name: 'Anita Mehta', phone: '+91 98333 44556', email: 'anita@mglobal.in', status: 'Active' }
+      ]));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(masterSalespersonsSettings)); } catch(e){} }, [masterSalespersonsSettings]);
+
       const [masterUnits, setMasterUnits] = useState([
         { id: 'UNT-001', code: 'KG', title: 'Kilogram', precision: 3, category: 'Weight', status: 'Active' },
         { id: 'UNT-002', code: 'TON', title: 'Metric Tonne', precision: 3, category: 'Bulk Weight', status: 'Active' },
@@ -364,6 +370,26 @@
         { id: 'EXP-006', categoryName: 'Port Storage & Demurrage', categoryGroup: 'Port Authority', gstApplicable: '18% GST', ledgerCode: '4006-DEM', status: 'Active' }
       ]);
 
+      const getActiveSubMenuDataset = (subMenuId) => {
+        if (subMenuId === 'companyAddress') return masterAddresses;
+        if (subMenuId === 'products') return masterProductsSettings;
+        if (subMenuId === 'customers') return masterCustomersSettings;
+        if (subMenuId === 'salespersons') return masterSalespersonsSettings;
+        if (subMenuId === 'unit') return masterUnits;
+        if (subMenuId === 'vendors') return masterVendors;
+        if (subMenuId === 'port') return masterPortsSettings;
+        if (subMenuId === 'packages') return masterPackages;
+        if (subMenuId === 'packageType') return masterPackageTypes;
+        if (subMenuId === 'packagingMaterials') return masterPackagingMaterials;
+        if (subMenuId === 'shipmentTerms') return masterShipmentTermsSettings;
+        if (subMenuId === 'deliveryAddress') return masterDeliveryAddresses;
+        if (subMenuId === 'paymentTerms') return masterPaymentTermsSettings;
+        if (subMenuId === 'currency') return masterCurrencies;
+        if (subMenuId === 'bankDetails') return masterBankDetails;
+        if (subMenuId === 'expanseTypes') return masterExpenseTypes;
+        return [];
+      };
+
       // Universal Master Drawer & Safeguard Modal States
       const [isMasterDrawerOpen, setIsMasterDrawerOpen] = useState(false);
       const [masterDrawerMode, setMasterDrawerMode] = useState('create'); // 'create' | 'edit'
@@ -405,6 +431,13 @@
           setMasterProducts(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
         } else if (subMenuId === 'customers') {
           setMasterCustomersSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
+        } else if (subMenuId === 'salespersons') {
+          if (!masterFormData.name) {
+            alert('Please enter Salesperson Name');
+            return;
+          }
+          setMasterSalespersonsSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
+          setMasterSalespersons(prev => masterDrawerMode === 'edit' ? prev.map(sp => typeof sp === 'string' ? (sp === editingRecord?.name ? newRecord.name : sp) : (sp.id === recordId ? newRecord.name : sp)) : [...prev, newRecord.name]);
         } else if (subMenuId === 'unit') {
           setMasterUnits(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
         } else if (subMenuId === 'vendors') {
@@ -458,6 +491,7 @@
         if (subMenuId === 'companyAddress') setMasterAddresses(updater);
         else if (subMenuId === 'products') { setMasterProductsSettings(updater); setMasterProducts(updater); }
         else if (subMenuId === 'customers') setMasterCustomersSettings(updater);
+        else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(updater);
         else if (subMenuId === 'unit') setMasterUnits(updater);
         else if (subMenuId === 'vendors') setMasterVendors(updater);
         else if (subMenuId === 'port') setMasterPortsSettings(updater);
@@ -484,6 +518,7 @@
         if (subMenuId === 'companyAddress') setMasterAddresses(remover);
         else if (subMenuId === 'products') { setMasterProductsSettings(remover); setMasterProducts(remover); }
         else if (subMenuId === 'customers') setMasterCustomersSettings(remover);
+        else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(remover);
         else if (subMenuId === 'unit') setMasterUnits(remover);
         else if (subMenuId === 'vendors') setMasterVendors(remover);
         else if (subMenuId === 'port') setMasterPortsSettings(remover);
@@ -8010,6 +8045,23 @@
                           <label className="block text-slate-700 font-bold mb-1">Tax ID / VAT</label>
                           <input type="text" value={masterFormData.taxId || ''} onChange={e => setMasterFormData({ ...masterFormData, taxId: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
                         </div>
+                      </div>
+                    </>
+                  )}
+
+                  {activeSettingsSubMenu === 'salespersons' && (
+                    <>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Salesperson Name *</label>
+                        <input type="text" placeholder="e.g. Rajesh Sharma" value={masterFormData.name || ''} onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold text-xs" required />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Phone Number</label>
+                        <input type="text" placeholder="e.g. +91 98200 12345" value={masterFormData.phone || ''} onChange={e => setMasterFormData({ ...masterFormData, phone: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Email Address</label>
+                        <input type="email" placeholder="e.g. rajesh@mglobal.in" value={masterFormData.email || ''} onChange={e => setMasterFormData({ ...masterFormData, email: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-medium text-xs" />
                       </div>
                     </>
                   )}

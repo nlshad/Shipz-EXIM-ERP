@@ -26,7 +26,7 @@ export const MasterSettings: React.FC<MasterSettingsProps> = ({
     try {
       const saved = localStorage.getItem('shipz_master_salespersons_v2');
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch (e) { }
     return DEFAULT_SALESPERSONS;
   });
 
@@ -37,7 +37,7 @@ export const MasterSettings: React.FC<MasterSettingsProps> = ({
   useEffect(() => {
     try {
       localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(salespersons));
-    } catch (e) {}
+    } catch (e) { }
   }, [salespersons]);
 
   const handleOpenAddSalesperson = () => {
@@ -146,44 +146,40 @@ export const MasterSettings: React.FC<MasterSettingsProps> = ({
       <div className="flex border-b border-white/10 text-xs">
         <button
           onClick={() => setActiveTab('productMaster')}
-          className={`pb-2.5 px-4 font-semibold flex items-center ${
-            activeTab === 'productMaster'
+          className={`pb-2.5 px-4 font-semibold flex items-center ${activeTab === 'productMaster'
               ? 'border-b-2 border-emerald-500 text-emerald-400'
               : 'text-slate-400 hover:text-slate-200'
-          }`}
+            }`}
         >
           <i className="fi fi-rr-box text-xs mr-1.5"></i>
           <span>Product Master & HSN Rules ({products.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('schemes')}
-          className={`pb-2.5 px-4 font-semibold flex items-center ${
-            activeTab === 'schemes'
+          className={`pb-2.5 px-4 font-semibold flex items-center ${activeTab === 'schemes'
               ? 'border-b-2 border-blue-500 text-blue-400'
               : 'text-slate-400 hover:text-slate-200'
-          }`}
+            }`}
         >
           <i className="fi fi-rr-percentage text-xs mr-1.5"></i>
           <span>Incentive Schemes Config (RoDTEP / DBK / RoSCTL)</span>
         </button>
         <button
           onClick={() => setActiveTab('packaging')}
-          className={`pb-2.5 px-4 font-semibold flex items-center ${
-            activeTab === 'packaging'
+          className={`pb-2.5 px-4 font-semibold flex items-center ${activeTab === 'packaging'
               ? 'border-b-2 border-purple-500 text-purple-400'
               : 'text-slate-400 hover:text-slate-200'
-          }`}
+            }`}
         >
           <i className="fi fi-rr-boxes text-xs mr-1.5"></i>
           <span>Packaging Materials & Units</span>
         </button>
         <button
           onClick={() => setActiveTab('salespersons')}
-          className={`pb-2.5 px-4 font-semibold flex items-center ${
-            activeTab === 'salespersons'
+          className={`pb-2.5 px-4 font-semibold flex items-center ${activeTab === 'salespersons'
               ? 'border-b-2 border-indigo-500 text-indigo-400'
               : 'text-slate-400 hover:text-slate-200'
-          }`}
+            }`}
         >
           <i className="fi fi-rr-user text-xs mr-1.5"></i>
           <span>Salespersons ({salespersons.length})</span>
