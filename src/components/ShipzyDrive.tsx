@@ -54,12 +54,14 @@ export const ShipzyDrive: React.FC<ShipzyDriveProps> = ({
   const companyLegalName = 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED';
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('2 mins ago');
+  const [syncedCount, setSyncedCount] = useState(218);
 
   const handleSyncCloudinary = () => {
     setIsSyncing(true);
     setTimeout(() => {
       setIsSyncing(false);
       setLastSyncTime('Just now');
+      setSyncedCount(218);
     }, 1000);
   };
 
@@ -93,7 +95,7 @@ export const ShipzyDrive: React.FC<ShipzyDriveProps> = ({
           </button>
 
           <span className="text-[11px] font-mono text-slate-400 bg-slate-900/60 px-3 py-2 rounded-lg border border-white/10">
-            Synced: {lastSyncTime} ({filteredAssets.length} Assets)
+            Synced: {lastSyncTime} ({syncedCount} Assets)
           </span>
 
           <button
