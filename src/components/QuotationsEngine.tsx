@@ -1251,7 +1251,23 @@ export const QuotationsEngine: React.FC = () => {
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
                     >
                       <option value="">-- Select Bank Account --</option>
-                      <option value="KOTAK MAHINDRA BANK LTD — 6748421381 (CBD Belapur)">KOTAK MAHINDRA BANK LTD — 6748421381 (CBD Belapur)</option>
+                      {(() => {
+                        try {
+                          const saved = localStorage.getItem('shipz_master_bank_details');
+                          if (saved) {
+                            const banks = JSON.parse(saved);
+                            return banks.map((b: any) => {
+                              const val = `${b.bankName} - A/C: ${b.accountNumber}`;
+                              return (
+                                <option key={b.id || b.accountNumber} value={val}>
+                                  {b.bankName} — {b.accountNumber} ({b.branchName || 'Branch'})
+                                </option>
+                              );
+                            });
+                          }
+                        } catch (e) {}
+                        return null;
+                      })()}
                     </select>
                   </div>
                 </div>

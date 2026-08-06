@@ -173,10 +173,10 @@
     ];
 
     // Automated Cache Migration & Stale Dummy Data Purger
-    const SHIPZ_CACHE_VERSION = 'v2.6_clear_signatory_dummies';
+    const SHIPZ_CACHE_VERSION = 'v2.7_clear_bank_dummies';
     try {
       if (localStorage.getItem('shipz_cache_version') !== SHIPZ_CACHE_VERSION) {
-        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2'].forEach(k => localStorage.removeItem(k));
+        ['shipz_master_incoterms', 'shipz_master_payment_terms', 'shipz_master_salespersons', 'shipz_master_salespersons_v2', 'shipz_master_bank_details'].forEach(k => localStorage.removeItem(k));
         const savedSigName = localStorage.getItem('shipz_signatory_name');
         if (savedSigName && savedSigName.includes('Rajesh Sharma')) localStorage.removeItem('shipz_signatory_name');
         const savedSigDesig = localStorage.getItem('shipz_signatory_designation');
@@ -377,10 +377,8 @@
         { id: 'CUR-006', code: 'INR', name: 'Indian Rupee', symbol: '₹', rateToInr: 1.0000, isBase: true, autoSync: false, status: 'Active' }
       ]);
 
-      const [masterBankDetails, setMasterBankDetails] = useState([
-        { id: 'BNK-001', beneficiaryName: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED', bankName: 'KOTAK MAHINDRA BANK LIMITED', branchName: 'CBD Belapur Trade Branch, Navi Mumbai, MH', accountNumber: '6748421381', swiftCode: 'KKBKINBB', ifscCode: 'KKBK0001358', adCode: '0400089', currency: 'USD', isPrimary: true, status: 'Active' },
-        { id: 'BNK-002', beneficiaryName: 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED', bankName: 'STATE BANK OF INDIA', branchName: 'Overseas Commercial Branch, Fort, Mumbai, MH', accountNumber: '38920194812', swiftCode: 'SBININBB104', ifscCode: 'SBIN0000300', adCode: '0210045', currency: 'INR', isPrimary: false, status: 'Active' }
-      ]);
+      const [masterBankDetails, setMasterBankDetails] = useState(() => loadSavedState('shipz_master_bank_details', []));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_bank_details', JSON.stringify(masterBankDetails)); } catch(e){} }, [masterBankDetails]);
 
       const [masterExpenseTypes, setMasterExpenseTypes] = useState([
         { id: 'EXP-001', categoryName: 'Ocean Freight Charges', categoryGroup: 'Logistics', gstApplicable: 'Exempt', ledgerCode: '4001-FRT', status: 'Active' },
@@ -7441,18 +7439,41 @@
                           </div>
                         </div>
 
-                        <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
-                          <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">BANK DETAILS (KOTAK MAHINDRA)</div>
-                          <div className="text-[9px] space-y-0.5">
-                            <div><span className="text-slate-400 text-[8px]">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED</b></div>
-                            <div><span className="text-slate-400 text-[8px]">BANK:</span> <b className="text-slate-900">KOTAK MAHINDRA BANK LTD</b></div>
-                            <div className="font-mono text-[8.5px] bg-slate-50 p-1 rounded border border-slate-200 flex justify-between">
-                              <div><span className="text-slate-400 block text-[7.5px]">A/C NO</span><b>6748421381</b></div>
-                              <div><span className="text-slate-400 block text-[7.5px]">SWIFT</span><b className="text-sky-800">KKBKINBB</b></div>
+                        {(() => {
+                          const qtBankObj = masterBankDetails.find(b => 
+                            b.id === qt.bank || 
+                            b.accountNumber === qt.bank || 
+                            (qt.bank && (
+                              String(qt.bank).toLowerCase().includes(b.bankName.toLowerCase()) ||
+                              (b.accountNumber && String(qt.bank).includes(b.accountNumber))
+                            ))
+                          ) || masterBankDetails.find(b => b.isPrimary) || masterBankDetails[0];
+
+                          if (!qtBankObj) {
+                            return (
+                              <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
+                                <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">BANK DETAILS</div>
+                                <p className="text-[8.5px] text-slate-400 italic">No bank account selected.</p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
+                              <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">BANK DETAILS ({qtBankObj.bankName})</div>
+                              <div className="text-[9px] space-y-0.5">
+                                <div><span className="text-slate-400 text-[8px]">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{qtBankObj.beneficiaryName}</b></div>
+                                <div><span className="text-slate-400 text-[8px]">BANK:</span> <b className="text-slate-900">{qtBankObj.bankName}</b></div>
+                                <div className="font-mono text-[8.5px] bg-slate-50 p-1 rounded border border-slate-200 flex justify-between">
+                                  <div><span className="text-slate-400 block text-[7.5px]">A/C NO</span><b>{qtBankObj.accountNumber}</b></div>
+                                  {qtBankObj.swiftCode && <div><span className="text-slate-400 block text-[7.5px]">SWIFT</span><b className="text-sky-800">{qtBankObj.swiftCode}</b></div>}
+                                  {qtBankObj.ifscCode && <div><span className="text-slate-400 block text-[7.5px]">IFSC</span><b className="text-indigo-800">{qtBankObj.ifscCode}</b></div>}
+                                </div>
+                                {qtBankObj.branchName && <div><span className="text-slate-400 text-[8px]">BRANCH:</span> <span className="font-medium text-slate-700">{qtBankObj.branchName}</span></div>}
+                              </div>
                             </div>
-                            <div><span className="text-slate-400 text-[8px]">BRANCH:</span> <span className="font-medium text-slate-700">CBD Belapur, Navi Mumbai, India</span></div>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
 
                       {/* ZONE 5: LINE ITEMS TABLE */}
@@ -7585,14 +7606,17 @@
               b.id === pi.bankAccount || 
               b.accountNumber === pi.bank || 
               b.bankName === pi.bank ||
-              (pi.bank && b.bankName.toLowerCase().includes(String(pi.bank).toLowerCase()))
+              (pi.bank && (
+                String(pi.bank).toLowerCase().includes(b.bankName.toLowerCase()) ||
+                (b.accountNumber && String(pi.bank).includes(b.accountNumber))
+              ))
             ) || masterBankDetails.find(b => b.isPrimary) || masterBankDetails[0] || {
-              beneficiaryName: 'GREANSCAPE SHAKTI VENTURES EXIM PRIVATE LIMITED',
-              bankName: 'KOTAK MAHINDRA BANK LTD',
-              accountNumber: '6748421381',
-              swiftCode: 'KKBKINBB',
-              ifscCode: 'KKBK0001358',
-              branchName: 'CBD Belapur, Navi Mumbai, India'
+              beneficiaryName: masterAddresses?.[0]?.label || masterAddresses?.[0]?.companyName || 'REGISTERED EXPORTER',
+              bankName: 'NO BANK SELECTED',
+              accountNumber: 'N/A',
+              swiftCode: 'N/A',
+              ifscCode: 'N/A',
+              branchName: 'N/A'
             };
 
             const bankShortName = selectedBank.bankName.toUpperCase().includes('KOTAK') 
