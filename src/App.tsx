@@ -148,7 +148,7 @@ export const App: React.FC = () => {
         )}
 
         {activeEngine === 'drive' && (
-          <div className="p-6 h-screen overflow-y-auto">
+          <div className="p-6 h-full overflow-y-auto flex-1 min-h-screen">
             <ShipzyDrive
               assets={driveAssets}
               searchQuery={searchQuery}
