@@ -2072,14 +2072,19 @@
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       };
 
-      const [driveFolders, setDriveFolders] = useState([
-        { id: 'f-all', name: 'All Drive Assets', count: 7, icon: 'fi fi-rr-folder' },
-        { id: 'f-prod', name: 'Product Images', count: 4, icon: 'fi fi-rr-picture' },
-        { id: 'f-coa', name: 'Quality & COA', count: 2, icon: 'fi fi-rr-document' },
+      const DEFAULT_DRIVE_FOLDERS = [
+        { id: 'f-all', name: 'All Drive Assets', count: 12, icon: 'fi fi-rr-folder' },
+        { id: 'f-prod', name: 'Product Images', count: 5, icon: 'fi fi-rr-picture' },
+        { id: 'f-coa', name: 'Quality & COA', count: 4, icon: 'fi fi-rr-document' },
         { id: 'f-ship', name: 'Shipping Docs', count: 1, icon: 'fi fi-rr-truck-side' },
-        { id: 'f-inv', name: 'Custom Invoices', count: 1, icon: 'fi fi-rr-receipt' }
-      ]);
-      const [driveTags, setDriveTags] = useState(['#Packaging', '#Logistics', '#Labels', '#Degaser', '#Batch2026']);
+        { id: 'f-inv', name: 'Custom Invoices', count: 2, icon: 'fi fi-rr-receipt' }
+      ];
+
+      const [driveFolders, setDriveFolders] = useState(() => loadSavedState('shipz_drive_folders', DEFAULT_DRIVE_FOLDERS));
+      React.useEffect(() => { try { localStorage.setItem('shipz_drive_folders', JSON.stringify(driveFolders)); } catch (e) { } }, [driveFolders]);
+
+      const [driveTags, setDriveTags] = useState(() => loadSavedState('shipz_drive_tags', ['#Packaging', '#Logistics', '#Labels', '#Degaser', '#Batch2026']));
+      React.useEffect(() => { try { localStorage.setItem('shipz_drive_tags', JSON.stringify(driveTags)); } catch (e) { } }, [driveTags]);
 
       const REAL_CLOUDINARY_INITIAL_ASSETS = [
         { id: "cld-init-1", publicId: "mglobal_erp_uploads/ezvlhsfwcg3fadr1krss", title: "RIVA Refined White Sugar Bag 1KG Artwork", fileName: "ezvlhsfwcg3fadr1krss.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/901", associatedContainerNo: "MSKU-882001-4", uploadDate: "2026-08-06", fileSizeMb: "0.2", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaSugar", "#CloudinarySynced"] },
@@ -2431,7 +2436,11 @@
         if (!assetToDelete) return;
 
         if (confirm(`Are you sure you want to delete "${assetToDelete.title}"? This will trigger Cloudinary API destroy (${assetToDelete.publicId || 'public_id'}).`)) {
-          setDriveAssets(prev => prev.filter(a => a.id !== assetId));
+          setDriveAssets(prev => {
+            const updated = prev.filter(a => a.id !== assetId);
+            try { localStorage.setItem('shipz_drive_assets', JSON.stringify(updated)); } catch (e) { }
+            return updated;
+          });
           if (selectedDriveAsset?.id === assetId) {
             setSelectedDriveAsset(null);
           }
