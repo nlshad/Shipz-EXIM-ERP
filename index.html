@@ -615,8 +615,10 @@
       const [financialYear, setFinancialYear] = useState('2025-2026');
       const [globalSearch, setGlobalSearch] = useState('');
       const [tableSearch, setTableSearch] = useState('');
+      const [statusFilter, setStatusFilter] = useState('ALL');
+      const [sortOrder, setSortOrder] = useState('newest');
       const [entriesPerPage, setEntriesPerPage] = useState('10');
-      const [sortField, setSortField] = useState('quotationNo');
+      const [sortField, setSortField] = useState('');
       const [sortDirection, setSortDirection] = useState('desc');
       const [expandedRows, setExpandedRows] = useState({});
       const [openActionMenuId, setOpenActionMenuId] = useState(null);
@@ -2891,65 +2893,134 @@
         }
       };
 
+      const getItemSortValue = (item) => {
+        if (item.createdAt) return new Date(item.createdAt).getTime();
+        if (item.date) return new Date(item.date).getTime();
+        if (item.id) {
+          const num = parseInt(item.id.replace(/\D/g, ''), 10);
+          if (!isNaN(num)) return num;
+          return item.id;
+        }
+        return 0;
+      };
+
       const sortedAndFilteredQuotations = [...quotations]
         .filter((q) => {
           const query = tableSearch.toLowerCase();
-          return (
-            q.quotationNo.toLowerCase().includes(query) ||
-            q.consignee.toLowerCase().includes(query) ||
-            q.products.toLowerCase().includes(query) ||
-            q.country.toLowerCase().includes(query) ||
-            q.port.toLowerCase().includes(query)
+          const matchesStatus = statusFilter === 'ALL' || (q.status || '').toUpperCase() === statusFilter.toUpperCase();
+          const matchesQuery = (
+            (q.quotationNo || '').toLowerCase().includes(query) ||
+            (q.consignee || '').toLowerCase().includes(query) ||
+            (q.products || '').toLowerCase().includes(query) ||
+            (q.country || '').toLowerCase().includes(query) ||
+            (q.port || '').toLowerCase().includes(query) ||
+            (q.status || '').toLowerCase().includes(query)
           );
+          return matchesStatus && matchesQuery;
         })
         .sort((a, b) => {
-          const valA = a[sortField] || '';
-          const valB = b[sortField] || '';
-          if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-          if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-          return 0;
+          if (sortField) {
+            const valA = (a[sortField] || '').toString();
+            const valB = (b[sortField] || '').toString();
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+          }
+          const valA = getItemSortValue(a);
+          const valB = getItemSortValue(b);
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortOrder === 'oldest' ? valA - valB : valB - valA;
+          }
+          return sortOrder === 'oldest' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
         });
 
-      const filteredAndSortedPi = [...proformaInvoices].filter((pi) => {
-        const query = tableSearch.toLowerCase();
-        return (
-          pi.invNumber.toLowerCase().includes(query) ||
-          pi.consignee.toLowerCase().includes(query) ||
-          pi.country.toLowerCase().includes(query) ||
-          pi.port.toLowerCase().includes(query)
-        );
-      });
+      const filteredAndSortedPi = [...proformaInvoices]
+        .filter((pi) => {
+          const query = tableSearch.toLowerCase();
+          const matchesStatus = statusFilter === 'ALL' || (pi.status || '').toUpperCase() === statusFilter.toUpperCase();
+          const matchesQuery = (
+            (pi.invNumber || '').toLowerCase().includes(query) ||
+            (pi.consignee || '').toLowerCase().includes(query) ||
+            (pi.country || '').toLowerCase().includes(query) ||
+            (pi.port || '').toLowerCase().includes(query) ||
+            (pi.status || '').toLowerCase().includes(query)
+          );
+          return matchesStatus && matchesQuery;
+        })
+        .sort((a, b) => {
+          if (sortField) {
+            const valA = (a[sortField] || '').toString();
+            const valB = (b[sortField] || '').toString();
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+          }
+          const valA = getItemSortValue(a);
+          const valB = getItemSortValue(b);
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortOrder === 'oldest' ? valA - valB : valB - valA;
+          }
+          return sortOrder === 'oldest' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+        });
 
       const filteredAndSortedBl = [...blRecords]
         .filter((r) => {
           const q = tableSearch.toLowerCase();
-          return (
-            r.piNo.toLowerCase().includes(q) ||
-            r.invoiceNo.toLowerCase().includes(q) ||
-            r.shippingLine.toLowerCase().includes(q) ||
-            r.bookingNo.toLowerCase().includes(q) ||
-            r.containerNo.toLowerCase().includes(q) ||
-            r.sealNo.toLowerCase().includes(q) ||
-            r.consignee.toLowerCase().includes(q)
+          const matchesStatus = statusFilter === 'ALL' || (r.status || '').toUpperCase() === statusFilter.toUpperCase();
+          const matchesQuery = (
+            (r.piNo || '').toLowerCase().includes(q) ||
+            (r.invoiceNo || '').toLowerCase().includes(q) ||
+            (r.shippingLine || '').toLowerCase().includes(q) ||
+            (r.bookingNo || '').toLowerCase().includes(q) ||
+            (r.containerNo || '').toLowerCase().includes(q) ||
+            (r.sealNo || '').toLowerCase().includes(q) ||
+            (r.consignee || '').toLowerCase().includes(q)
           );
+          return matchesStatus && matchesQuery;
         })
         .sort((a, b) => {
-          const valA = (a[sortField] || '').toString();
-          const valB = (b[sortField] || '').toString();
-          if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-          if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-          return 0;
+          if (sortField) {
+            const valA = (a[sortField] || '').toString();
+            const valB = (b[sortField] || '').toString();
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+          }
+          const valA = getItemSortValue(a);
+          const valB = getItemSortValue(b);
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortOrder === 'oldest' ? valA - valB : valB - valA;
+          }
+          return sortOrder === 'oldest' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
         });
 
-      const filteredAndSortedPkl = [...packingLists].filter((p) => {
-        const q = tableSearch.toLowerCase();
-        return (
-          p.pklNo.toLowerCase().includes(q) ||
-          p.piInvoiceNo.toLowerCase().includes(q) ||
-          p.consignee.toLowerCase().includes(q) ||
-          p.totalPackages.toLowerCase().includes(q)
-        );
-      });
+      const filteredAndSortedPkl = [...packingLists]
+        .filter((p) => {
+          const q = tableSearch.toLowerCase();
+          const matchesStatus = statusFilter === 'ALL' || (p.status || '').toUpperCase() === statusFilter.toUpperCase();
+          const matchesQuery = (
+            (p.pklNo || '').toLowerCase().includes(q) ||
+            (p.piInvoiceNo || '').toLowerCase().includes(q) ||
+            (p.consignee || '').toLowerCase().includes(q) ||
+            (p.totalPackages || '').toLowerCase().includes(q)
+          );
+          return matchesStatus && matchesQuery;
+        })
+        .sort((a, b) => {
+          if (sortField) {
+            const valA = (a[sortField] || '').toString();
+            const valB = (b[sortField] || '').toString();
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+          }
+          const valA = getItemSortValue(a);
+          const valB = getItemSortValue(b);
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortOrder === 'oldest' ? valA - valB : valB - valA;
+          }
+          return sortOrder === 'oldest' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+        });
 
       const handleToggleExpand = (id) => {
         setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -4319,7 +4390,7 @@
                   <span>Settings</span>
                 </button>
                 <span className="text-[10px] font-mono text-slate-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap ml-1 shadow-2xs">
-                  v2.3
+                  v2.4
                 </span>
               </div>
               <button
@@ -6748,7 +6819,28 @@
                       <span>Entries</span>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-wrap items-center space-x-3 gap-y-2">
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
+                        <span>Status:</span>
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                          <option value="ALL">All Statuses</option>
+                          <option value="CONFIRMED">Confirmed</option>
+                          <option value="ACTIVE">Active</option>
+                          <option value="DRAFT">Draft</option>
+                          <option value="PENDING">Pending</option>
+                          <option value="SENT">Sent</option>
+                          <option value="APPROVED">Approved</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
+                        <span>Order:</span>
+                        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                          <option value="newest">Last Created (Newest Top)</option>
+                          <option value="oldest">First Created (Oldest Top)</option>
+                        </select>
+                      </div>
+
                       <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
                         <span>Search:</span>
                         <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter view..." className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
@@ -6977,7 +7069,28 @@
                         <span>Entries</span>
                       </div>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex flex-wrap items-center space-x-3 gap-y-2">
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
+                          <span>Status:</span>
+                          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="ALL">All Statuses</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="PAID">Paid</option>
+                            <option value="DRAFT">Draft</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CANCELLED">Cancelled</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
+                          <span>Order:</span>
+                          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="newest">Last Created (Newest Top)</option>
+                            <option value="oldest">First Created (Oldest Top)</option>
+                          </select>
+                        </div>
+
                         <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
                           <span>Search:</span>
                           <input type="text" id="grid_search" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter PI grid..." className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />

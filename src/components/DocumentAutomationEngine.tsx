@@ -348,7 +348,7 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                 {isProformaMode ? (
-                  proformaInvoices.map((pi) => (
+                  [...proformaInvoices].sort((a, b) => b.id.localeCompare(a.id)).map((pi) => (
                     <tr key={pi.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-indigo-600">
                         {pi.invNumber}
