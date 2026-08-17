@@ -2203,22 +2203,51 @@
             });
           }
 
-          setDriveAssets(fetchedAssets);
-          try { localStorage.setItem('shipz_drive_assets', JSON.stringify(fetchedAssets)); } catch (e) { }
+          setDriveAssets((prevAssets) => {
+            const combinedMap = new Map();
 
-          // Dynamic folder count updates
-          const prodCount = fetchedAssets.filter(a => a.folder === 'Product Images').length;
-          const coaCount = fetchedAssets.filter(a => a.folder === 'Quality & COA').length;
-          const shipCount = fetchedAssets.filter(a => a.folder === 'Shipping Docs').length;
-          const invCount = fetchedAssets.filter(a => a.folder === 'Custom Invoices').length;
+            // 1. Add all fetched assets (Cloudinary Account + Product Master)
+            fetchedAssets.forEach(asset => {
+              const key = asset.publicId || asset.url || asset.id;
+              combinedMap.set(key, asset);
+            });
 
-          setDriveFolders([
-            { id: 'f-all', name: 'All Drive Assets', count: fetchedAssets.length, icon: 'fi fi-rr-folder' },
-            { id: 'f-prod', name: 'Product Images', count: prodCount, icon: 'fi fi-rr-picture' },
-            { id: 'f-coa', name: 'Quality & COA', count: coaCount, icon: 'fi fi-rr-document' },
-            { id: 'f-ship', name: 'Shipping Docs', count: shipCount, icon: 'fi fi-rr-truck-side' },
-            { id: 'f-inv', name: 'Custom Invoices', count: invCount, icon: 'fi fi-rr-receipt' }
-          ]);
+            // 2. Preserve all user-uploaded photos & custom assets from live site!
+            if (Array.isArray(prevAssets)) {
+              prevAssets.forEach(prevItem => {
+                if (
+                  prevItem.title?.includes('Executive Team Portrait') ||
+                  prevItem.title?.includes('Operations Team Officer') ||
+                  prevItem.title?.includes('Port Operations Specialist')
+                ) {
+                  return;
+                }
+                const key = prevItem.publicId || prevItem.url || prevItem.id;
+                if (!combinedMap.has(key)) {
+                  combinedMap.set(key, prevItem);
+                }
+              });
+            }
+
+            const mergedList = Array.from(combinedMap.values());
+
+            // Dynamic folder count updates
+            const prodCount = mergedList.filter(a => a.folder === 'Product Images').length;
+            const coaCount = mergedList.filter(a => a.folder === 'Quality & COA').length;
+            const shipCount = mergedList.filter(a => a.folder === 'Shipping Docs').length;
+            const invCount = mergedList.filter(a => a.folder === 'Custom Invoices').length;
+
+            setDriveFolders([
+              { id: 'f-all', name: 'All Drive Assets', count: mergedList.length, icon: 'fi fi-rr-folder' },
+              { id: 'f-prod', name: 'Product Images', count: prodCount, icon: 'fi fi-rr-picture' },
+              { id: 'f-coa', name: 'Quality & COA', count: coaCount, icon: 'fi fi-rr-document' },
+              { id: 'f-ship', name: 'Shipping Docs', count: shipCount, icon: 'fi fi-rr-truck-side' },
+              { id: 'f-inv', name: 'Custom Invoices', count: invCount, icon: 'fi fi-rr-receipt' }
+            ]);
+
+            try { localStorage.setItem('shipz_drive_assets', JSON.stringify(mergedList)); } catch (e) { }
+            return mergedList;
+          });
 
           const nowStr = `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
           const syncBadgeStr = `Today at ${nowStr}`;
@@ -2226,7 +2255,7 @@
           try { localStorage.setItem('shipz_last_cloudinary_sync', JSON.stringify(syncBadgeStr)); } catch (e) { }
 
           setIsSyncingCloudinary(false);
-          setToastNotice(`Cloudinary DAM Sync Complete! Synced ${realAssets.length} authentic Cloudinary assets from account (${cloudName}).`);
+          setToastNotice(`Cloudinary DAM Sync Complete! All account assets synced and your newly uploaded photos are safely preserved.`);
         }, 1000);
       };
 
