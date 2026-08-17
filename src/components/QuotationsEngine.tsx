@@ -282,9 +282,7 @@ export const QuotationsEngine: React.FC = () => {
             onChange={(e) => setGlobalSearch(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
           />
-          <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <i className="fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"></i>
         </div>
 
         <div className="flex items-center space-x-3 text-xs">
@@ -1537,8 +1535,20 @@ export const QuotationsEngine: React.FC = () => {
                         <select
                           value={item.product}
                           onChange={(e) => {
+                            const prodName = e.target.value;
                             const updated = [...formData.lineItems];
-                            updated[idx].product = e.target.value;
+                            updated[idx].product = prodName;
+                            const samplePrices: Record<string, number> = {
+                              'Degaser 200': 15.00,
+                              'Citric Acid Anhydrous': 1.20,
+                              'Sodium Benzoate': 2.50,
+                              'Emamectin Benzoate': 45.00,
+                              'RIVA STAR COLA 250ML 1X24': 8.00,
+                              'Organic Cumin Seeds': 5.88,
+                              'Fennel Seeds': 10.00,
+                              'Turmeric Powder (Curcumin 3%)': 14.12
+                            };
+                            updated[idx].price = samplePrices[prodName] || 10.00;
                             setFormData({ ...formData, lineItems: updated });
                           }}
                           className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
@@ -1547,6 +1557,8 @@ export const QuotationsEngine: React.FC = () => {
                           <option value="Citric Acid Anhydrous">Citric Acid Anhydrous</option>
                           <option value="Sodium Benzoate">Sodium Benzoate</option>
                           <option value="Emamectin Benzoate">Emamectin Benzoate</option>
+                          <option value="RIVA STAR COLA 250ML 1X24">RIVA STAR COLA 250ML 1X24</option>
+                          <option value="Organic Cumin Seeds">Organic Cumin Seeds</option>
                         </select>
                       </div>
 
@@ -1564,6 +1576,7 @@ export const QuotationsEngine: React.FC = () => {
                           <option value="Litre (Litre)">Litre (Litre)</option>
                           <option value="KG (Kilogram)">KG (Kilogram)</option>
                           <option value="Ton (Metric Ton)">Ton (Metric Ton)</option>
+                          <option value="Box">Box</option>
                         </select>
                       </div>
 
@@ -1571,12 +1584,14 @@ export const QuotationsEngine: React.FC = () => {
                         <label className="block text-slate-700 font-bold mb-1">Quantity</label>
                         <div className="flex items-center space-x-1">
                           <button
+                            type="button"
                             onClick={() => {
                               const updated = [...formData.lineItems];
-                              updated[idx].quantity = Math.max(1, updated[idx].quantity - 1);
+                              const newQty = Math.max(1, (updated[idx].quantity || 1) - 1);
+                              updated[idx].quantity = newQty;
                               setFormData({ ...formData, lineItems: updated });
                             }}
-                            className="w-7 h-8 bg-blue-600 text-white rounded font-bold"
+                            className="w-7 h-8 bg-blue-600 text-white rounded font-bold cursor-pointer"
                           >
                             -
                           </button>
@@ -1585,18 +1600,21 @@ export const QuotationsEngine: React.FC = () => {
                             value={item.quantity}
                             onChange={(e) => {
                               const updated = [...formData.lineItems];
-                              updated[idx].quantity = parseInt(e.target.value) || 1;
+                              const newQty = parseInt(e.target.value) || 0;
+                              updated[idx].quantity = newQty;
                               setFormData({ ...formData, lineItems: updated });
                             }}
                             className="w-12 text-center bg-white border border-slate-300 rounded py-1 text-xs font-bold"
                           />
                           <button
+                            type="button"
                             onClick={() => {
                               const updated = [...formData.lineItems];
-                              updated[idx].quantity += 1;
+                              const newQty = (updated[idx].quantity || 0) + 1;
+                              updated[idx].quantity = newQty;
                               setFormData({ ...formData, lineItems: updated });
                             }}
-                            className="w-7 h-8 bg-blue-600 text-white rounded font-bold"
+                            className="w-7 h-8 bg-blue-600 text-white rounded font-bold cursor-pointer"
                           >
                             +
                           </button>

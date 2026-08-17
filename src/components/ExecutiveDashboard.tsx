@@ -53,15 +53,11 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
           <p className="text-xs text-slate-400">
             Real-time trade metrics, contractual profit & loss reports, and container stuffing due alerts.
           </p>
-        </div>
-
-        <button
+              <button
           onClick={() => setShowPnlModal(true)}
           className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 flex items-center gap-2"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
+          <i className="fi fi-rr-chart-pie text-xs"></i>
           <span>View Contractual P&L Breakdown</span>
         </button>
       </div>
@@ -162,9 +158,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <div className="lg:col-span-4 glass-panel p-4 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <i className="fi fi-rr-time-fast text-emerald-400 text-xs"></i>
               Live Operational Activity
             </h3>
             <span className="text-[10px] text-emerald-400 font-mono">Real-Time</span>
@@ -186,15 +180,133 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         </div>
       </div>
 
+      {/* ROW 3: ZONE 4 CUSTOMS INCENTIVE & FOREX MATRIX + ZONE 5 QUICK COMMAND LAUNCHER */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 2/3 Width Zone 4: Customs Incentive Realization & Forex Exposure Matrix */}
+        <div className="lg:col-span-8 glass-panel p-4 space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                Customs Incentive Realization & Forex Exposure Matrix
+              </h3>
+              <p className="text-[11px] text-slate-400">RoDTEP / Duty Drawback refund claims & live currency exchange rates</p>
+            </div>
+            <span className="text-[10px] text-indigo-400 font-mono font-bold bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30">
+              Live Currency Sync
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* RoDTEP / DBK Incentive Realization Card */}
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">RoDTEP & DBK Claims Status</span>
+                <span className="text-emerald-400 font-mono font-bold">88.4% Realized</span>
+              </div>
+              <div className="flex justify-between items-baseline font-mono">
+                <span className="text-xs text-slate-400">Claimed: <strong className="text-white">{formatMoney(48500)}</strong></span>
+                <span className="text-sm font-extrabold text-emerald-400">{formatMoney(42874)}</span>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full w-[88.4%]"></div>
+              </div>
+              <div className="flex justify-between text-[9.5px] text-slate-400 font-mono pt-1">
+                <span>Pending Refund: {formatMoney(5626)}</span>
+                <span className="text-amber-400 font-bold">2 Shipping Bills Due</span>
+              </div>
+            </div>
+
+            {/* Live Forex Exchange Rates Ticker */}
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">Forex Exchange Ticker (Base: INR)</span>
+                <span className="text-sky-400 font-mono text-[10px]">Auto-Synced</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                  <span className="text-slate-400 font-bold">USD/INR</span>
+                  <span className="text-white font-extrabold">₹85.00</span>
+                </div>
+                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                  <span className="text-slate-400 font-bold">EUR/INR</span>
+                  <span className="text-white font-extrabold">₹92.50</span>
+                </div>
+                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                  <span className="text-slate-400 font-bold">GBP/INR</span>
+                  <span className="text-white font-extrabold">₹108.20</span>
+                </div>
+                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                  <span className="text-slate-400 font-bold">AED/INR</span>
+                  <span className="text-white font-extrabold">₹23.14</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 1/3 Width Zone 5: Quick Command Launcher Grid */}
+        <div className="lg:col-span-4 glass-panel p-4 space-y-3">
+          <div className="pb-2 border-b border-white/10 flex justify-between items-center">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <i className="fi fi-rr-bolt text-amber-400 text-xs"></i>
+              Quick Command Center
+            </h3>
+            <span className="text-[10px] text-slate-400">EXIM Shortcuts</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+            <button
+              onClick={() => onNavigateEngine('quotations')}
+              className="p-3 rounded-xl bg-gradient-to-br from-indigo-600/80 to-blue-700/80 hover:from-indigo-600 hover:to-blue-600 text-white border border-indigo-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <i className="fi fi-rr-file-edit text-white text-xs"></i>
+              </div>
+              <span className="text-[11px] leading-tight">+ Create Quotation</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateEngine('documents')}
+              className="p-3 rounded-xl bg-gradient-to-br from-emerald-600/80 to-teal-700/80 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <i className="fi fi-rr-document text-white text-xs"></i>
+              </div>
+              <span className="text-[11px] leading-tight">+ Create PI Document</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateEngine('documents')}
+              className="p-3 rounded-xl bg-gradient-to-br from-amber-600/80 to-orange-700/80 hover:from-amber-600 hover:to-orange-700 text-white border border-amber-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <i className="fi fi-rr-box-alt text-white text-xs"></i>
+              </div>
+              <span className="text-[11px] leading-tight">+ Packing List</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateEngine('settings')}
+              className="p-3 rounded-xl bg-gradient-to-br from-slate-700/80 to-slate-800/80 hover:from-slate-700 hover:to-slate-800 text-white border border-slate-500/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <i className="fi fi-rr-settings text-white text-xs"></i>
+              </div>
+              <span className="text-[11px] leading-tight">Master Directory</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* CONTRACTUAL PROFIT & LOSS REPORT MODAL */}
       {showPnlModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="glass-panel p-6 max-w-3xl w-full space-y-4 border border-blue-500/30">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <i className="fi fi-rr-chart-histogram text-emerald-400 text-base"></i>
                 Contractual Net Profitability & Incentive Realization Report
               </h3>
               <button onClick={() => setShowPnlModal(false)} className="text-slate-400 hover:text-white">✕</button>

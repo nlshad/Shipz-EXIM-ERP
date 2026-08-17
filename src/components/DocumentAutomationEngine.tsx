@@ -304,28 +304,140 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
                 <p className="text-[11px] text-slate-600 leading-relaxed">{activeCard.exporterAddr}</p>
               </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
-                <div className="text-slate-500 font-bold uppercase text-[10px]">CONSIGNEE</div>
-                <h4 className="font-bold text-slate-900 text-sm">{activeCard.consignee}</h4>
-                <p className="text-[11px] text-slate-600 leading-relaxed">{activeCard.consigneeAddr}</p>
-              </div>
-            </div>
+        </div>
+
+        {/* Action Toolbar */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => alert('Batch Printing 12 documents...')}
+            className="px-3.5 py-2 bg-white text-slate-700 font-semibold text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition-all shadow-xs flex items-center space-x-1.5"
+          >
+            <i className="fi fi-rr-print"></i>
+            <span>Batch Export</span>
+          </button>
+          <button
+            onClick={() => alert('Exporting directory to Excel...')}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-all shadow-xs flex items-center space-x-1.5"
+          >
+            <i className="fi fi-rr-file-excel"></i>
+            <span>Export Excel</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Document Master Directory Table */}
+        <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 text-sm">Active Document Register</h3>
+            <span className="text-xs text-slate-500 font-medium">Showing 1-10 of 124 records</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+                  <th className="py-3 px-4">Doc No / Date</th>
+                  <th className="py-3 px-4">Consignee & Buyer</th>
+                  <th className="py-3 px-4">Port of Discharge</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                {isProformaMode ? (
+                  proformaInvoices.map((pi) => (
+                    <tr key={pi.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-indigo-600">
+                        {pi.invNumber}
+                        <div className="text-[10px] text-slate-400 font-normal">{pi.date}</div>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{pi.consignee}</td>
+                      <td className="py-3 px-4">{pi.portOfDischarge}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">${pi.totalAmount.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          {pi.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => onSelectPiForPdf(pi)}
+                            className="px-2.5 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold rounded text-[11px] transition-colors"
+                          >
+                            PDF Preview
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  [
+                    { id: '1', number: 'INV/2026/0401', consignee: 'Global Trade Partners LLC', port: 'Los Angeles (USA)', amount: 48500, status: 'CONFIRMED' },
+                    { id: '2', number: 'INV/2026/0402', consignee: 'Apex Import Corp', port: 'Hamburg Port (Germany)', amount: 32400, status: 'SHIPPED' },
+                    { id: '3', number: 'INV/2026/0403', consignee: 'Sunburst Logistics DMCC', port: 'Jebel Ali (UAE)', amount: 64100, status: 'DRAFT' }
+                  ].map((inv) => (
+                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-indigo-600">{inv.number}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{inv.consignee}</td>
+                      <td className="py-3 px-4">{inv.port}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">${inv.amount.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => alert(`Opening Commercial Invoice ${inv.number}`)}
+                          className="px-2.5 py-1 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded text-[11px] transition-colors"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Floating CBM Optimizer */}
-        <div className="fixed bottom-6 right-8 w-[380px] z-40 smart-tools-widget p-4 shadow-2xl border border-indigo-200">
-          <div className="flex items-center justify-between pb-3 border-b border-indigo-200/60">
-            <div className="flex items-center space-x-2 text-indigo-950 font-extrabold text-xs">
-              <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span>Smart Tools: CBM Optimizer</span>
+        {/* Quick Document Generator Sidebar */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">Quick Document Actions</h3>
+            <div className="space-y-2.5 text-xs">
+              <button onClick={() => alert('Initiating Pre-Shipment Document Bundle...')} className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-slate-800 font-semibold transition-colors">
+                <span>📦 Pre-Shipment Bundle</span>
+                <span className="text-slate-400">→</span>
+              </button>
+              <button onClick={() => alert('Initiating Post-Shipment Document Bundle...')} className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-slate-800 font-semibold transition-colors">
+                <span>🚢 Post-Shipment Bundle</span>
+                <span className="text-slate-400">→</span>
+              </button>
+              <button onClick={() => alert('Generating Customs Invoice & Certificate of Origin...')} className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-slate-800 font-semibold transition-colors">
+                <span>📜 Certificate of Origin (COO)</span>
+                <span className="text-slate-400">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating CBM Optimizer */}
+      <div className="fixed bottom-6 right-8 w-[380px] z-40 smart-tools-widget p-4 shadow-2xl border border-indigo-200">
+        <div className="flex items-center justify-between pb-3 border-b border-indigo-200/60">
+          <div className="flex items-center space-x-2 text-indigo-950 font-extrabold text-xs">
+            <i className="fi fi-rr-box-alt text-indigo-600 text-sm"></i>
+            <span>Smart Tools: CBM Optimizer</span>
             </div>
             <button onClick={() => setIsCbmOptimizerOpen(!isCbmOptimizerOpen)} className="text-slate-500 font-bold">
               {isCbmOptimizerOpen ? '▲' : '▼'}
             </button>
-          </div>
 
           {isCbmOptimizerOpen && (
             <div className="space-y-3 pt-3 text-xs">

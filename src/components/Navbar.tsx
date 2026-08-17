@@ -66,9 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onChange={handleSearchChange}
             className="w-full glass-input text-xs pl-9 pr-4 py-2 text-slate-200 placeholder-slate-400 focus:outline-none"
           />
-          <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <i className="fi fi-rr-search text-slate-400 absolute left-3 top-3 text-xs"></i>
         </div>
       </div>
 
@@ -95,11 +93,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-lg bg-slate-800/60 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all relative"
+            className="p-2 rounded-lg bg-slate-800/60 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all relative flex items-center justify-center"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <i className="fi fi-rr-bell text-slate-300 text-base"></i>
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400 ring-4 ring-slate-900"></span>
           </button>
 
@@ -129,9 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onOpenQuickDoc}
           className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-1.5"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <i className="fi fi-rr-plus text-xs"></i>
           <span>+ New Document</span>
         </button>
       </div>
