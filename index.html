@@ -7418,7 +7418,7 @@
 
             {/* SHIPZY DRIVE • CLOUDINARY MEDIA VAULT & DRIVE ENGINE (MODULE B PRD) */}
             {activeEngine === 'drive' && (
-              <div className="space-y-6">
+              <div className="flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#F8FAFC] text-slate-800 pb-28">
                 {/* TOP BAR: DRIVE DIRECTORY & ACTIONS */}
                 <div className="drive-canvas-container p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center space-x-3 w-full md:w-auto">
@@ -7798,33 +7798,84 @@
                       </div>
                     )}
 
-                    {/* ASSET METADATA FOOTER PANEL */}
+                    {/* INTERACTIVE FULL-SCREEN ASSET & DOCUMENT PREVIEWER MODAL */}
                     {selectedDriveAsset && (
-                      <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 shadow-xl space-y-2">
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            <h5 className="font-extrabold text-xs text-white">Selected Asset: {selectedDriveAsset.title}</h5>
-                          </div>
-                          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                            SHA-256 Direct Transfer Verified
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
-                          <div className="space-y-1">
-                            <p className="text-slate-400 text-[11px]">Cloudinary Public ID: <strong className="font-mono text-slate-200">{selectedDriveAsset.publicId || 'mglobal_erp_uploads/asset'}</strong></p>
-                            <p className="text-slate-400 text-[11px]">Folder Path: <strong className="text-slate-200">{selectedDriveAsset.folder || 'Product Assets'}</strong></p>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Cloudinary CDN Dynamic URL (f_auto,q_auto):</span>
+                      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-6">
+                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
+                          {/* MODAL HEADER */}
+                          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+                            <div className="flex items-center space-x-3 truncate">
+                              <div className={`p-2.5 rounded-xl ${selectedDriveAsset.fileType === 'pdf' ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                                <i className={`text-xl ${selectedDriveAsset.fileType === 'pdf' ? 'fi fi-rr-document' : 'fi fi-rr-picture'}`}></i>
+                              </div>
+                              <div className="truncate">
+                                <h3 className="text-base font-black text-slate-900 truncate flex items-center space-x-2">
+                                  <span>{selectedDriveAsset.title}</span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-mono font-bold border border-indigo-200">
+                                    {selectedDriveAsset.fileType?.toUpperCase() || 'FILE'}
+                                  </span>
+                                </h3>
+                                <p className="text-xs text-slate-500 font-mono flex items-center space-x-2 mt-0.5">
+                                  <span className="truncate">{selectedDriveAsset.fileName}</span>
+                                  <span>•</span>
+                                  <span className="font-bold text-indigo-600">{selectedDriveAsset.fileSizeMb} MB</span>
+                                  <span>•</span>
+                                  <span className="text-slate-600 font-semibold">{selectedDriveAsset.folder}</span>
+                                </p>
+                              </div>
+                            </div>
                             <div className="flex items-center space-x-2">
+                              <a
+                                href={selectedDriveAsset.cloudinaryUrl || selectedDriveAsset.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-xl transition-all flex items-center space-x-1.5 border border-indigo-200"
+                              >
+                                <i className="fi fi-rr-external-link text-xs"></i>
+                                <span>Open Full Screen</span>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDriveAsset(null)}
+                                className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-xl text-lg font-bold transition-all"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* DOCUMENT / PHOTO PREVIEW CONTAINER */}
+                          <div className="flex-1 overflow-y-auto p-6 bg-slate-900/5 flex flex-col items-center justify-center min-h-[400px]">
+                            {selectedDriveAsset.fileType === 'pdf' || (selectedDriveAsset.url && selectedDriveAsset.url.toLowerCase().endsWith('.pdf')) ? (
+                              <iframe
+                                src={selectedDriveAsset.cloudinaryUrl || selectedDriveAsset.url}
+                                title={selectedDriveAsset.title}
+                                className="w-full h-[580px] rounded-xl border border-slate-300 shadow-lg bg-white"
+                              />
+                            ) : (
+                              <div className="max-w-full max-h-[580px] overflow-hidden rounded-xl shadow-xl border border-slate-200 bg-white flex items-center justify-center p-2">
+                                <img
+                                  src={selectedDriveAsset.cloudinaryUrl || selectedDriveAsset.url}
+                                  alt={selectedDriveAsset.title}
+                                  className="max-w-full max-h-[560px] object-contain rounded-lg"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80';
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* MODAL ACTION FOOTER */}
+                          <div className="px-6 py-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="flex items-center space-x-2 text-xs text-slate-500 font-mono truncate w-full sm:w-auto">
+                              <span className="font-bold text-slate-700">CDN Link:</span>
                               <input
                                 type="text"
                                 readOnly
                                 value={selectedDriveAsset.cloudinaryUrl || selectedDriveAsset.url}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-[11px] font-mono text-indigo-300 focus:outline-none"
+                                className="bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 text-[11px] font-mono text-slate-800 w-full sm:w-80"
                               />
                               <button
                                 type="button"
@@ -7833,9 +7884,29 @@
                                   setToastNotice('Cloudinary CDN URL copied!');
                                   setTimeout(() => setToastNotice(null), 3000);
                                 }}
-                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs whitespace-nowrap"
+                                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-lg whitespace-nowrap"
                               >
                                 Copy CDN
+                              </button>
+                            </div>
+
+                            <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                              <a
+                                href={selectedDriveAsset.cloudinaryUrl || selectedDriveAsset.url}
+                                download={selectedDriveAsset.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all"
+                              >
+                                <i className="fi fi-rr-download text-xs"></i>
+                                <span>Download File</span>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDriveAsset(null)}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                              >
+                                Close Preview
                               </button>
                             </div>
                           </div>
