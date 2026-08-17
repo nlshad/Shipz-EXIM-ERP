@@ -4207,8 +4207,7 @@
         { id: 'expenses', label: 'Expenses', iconClass: 'fi fi-rr-money-bill-wave', color: 'text-rose-400' },
         { id: 'drive', label: 'Drive', iconClass: 'fi fi-rr-folder', color: 'text-amber-400' },
         { id: 'user', label: 'User', iconClass: 'fi fi-rr-user', color: 'text-slate-300' },
-        { id: 'reports', label: 'Reports', iconClass: 'fi fi-rr-chart-pie', color: 'text-emerald-400' },
-        { id: 'supportHelpdesk', label: 'Support & Helpdesk', iconClass: 'fi fi-rr-headset', color: 'text-amber-400' }
+        { id: 'reports', label: 'Reports', iconClass: 'fi fi-rr-chart-pie', color: 'text-emerald-400' }
       ];
 
       return (
@@ -4310,14 +4309,19 @@
 
             {/* ABSOLUTE PINNED BOTTOM FOOTER */}
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#0B132B] border-t border-white/10 space-y-1 text-xs z-20">
-              <button
-                onClick={() => { setActiveEngine('settings'); setIsMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${activeEngine === 'settings' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
-              >
-                <i className="fi fi-rr-settings text-sm text-slate-400 flex items-center"></i>
-                <span>Settings</span>
-              </button>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => { setActiveEngine('settings'); setIsMobileSidebarOpen(false); }}
+                  className={`flex-1 flex items-center space-x-2.5 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${activeEngine === 'settings' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  <i className="fi fi-rr-settings text-sm text-slate-400 flex items-center"></i>
+                  <span>Settings</span>
+                </button>
+                <span className="text-[10px] font-mono text-emerald-400 font-extrabold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap ml-1 shadow-xs">
+                  v2.0 - 6f959db
+                </span>
+              </div>
               <button
                 onClick={() => { setActiveEngine('supportHelpdesk'); setIsMobileSidebarOpen(false); }}
                 className={`w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${activeEngine === 'supportHelpdesk' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'
