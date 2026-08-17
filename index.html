@@ -4390,7 +4390,7 @@
                   <span>Settings</span>
                 </button>
                 <span className="text-[10px] font-mono text-slate-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap ml-1 shadow-2xs">
-                  v2.4
+                  v2.5
                 </span>
               </div>
               <button
@@ -6807,10 +6807,10 @@
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3 text-xs font-bold text-slate-600">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                    <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
                       <span>Show</span>
-                      <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold">
+                      <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(e.target.value)} className="bg-white border border-slate-300 rounded-md px-2 py-1 font-bold">
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -6819,10 +6819,10 @@
                       <span>Entries</span>
                     </div>
 
-                    <div className="flex flex-wrap items-center space-x-3 gap-y-2">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
                         <span>Status:</span>
-                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-white border border-slate-300 rounded-md px-2.5 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs">
                           <option value="ALL">All Statuses</option>
                           <option value="CONFIRMED">Confirmed</option>
                           <option value="ACTIVE">Active</option>
@@ -6835,24 +6835,28 @@
 
                       <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
                         <span>Order:</span>
-                        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="bg-white border border-slate-300 rounded-md px-2.5 py-1 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs">
                           <option value="newest">Last Created (Newest Top)</option>
                           <option value="oldest">First Created (Oldest Top)</option>
                         </select>
                       </div>
 
-                      <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-600">
                         <span>Search:</span>
-                        <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter view..." className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                        <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter view..." className="bg-white border border-slate-300 rounded-md px-3 py-1 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none w-36 sm:w-48 shadow-2xs" />
                       </div>
 
-                      <button onClick={() => { handleResetQtFormData(); setIsCreateQtModalOpen(true); }} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1">
+                      <button onClick={() => { handleResetQtFormData(); setIsCreateQtModalOpen(true); }} className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1 transition-all">
                         <span>+ Add New</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="overflow-visible min-h-[380px]">
+                  <div className="overflow-visible min-h-[380px] relative">
+                    {(openActionMenuId || openDocMenuId) && (
+                      <div className="fixed inset-0 z-30 bg-transparent" onClick={() => { setOpenActionMenuId(null); setOpenDocMenuId(null); }} />
+                    )}
+
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
@@ -6889,32 +6893,32 @@
                                 <button onClick={() => handleToggleExpand(qt.id)} className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center mx-auto">{expandedRows[qt.id] ? '-' : '+'}</button>
                               </td>
 
-                              <td className="py-3 px-3 relative">
-                                <button onClick={() => setOpenActionMenuId(openActionMenuId === qt.id ? null : qt.id)} className="px-3 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-md flex items-center space-x-1">
+                              <td className={`py-3 px-3 relative ${openActionMenuId === qt.id ? 'z-50' : 'z-10'}`}>
+                                <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(openActionMenuId === qt.id ? null : qt.id); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 shadow-2xs transition-colors">
                                   <span>Action</span>
                                   <span>▼</span>
                                 </button>
 
                                 {openActionMenuId === qt.id && (
-                                  <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5">
+                                  <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
                                     <button onClick={() => { setSelectedQuotationView(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View Details</span></button>
-                                    <button onClick={() => handleEditQuotation(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Edit Quotation</span></button>
-                                    <button onClick={() => handleOpenQuotationPdf(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"><i className="fi fi-rr-document text-xs"></i><span>Download PDF</span></button>
+                                    <button onClick={() => { handleEditQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Edit Quotation</span></button>
+                                    <button onClick={() => { handleOpenQuotationPdf(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"><i className="fi fi-rr-document text-xs"></i><span>Download PDF</span></button>
                                     <button onClick={() => { setShareModalQt(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send via Email / WhatsApp</span></button>
-                                    <button onClick={() => handleConvertToPi(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><i className="fi fi-rr-refresh text-xs"></i><span>Convert to Proforma Invoice (PI)</span></button>
-                                    <button onClick={() => handleDuplicateQuotation(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-copy text-xs"></i><span>Duplicate / Clone</span></button>
+                                    <button onClick={() => { handleConvertToPi(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><i className="fi fi-rr-refresh text-xs"></i><span>Convert to Proforma Invoice (PI)</span></button>
+                                    <button onClick={() => { handleDuplicateQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-copy text-xs"></i><span>Duplicate / Clone</span></button>
                                     <div className="border-t border-slate-100 my-1"></div>
-                                    <button onClick={() => handleDeleteQuotation(qt.id)} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete / Cancel</span></button>
+                                    <button onClick={() => { handleDeleteQuotation(qt.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete / Cancel</span></button>
                                   </div>
                                 )}
                               </td>
 
-                              <td className="py-3 px-3 relative">
-                                <button onClick={() => setOpenDocMenuId(openDocMenuId === `doc-${qt.id}` ? null : `doc-${qt.id}`)} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
+                              <td className={`py-3 px-3 relative ${openDocMenuId === `doc-${qt.id}` ? 'z-50' : 'z-10'}`}>
+                                <button onClick={(e) => { e.stopPropagation(); setOpenDocMenuId(openDocMenuId === `doc-${qt.id}` ? null : `doc-${qt.id}`); setOpenActionMenuId(null); }} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1 hover:bg-amber-100 transition-colors"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
                                 {openDocMenuId === `doc-${qt.id}` && (
-                                  <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5">
-                                    <button onClick={() => handleOpenQuotationPdf(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-sky-700"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
-                                    <button onClick={() => handleOpenQuotationPdf(qt)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>Preview Quotation PDF</span></button>
+                                  <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                    <button onClick={() => { handleOpenQuotationPdf(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-sky-700"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
+                                    <button onClick={() => { handleOpenQuotationPdf(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>Preview Quotation PDF</span></button>
                                     <button onClick={() => { setShareModalQt(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send via Email / WhatsApp</span></button>
                                   </div>
                                 )}
@@ -7115,7 +7119,11 @@
                     </div>
 
                     {/* 3. STRICT 13 DATA GRID COLUMNS TABLE */}
-                    <div className="overflow-visible min-h-[380px]">
+                    <div className="overflow-visible min-h-[380px] relative">
+                      {(openActionMenuId || openDocMenuId) && (
+                        <div className="fixed inset-0 z-30 bg-transparent" onClick={() => { setOpenActionMenuId(null); setOpenDocMenuId(null); }} />
+                      )}
+
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
@@ -7155,21 +7163,21 @@
                                 </td>
 
                                 {/* 2. row_actions */}
-                                <td className="py-3 px-3 relative">
-                                  <button onClick={() => setOpenActionMenuId(openActionMenuId === pi.id ? null : pi.id)} className="px-3 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-md flex items-center space-x-1">
+                                <td className={`py-3 px-3 relative ${openActionMenuId === pi.id ? 'z-50' : 'z-10'}`}>
+                                  <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(openActionMenuId === pi.id ? null : pi.id); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors">
                                     <span>Action</span>
                                     <span>▼</span>
                                   </button>
 
                                   {openActionMenuId === pi.id && (
-                                    <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5">
-                                      <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details (view_details)</span></button>
-                                      <button onClick={() => handleEditPi(pi)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI (update_pi)</span></button>
-                                      <button onClick={() => { handleOpenPiPdf(pi); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF (download_pdf)</span></button>
-                                      <button onClick={() => handleConvertToCommercialInvoice(pi)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
-                                      <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email (send_email)</span></button>
+                                    <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                      <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
+                                      <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI</span></button>
+                                      <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
+                                      <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
+                                      <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
                                       <div className="border-t border-slate-100 my-1"></div>
-                                      <button onClick={() => handleDeletePi(pi.id)} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><span>🗑️</span><span>Delete Record (delete_record)</span></button>
+                                      <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><span>🗑️</span><span>Delete Record</span></button>
                                     </div>
                                   )}
                                 </td>
