@@ -562,7 +562,7 @@
     }
 
     function App() {
-      const [activeEngine, setActiveEngine] = useState('quotations');
+      const [activeEngine, setActiveEngine] = useState('dashboard');
       const [quotations, setQuotations] = useState(() => loadSavedState('shipz_quotations', INITIAL_QUOTATIONS));
       const [proformaInvoices, setProformaInvoices] = useState(() => loadSavedState('shipz_proforma_invoices', INITIAL_PROFORMA_INVOICES));
       const [blRecords, setBlRecords] = useState(() => loadSavedState('shipz_bl_records', INITIAL_BL_DRAFTS));
@@ -4319,7 +4319,7 @@
                   <span>Settings</span>
                 </button>
                 <span className="text-[10px] font-mono text-slate-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap ml-1 shadow-2xs">
-                  v2.2
+                  v2.3
                 </span>
               </div>
               <button
