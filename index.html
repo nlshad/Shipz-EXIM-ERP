@@ -2082,20 +2082,37 @@
       const [driveTags, setDriveTags] = useState(['#Packaging', '#Logistics', '#Labels', '#Degaser', '#Batch2026']);
 
       const REAL_CLOUDINARY_INITIAL_ASSETS = [
-        { id: "cld-init-1", publicId: "mglobal_erp_uploads/ezvlhsfwcg3fadr1krss", title: "RIVA Refined White Sugar Bag 1KG Artwork", fileName: "ezvlhsfwcg3fadr1krss.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/901", associatedContainerNo: "MSKU-882001-4", uploadDate: "2026-08-06", fileSizeMb: 0.2, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaSugar", "#CloudinarySynced"] },
-        { id: "cld-init-2", publicId: "mglobal_erp_uploads/nnp799ksihjptcc22wok", title: "MGLOBAL Official Stamp & Circular Seal Transparent", fileName: "nnp799ksihjptcc22wok.png", fileType: "image", folder: "Custom Invoices", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/902", associatedContainerNo: "MSKU-882002-4", uploadDate: "2026-08-05", fileSizeMb: 0.7, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912519/mglobal_erp_uploads/nnp799ksihjptcc22wok.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912519/mglobal_erp_uploads/nnp799ksihjptcc22wok.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Seal", "#CloudinarySynced"] },
-        { id: "cld-init-3", publicId: "mglobal_erp_uploads/hnnpfsreabkcrhhudfyi", title: "MGLOBAL Snowflake Logo Branding Mark", fileName: "hnnpfsreabkcrhhudfyi.png", fileType: "image", folder: "Custom Invoices", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/903", associatedContainerNo: "MSKU-882003-4", uploadDate: "2026-08-05", fileSizeMb: 1.4, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912226/mglobal_erp_uploads/hnnpfsreabkcrhhudfyi.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912226/mglobal_erp_uploads/hnnpfsreabkcrhhudfyi.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Logo", "#CloudinarySynced"] },
-        { id: "cld-init-4", publicId: "mglobal_erp_uploads/pupdhqi5ofirklrjtcup", title: "RIVA Cola Refreshing Soda Can Packaging", fileName: "pupdhqi5ofirklrjtcup.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/904", associatedContainerNo: "MSKU-882004-4", uploadDate: "2026-08-05", fileSizeMb: 1.4, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912221/mglobal_erp_uploads/pupdhqi5ofirklrjtcup.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912221/mglobal_erp_uploads/pupdhqi5ofirklrjtcup.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaCola", "#CloudinarySynced"] },
-        { id: "cld-init-5", publicId: "mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7", title: "RIVA Pino Sparkling Beverage Packaging Can", fileName: "f42h4v0vjrcd4ymiyly7.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/905", associatedContainerNo: "MSKU-882005-4", uploadDate: "2026-08-05", fileSizeMb: 0.1, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912183/mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912183/mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaPino", "#CloudinarySynced"] },
-        { id: "cld-init-6", publicId: "mglobal_erp_uploads/hv3z9crdoonghpdymkpa", title: "MGLOBAL Official Export Corporate Letterhead Sheet", fileName: "hv3z9crdoonghpdymkpa.png", fileType: "image", folder: "Shipping Docs", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/906", associatedContainerNo: "MSKU-882006-4", uploadDate: "2026-08-05", fileSizeMb: 0.2, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785910937/mglobal_erp_uploads/hv3z9crdoonghpdymkpa.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785910937/mglobal_erp_uploads/hv3z9crdoonghpdymkpa.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Letterhead", "#CloudinarySynced"] },
-        { id: "cld-init-7", publicId: "mglobal_erp_uploads/ecw42ktiulubqsvntdz6", title: "MGLOBAL Executive Team Portrait - Director", fileName: "ecw42ktiulubqsvntdz6.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/907", associatedContainerNo: "MSKU-882007-4", uploadDate: "2026-08-04", fileSizeMb: 1.4, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785871214/mglobal_erp_uploads/ecw42ktiulubqsvntdz6.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785871214/mglobal_erp_uploads/ecw42ktiulubqsvntdz6.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Portrait", "#CloudinarySynced"] },
-        { id: "cld-init-8", publicId: "mglobal_erp_uploads/ularlmqdbpxasoxhj095", title: "UDYAM Registration Government Authority Certificate", fileName: "ularlmqdbpxasoxhj095.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/908", associatedContainerNo: "MSKU-882008-4", uploadDate: "2026-08-04", fileSizeMb: 0.1, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849408/mglobal_erp_uploads/ularlmqdbpxasoxhj095.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849408/mglobal_erp_uploads/ularlmqdbpxasoxhj095.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Udyam", "#CloudinarySynced"] },
-        { id: "cld-init-9", publicId: "mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp", title: "FSSAI Food Safety & Standards Authority License", fileName: "rbzkkqbtqwmk9jwtzcxp.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/909", associatedContainerNo: "MSKU-882009-4", uploadDate: "2026-08-04", fileSizeMb: 0.1, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849397/mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849397/mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Fssai", "#CloudinarySynced"] },
-        { id: "cld-init-10", publicId: "mglobal_erp_uploads/oz5aivdh53irkofhvacp", title: "APEDA Export Promotion Authority Registration Slip", fileName: "oz5aivdh53irkofhvacp.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/910", associatedContainerNo: "MSKU-882010-4", uploadDate: "2026-08-04", fileSizeMb: 0.1, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849381/mglobal_erp_uploads/oz5aivdh53irkofhvacp.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849381/mglobal_erp_uploads/oz5aivdh53irkofhvacp.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Apeda", "#CloudinarySynced"] },
-        { id: "cld-init-11", publicId: "mglobal_erp_uploads/x3plc8nrza0g1a3sztrf", title: "Spices Board India Export Certification Document", fileName: "x3plc8nrza0g1a3sztrf.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/911", associatedContainerNo: "MSKU-882011-4", uploadDate: "2026-08-04", fileSizeMb: 0.1, url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849363/mglobal_erp_uploads/x3plc8nrza0g1a3sztrf.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849363/mglobal_erp_uploads/x3plc8nrza0g1a3sztrf.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#SpicesBoard", "#CloudinarySynced"] }
+        { id: "cld-init-1", publicId: "mglobal_erp_uploads/ezvlhsfwcg3fadr1krss", title: "RIVA Refined White Sugar Bag 1KG Artwork", fileName: "ezvlhsfwcg3fadr1krss.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/901", associatedContainerNo: "MSKU-882001-4", uploadDate: "2026-08-06", fileSizeMb: "0.2", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ezvlhsfwcg3fadr1krss.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaSugar", "#CloudinarySynced"] },
+        { id: "cld-init-2", publicId: "mglobal_erp_uploads/nnp799ksihjptcc22wok", title: "MGLOBAL Official Stamp & Circular Seal Transparent", fileName: "nnp799ksihjptcc22wok.png", fileType: "image", folder: "Custom Invoices", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/902", associatedContainerNo: "MSKU-882002-4", uploadDate: "2026-08-05", fileSizeMb: "0.7", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912519/mglobal_erp_uploads/nnp799ksihjptcc22wok.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912519/mglobal_erp_uploads/nnp799ksihjptcc22wok.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Seal", "#CloudinarySynced"] },
+        { id: "cld-init-3", publicId: "mglobal_erp_uploads/hnnpfsreabkcrhhudfyi", title: "MGLOBAL Snowflake Logo Branding Mark", fileName: "hnnpfsreabkcrhhudfyi.png", fileType: "image", folder: "Custom Invoices", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/903", associatedContainerNo: "MSKU-882003-4", uploadDate: "2026-08-05", fileSizeMb: "1.4", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912226/mglobal_erp_uploads/hnnpfsreabkcrhhudfyi.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912226/mglobal_erp_uploads/hnnpfsreabkcrhhudfyi.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Logo", "#CloudinarySynced"] },
+        { id: "cld-init-4", publicId: "mglobal_erp_uploads/pupdhqi5ofirklrjtcup", title: "RIVA Cola Refreshing Soda Can Packaging", fileName: "pupdhqi5ofirklrjtcup.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/904", associatedContainerNo: "MSKU-882004-4", uploadDate: "2026-08-05", fileSizeMb: "1.4", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912221/mglobal_erp_uploads/pupdhqi5ofirklrjtcup.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912221/mglobal_erp_uploads/pupdhqi5ofirklrjtcup.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaCola", "#CloudinarySynced"] },
+        { id: "cld-init-5", publicId: "mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7", title: "RIVA Pino Sparkling Beverage Packaging Can", fileName: "f42h4v0vjrcd4ymiyly7.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/905", associatedContainerNo: "MSKU-882005-4", uploadDate: "2026-08-05", fileSizeMb: "0.1", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912183/mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785912183/mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#RivaPino", "#CloudinarySynced"] },
+        { id: "cld-init-6", publicId: "mglobal_erp_uploads/hv3z9crdoonghpdymkpa", title: "MGLOBAL Official Export Corporate Letterhead Sheet", fileName: "hv3z9crdoonghpdymkpa.png", fileType: "image", folder: "Shipping Docs", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/906", associatedContainerNo: "MSKU-882006-4", uploadDate: "2026-08-05", fileSizeMb: "0.2", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785910937/mglobal_erp_uploads/hv3z9crdoonghpdymkpa.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785910937/mglobal_erp_uploads/hv3z9crdoonghpdymkpa.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Letterhead", "#CloudinarySynced"] },
+        { id: "cld-init-7", publicId: "mglobal_erp_uploads/mjwvkrejrnr850znbaxh", title: "MGLOBAL Official Authorized Signatory Stamp", fileName: "mjwvkrejrnr850znbaxh.png", fileType: "image", folder: "Custom Invoices", category: "Gate Pass", associatedPiNo: "EXP/PI/2026/907", associatedContainerNo: "MSKU-882007-4", uploadDate: "2026-08-04", fileSizeMb: "0.5", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/mjwvkrejrnr850znbaxh.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/mjwvkrejrnr850znbaxh.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Stamp", "#CloudinarySynced"] },
+        { id: "cld-init-8", publicId: "mglobal_erp_uploads/ecu0shh6s7troi7hwmkm", title: "RIVA Refined White Sugar Bag 25KG Container Load", fileName: "ecu0shh6s7troi7hwmkm.png", fileType: "image", folder: "Product Images", category: "Stuffing Photo", associatedPiNo: "EXP/PI/2026/908", associatedContainerNo: "MSKU-882008-4", uploadDate: "2026-08-04", fileSizeMb: "1.2", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ecu0shh6s7troi7hwmkm.png", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1786004614/mglobal_erp_uploads/ecu0shh6s7troi7hwmkm.png", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#SugarBag", "#CloudinarySynced"] },
+        { id: "cld-init-9", publicId: "mglobal_erp_uploads/ularlmqdbpxasoxhj095", title: "UDYAM Registration Government Authority Certificate", fileName: "ularlmqdbpxasoxhj095.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/909", associatedContainerNo: "MSKU-882009-4", uploadDate: "2026-08-04", fileSizeMb: "0.1", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849408/mglobal_erp_uploads/ularlmqdbpxasoxhj095.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849408/mglobal_erp_uploads/ularlmqdbpxasoxhj095.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Udyam", "#CloudinarySynced"] },
+        { id: "cld-init-10", publicId: "mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp", title: "FSSAI Food Safety & Standards Authority License", fileName: "rbzkkqbtqwmk9jwtzcxp.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/910", associatedContainerNo: "MSKU-882010-4", uploadDate: "2026-08-04", fileSizeMb: "0.1", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849397/mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849397/mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Fssai", "#CloudinarySynced"] },
+        { id: "cld-init-11", publicId: "mglobal_erp_uploads/oz5aivdh53irkofhvacp", title: "APEDA Export Promotion Authority Registration Slip", fileName: "oz5aivdh53irkofhvacp.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/911", associatedContainerNo: "MSKU-882011-4", uploadDate: "2026-08-04", fileSizeMb: "0.1", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849381/mglobal_erp_uploads/oz5aivdh53irkofhvacp.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849381/mglobal_erp_uploads/oz5aivdh53irkofhvacp.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#Apeda", "#CloudinarySynced"] },
+        { id: "cld-init-12", publicId: "mglobal_erp_uploads/x3plc8nrza0g1a3sztrf", title: "Spices Board India Export Certification Document", fileName: "x3plc8nrza0g1a3sztrf.pdf", fileType: "pdf", folder: "Quality & COA", category: "Compliance PDF", associatedPiNo: "EXP/PI/2026/912", associatedContainerNo: "MSKU-882012-4", uploadDate: "2026-08-04", fileSizeMb: "0.1", url: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849363/mglobal_erp_uploads/x3plc8nrza0g1a3sztrf.pdf", cloudinaryUrl: "https://res.cloudinary.com/k0pdvq8b/image/upload/v1785849363/mglobal_erp_uploads/x3plc8nrza0g1a3sztrf.pdf", companyName: "MGLOBAL IMPEX-INDIA PRIVATE LIMITED", tags: ["#SpicesBoard", "#CloudinarySynced"] }
       ];
 
-      const [driveAssets, setDriveAssets] = useState(() => loadSavedState('shipz_drive_assets', REAL_CLOUDINARY_INITIAL_ASSETS));
+      const [driveAssets, setDriveAssets] = useState(() => {
+        const saved = loadSavedState('shipz_drive_assets', REAL_CLOUDINARY_INITIAL_ASSETS);
+        if (Array.isArray(saved)) {
+          const sanitized = saved.filter(a =>
+            !a.title?.includes('Executive Team Portrait') &&
+            !a.title?.includes('Operations Team Officer') &&
+            !a.title?.includes('Port Operations Specialist') &&
+            !a.publicId?.includes('ecw42ktiulubqsvntdz6') &&
+            !a.publicId?.includes('rorgyo32k7eqyr89qdvy') &&
+            !a.publicId?.includes('bjyjuamzvcoq08zaniuo') &&
+            !a.publicId?.includes('oqvr2ct2rz6fvsnriqzv') &&
+            !a.publicId?.includes('cset5hepmrkhtotd0cve')
+          );
+          return sanitized.length > 0 ? sanitized : REAL_CLOUDINARY_INITIAL_ASSETS;
+        }
+        return REAL_CLOUDINARY_INITIAL_ASSETS;
+      });
       React.useEffect(() => { try { localStorage.setItem('shipz_drive_assets', JSON.stringify(driveAssets)); } catch (e) { } }, [driveAssets]);
 
       const [isSyncingCloudinary, setIsSyncingCloudinary] = useState(false);
@@ -2118,17 +2135,12 @@
             { id: "mglobal_erp_uploads/pupdhqi5ofirklrjtcup", fmt: "png", name: "RIVA Cola Refreshing Soda Can Packaging", folder: "Product Images", cat: "Stuffing Photo" },
             { id: "mglobal_erp_uploads/f42h4v0vjrcd4ymiyly7", fmt: "png", name: "RIVA Pino Sparkling Beverage Packaging Can", folder: "Product Images", cat: "Stuffing Photo" },
             { id: "mglobal_erp_uploads/hv3z9crdoonghpdymkpa", fmt: "png", name: "MGLOBAL Official Export Corporate Letterhead Sheet", folder: "Shipping Docs", cat: "Gate Pass" },
-            { id: "mglobal_erp_uploads/ecw42ktiulubqsvntdz6", fmt: "png", name: "MGLOBAL Executive Team Portrait - Director", folder: "Product Images", cat: "Stuffing Photo" },
-            { id: "mglobal_erp_uploads/rorgyo32k7eqyr89qdvy", fmt: "png", name: "MGLOBAL Executive Team Portrait - Logistics Lead", folder: "Product Images", cat: "Stuffing Photo" },
-            { id: "mglobal_erp_uploads/bjyjuamzvcoq08zaniuo", fmt: "png", name: "MGLOBAL Executive Team Portrait - Quality Controller", folder: "Product Images", cat: "Stuffing Photo" },
             { id: "mglobal_erp_uploads/ularlmqdbpxasoxhj095", fmt: "pdf", name: "UDYAM Registration Government Authority Certificate", folder: "Quality & COA", cat: "Compliance PDF" },
             { id: "mglobal_erp_uploads/rbzkkqbtqwmk9jwtzcxp", fmt: "pdf", name: "FSSAI Food Safety & Standards Authority License", folder: "Quality & COA", cat: "Compliance PDF" },
             { id: "mglobal_erp_uploads/oz5aivdh53irkofhvacp", fmt: "pdf", name: "APEDA Export Promotion Authority Registration Slip", folder: "Quality & COA", cat: "Compliance PDF" },
             { id: "mglobal_erp_uploads/x3plc8nrza0g1a3sztrf", fmt: "pdf", name: "Spices Board India Export Certification Document", folder: "Quality & COA", cat: "Compliance PDF" },
             { id: "mglobal_erp_uploads/mjwvkrejrnr850znbaxh", fmt: "png", name: "MGLOBAL Official Authorized Signatory Stamp", folder: "Custom Invoices", cat: "Gate Pass" },
             { id: "mglobal_erp_uploads/ecu0shh6s7troi7hwmkm", fmt: "png", name: "RIVA Refined White Sugar Bag 25KG Container Load", folder: "Product Images", cat: "Stuffing Photo" },
-            { id: "mglobal_erp_uploads/oqvr2ct2rz6fvsnriqzv", fmt: "png", name: "MGLOBAL Operations Team Officer Portrait", folder: "Product Images", cat: "Stuffing Photo" },
-            { id: "mglobal_erp_uploads/cset5hepmrkhtotd0cve", fmt: "png", name: "MGLOBAL Port Operations Specialist Portrait", folder: "Product Images", cat: "Stuffing Photo" },
             { id: "mglobal_erp_uploads/lqmrsc44kf1jvwu9skwg", fmt: "png", name: "MGLOBAL Corporate Watermark Transparent Badge", folder: "Custom Invoices", cat: "Gate Pass" },
             { id: "mglobal/ohtm66uefkiuiqbqt8vn", fmt: "jpg", name: "Jute Bag Stuffing & Container Inspection Photo 1", folder: "Product Images", cat: "Stuffing Photo" },
             { id: "mglobal/hapbstnscswqkeyg6bjf", fmt: "png", name: "Packaging Bag Stuffing & Inspection Photo 2", folder: "Product Images", cat: "Stuffing Photo" },
@@ -2140,8 +2152,10 @@
             { id: "mglobal/fae0vs96plglzcflpksy", fmt: "png", name: "EXIM Custom Clearance Gate Release Slip 8", folder: "Shipping Docs", cat: "Gate Pass" }
           ];
 
-          const realAssets = realCloudinaryLibrary.map((item, idx) => {
-            const cldUrl = `https://res.cloudinary.com/${cloudName}/image/upload/v1722800000/${item.id}.${item.fmt}`;
+          const fetchedAssets = realCloudinaryLibrary.map((item, idx) => {
+            const cldUrl = item.id.startsWith('mglobal_erp_uploads/')
+              ? `https://res.cloudinary.com/${cloudName}/image/upload/${item.id}.${item.fmt}`
+              : `https://res.cloudinary.com/${cloudName}/image/upload/v1722800000/${item.id}.${item.fmt}`;
             return {
               id: `cld-k0pdvq8b-${idx + 1}`,
               publicId: item.id,
@@ -2161,20 +2175,45 @@
             };
           });
 
-          setDriveAssets((prevAssets) => {
-            const existingIds = new Set(prevAssets.map(a => a.publicId || a.id));
-            const newItems = realAssets.filter(a => !existingIds.has(a.publicId));
-            return [...newItems, ...prevAssets];
-          });
+          // Scan Product Master for any product images hosted on Cloudinary
+          if (Array.isArray(masterProducts)) {
+            masterProducts.forEach((p, pIdx) => {
+              if (p.imgUrl && p.imgUrl.includes('cloudinary.com')) {
+                const alreadyExists = fetchedAssets.some(a => a.url === p.imgUrl);
+                if (!alreadyExists) {
+                  fetchedAssets.push({
+                    id: `cld-prod-img-${pIdx}`,
+                    publicId: `product_${pIdx}`,
+                    title: `${p.name} Product Master Photo`,
+                    fileName: `${p.name.replace(/\s+/g, '_')}.png`,
+                    fileType: 'image',
+                    folder: 'Product Images',
+                    category: 'Stuffing Photo',
+                    associatedPiNo: 'EXP/PI/2026/101',
+                    associatedContainerNo: 'MSKU-100200-1',
+                    uploadDate: '2026-08-14',
+                    fileSizeMb: '0.8',
+                    url: p.imgUrl,
+                    cloudinaryUrl: p.imgUrl,
+                    companyName: companyLegalName,
+                    tags: ['#CloudinarySynced', '#ProductMaster', '#ProductImages']
+                  });
+                }
+              }
+            });
+          }
+
+          setDriveAssets(fetchedAssets);
+          try { localStorage.setItem('shipz_drive_assets', JSON.stringify(fetchedAssets)); } catch (e) { }
 
           // Dynamic folder count updates
-          const prodCount = realAssets.filter(a => a.folder === 'Product Images').length;
-          const coaCount = realAssets.filter(a => a.folder === 'Quality & COA').length;
-          const shipCount = realAssets.filter(a => a.folder === 'Shipping Docs').length;
-          const invCount = realAssets.filter(a => a.folder === 'Custom Invoices').length;
+          const prodCount = fetchedAssets.filter(a => a.folder === 'Product Images').length;
+          const coaCount = fetchedAssets.filter(a => a.folder === 'Quality & COA').length;
+          const shipCount = fetchedAssets.filter(a => a.folder === 'Shipping Docs').length;
+          const invCount = fetchedAssets.filter(a => a.folder === 'Custom Invoices').length;
 
           setDriveFolders([
-            { id: 'f-all', name: 'All Drive Assets', count: realAssets.length, icon: 'fi fi-rr-folder' },
+            { id: 'f-all', name: 'All Drive Assets', count: fetchedAssets.length, icon: 'fi fi-rr-folder' },
             { id: 'f-prod', name: 'Product Images', count: prodCount, icon: 'fi fi-rr-picture' },
             { id: 'f-coa', name: 'Quality & COA', count: coaCount, icon: 'fi fi-rr-document' },
             { id: 'f-ship', name: 'Shipping Docs', count: shipCount, icon: 'fi fi-rr-truck-side' },
