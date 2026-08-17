@@ -133,6 +133,70 @@
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
       background: rgba(100, 116, 139, 0.5);
     }
+
+    /* Ultra-smooth Global Interactive Micro-Animations */
+    button, input, select, textarea, a, .clickable-card {
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+    }
+
+    button:active, .btn-action:active {
+      transform: scale(0.96) !important;
+    }
+
+    /* Action Dropdown & Popover Fade & Slide Animations */
+    @keyframes dropdownFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dropdown-animate {
+      animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Modal Backdrop & Content Entrance Animations */
+    @keyframes modalBackdropFade {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(4px); }
+    }
+
+    @keyframes modalContentPop {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .animate-modal-backdrop {
+      animation: modalBackdropFade 0.25s ease-out forwards;
+    }
+
+    .animate-modal-content {
+      animation: modalContentPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Smooth Delete Toast / Row Removal Feedback */
+    @keyframes deleteItemShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    .btn-delete-hover:hover {
+      animation: deleteItemShake 0.4s ease-in-out;
+    }
+
+    /* Ripple / Glow hover utilities */
+    .hover-lift {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+    }
   </style>
 </head>
 
@@ -6905,7 +6969,7 @@
                                   </button>
 
                                   {isActionOpen && (
-                                    <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                       <button onClick={() => { setSelectedQuotationView(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View Details</span></button>
                                       <button onClick={() => { handleEditQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Edit Quotation</span></button>
                                       <button onClick={() => { handleOpenQuotationPdf(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"><i className="fi fi-rr-document text-xs"></i><span>Download PDF</span></button>
@@ -6913,7 +6977,7 @@
                                       <button onClick={() => { handleConvertToPi(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><i className="fi fi-rr-refresh text-xs"></i><span>Convert to Proforma Invoice (PI)</span></button>
                                       <button onClick={() => { handleDuplicateQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-copy text-xs"></i><span>Duplicate / Clone</span></button>
                                       <div className="border-t border-slate-100 my-1"></div>
-                                      <button onClick={() => { handleDeleteQuotation(qt.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete / Cancel</span></button>
+                                      <button onClick={() => { handleDeleteQuotation(qt.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><i className="fi fi-rr-trash text-xs"></i><span>Delete / Cancel</span></button>
                                     </div>
                                   )}
                                 </td>
@@ -6921,7 +6985,7 @@
                                 <td className={`py-3 px-3 relative ${isDocOpen ? 'z-50' : 'z-10'}`}>
                                   <button onClick={(e) => { e.stopPropagation(); setOpenDocMenuId(isDocOpen ? null : `doc-${rowKey}`); setOpenActionMenuId(null); }} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1 hover:bg-amber-100 transition-colors"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
                                   {isDocOpen && (
-                                    <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                       <button onClick={() => { handleOpenQuotationPdf(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-sky-700"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
                                       <button onClick={() => { handleOpenQuotationPdf(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>Preview Quotation PDF</span></button>
                                       <button onClick={() => { setShareModalQt(qt); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send via Email / WhatsApp</span></button>
@@ -7180,14 +7244,14 @@
                                     </button>
 
                                     {isActionOpen && (
-                                      <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                      <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                         <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
                                         <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI</span></button>
                                         <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
                                         <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
                                         <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
                                         <div className="border-t border-slate-100 my-1"></div>
-                                        <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><span>🗑️</span><span>Delete Record</span></button>
+                                        <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Record</span></button>
                                       </div>
                                     )}
                                   </td>
@@ -7505,12 +7569,12 @@
                               <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
                                 <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
                                 {isActionOpen && (
-                                  <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                  <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                     <button onClick={() => { alert(`Viewing Packing List ${p.pklNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
                                     <button onClick={() => { window.print(); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
                                     <button onClick={() => { setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
                                     <div className="border-t border-slate-100 my-1"></div>
-                                    <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><span>🗑️</span><span>Delete</span></button>
+                                    <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete</span></button>
                                   </div>
                                 )}
                               </td>
@@ -7984,8 +8048,8 @@
 
                     {/* INTERACTIVE FULL-SCREEN ASSET & DOCUMENT PREVIEWER MODAL */}
                     {selectedDriveAsset && (
-                      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-6">
-                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
+                      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-6 animate-modal-backdrop">
+                        <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-modal-content">
                           {/* MODAL HEADER */}
                           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
                             <div className="flex items-center space-x-3 truncate">
