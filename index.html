@@ -3369,9 +3369,11 @@
 
       const getPiPdfFilename = (pi) => {
         const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-        const piNo = sanitize(pi.invNumber || 'PI_001');
-        const consignee = sanitize(pi.consignee || 'Consignee');
-        return `${piNo}_${consignee}.pdf`;
+        const isComm = (pi && (pi.invoiceType === 'Commercial Invoice' || (pi.invNumber || '').toUpperCase().startsWith('INV/') || (pi.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices'));
+        const prefix = isComm ? 'Commercial_Invoice' : 'PI';
+        const piNo = sanitize(pi ? pi.invNumber : '001');
+        const consignee = sanitize(pi ? pi.consignee : 'Consignee');
+        return `${prefix}_${piNo}_${consignee}.pdf`;
       };
 
       const handleDownloadPiPdfFile = (pi) => {
@@ -7489,8 +7491,12 @@
 
                           <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6 pr-52">
                             <div>
-                              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none uppercase">PROFORMA INVOICE</h1>
-                              <p className="text-xs text-slate-500 font-semibold mt-1">Export-Import Pre-Shipment Document</p>
+                              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none uppercase">
+                                {(activeEngine === 'invoices' || (activePiCard && activePiCard.invoiceType === 'Commercial Invoice') || (activePiCard && (activePiCard.invNumber || '').toUpperCase().startsWith('INV/'))) ? 'COMMERCIAL INVOICE' : 'PROFORMA INVOICE'}
+                              </h1>
+                              <p className="text-xs text-slate-500 font-semibold mt-1">
+                                {(activeEngine === 'invoices' || (activePiCard && activePiCard.invoiceType === 'Commercial Invoice') || (activePiCard && (activePiCard.invNumber || '').toUpperCase().startsWith('INV/'))) ? 'Export Customs & Commercial Document' : 'Export-Import Pre-Shipment Document'}
+                              </p>
                             </div>
                             <div className="text-right space-y-1 text-xs">
                               <div className="text-xl font-black text-slate-900">{activePiCard.exporter}</div>
@@ -7499,7 +7505,12 @@
                           </div>
 
                           <div className="grid grid-cols-4 gap-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div><span className="text-[10px] text-slate-400 font-bold uppercase block">PROFORMA NO</span><span className="font-mono font-bold text-slate-900">{activePiCard.invNumber}</span></div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                                {(activeEngine === 'invoices' || (activePiCard && activePiCard.invoiceType === 'Commercial Invoice') || (activePiCard && (activePiCard.invNumber || '').toUpperCase().startsWith('INV/'))) ? 'INVOICE NO' : 'PROFORMA NO'}
+                              </span>
+                              <span className="font-mono font-bold text-slate-900">{activePiCard.invNumber}</span>
+                            </div>
                             <div><span className="text-[10px] text-slate-400 font-bold uppercase block">DATE</span><span className="font-semibold text-slate-800">{activePiCard.date}</span></div>
                             <div><span className="text-[10px] text-slate-400 font-bold uppercase block">TERMS OF SALE</span><span className="font-semibold text-slate-800">FOB Visakhapatnam</span></div>
                             <div><span className="text-[10px] text-slate-400 font-bold uppercase block">CURRENCY</span><span className="font-semibold text-slate-800">USD ($)</span></div>
@@ -8452,7 +8463,9 @@
               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900">Proforma Invoice Overview - {selectedPiView.invNumber}</h3>
+                    <h3 className="text-lg font-black text-slate-900">
+                      {(selectedPiView.invoiceType === 'Commercial Invoice' || (selectedPiView.invNumber || '').toUpperCase().startsWith('INV/') || (selectedPiView.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices') ? 'Commercial Invoice Overview' : 'Proforma Invoice Overview'} - {selectedPiView.invNumber}
+                    </h3>
                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${selectedPiView.statusColor}`}>{selectedPiView.status}</span>
                   </div>
                   <button onClick={() => setSelectedPiView(null)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
@@ -10745,6 +10758,14 @@
                 ? 'STATE BANK OF INDIA'
                 : selectedBank.bankName;
 
+            const isCommercialDoc = (pi && (
+              pi.invoiceType === 'Commercial Invoice' ||
+              (pi.invNumber || '').toUpperCase().startsWith('INV/') ||
+              (pi.invNumber || '').toUpperCase().startsWith('CI/') ||
+              pi.status === 'Finalized' ||
+              pi.status === 'Commercial Invoice'
+            )) || activeEngine === 'invoices';
+
             return (
               <div id="proforma-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
                 <div className="bg-slate-100 rounded-2xl shadow-2xl border border-slate-300 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden">
@@ -10752,10 +10773,12 @@
                   <div className="no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0">
                     {/* LEFT: DOCUMENT TITLE & NUMBER */}
                     <div className="flex items-center space-x-2.5 min-w-0">
-                      <span className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-[10px] shadow-sm shrink-0">PI</span>
+                      <span className={`w-7 h-7 rounded-lg ${isCommercialDoc ? 'bg-indigo-500 text-white' : 'bg-emerald-500 text-slate-950'} font-black flex items-center justify-center text-[10px] shadow-sm shrink-0`}>
+                        {isCommercialDoc ? 'CI' : 'PI'}
+                      </span>
                       <div className="min-w-0">
                         <h3 className="font-extrabold text-xs sm:text-sm text-white tracking-tight flex items-center space-x-2 truncate">
-                          <span>Proforma Invoice</span>
+                          <span>{isCommercialDoc ? 'Commercial Invoice' : 'Proforma Invoice'}</span>
                           <span className="text-[10px] bg-slate-800 text-emerald-300 px-2 py-0.5 rounded-md border border-slate-700 font-mono font-bold">{pi.invNumber}</span>
                         </h3>
                       </div>
@@ -10851,7 +10874,7 @@
                       {/* TITLE BAR */}
                       <div className="text-center my-1.5">
                         <h2 className="text-base font-black text-slate-900 tracking-widest uppercase border-b-2 border-slate-900 inline-block pb-0.5">
-                          PROFORMA INVOICE
+                          {isCommercialDoc ? 'COMMERCIAL INVOICE' : 'PROFORMA INVOICE'}
                         </h2>
                       </div>
 
@@ -10879,11 +10902,14 @@
                                 </div>
                               </div>
 
-                              {/* RIGHT: PI NO, DATE & BANK DETAILS */}
+                              {/* RIGHT: PI NO / INVOICE NO, DATE & BANK DETAILS */}
                               <div className="bg-white">
                                 <div className="grid grid-cols-2 border-b border-slate-400 p-1.5 font-bold">
-                                  <div>PI NO: <span className="text-indigo-800 font-mono">{pi.invNumber}</span></div>
-                                  <div>DATE : <span className="font-mono">{pi.date || '04/08/2026'}</span></div>
+                                  <div>
+                                    <b>{isCommercialDoc ? 'INVOICE NO:' : 'PI NO:'}</b> <span className="text-indigo-800 font-mono">{pi.invNumber}</span>
+                                    {pi.piReferenceNo ? <div className="text-[7.5px] text-slate-500 font-mono font-normal">PI REF: <b className="text-slate-800">{pi.piReferenceNo}</b></div> : null}
+                                  </div>
+                                  <div>DATE : <span className="font-mono">{pi.date || pi.createdDate || '04/08/2026'}</span></div>
                                 </div>
 
                                 <div className="bg-[#D9EBF7] p-1 font-bold text-slate-900 border-b border-slate-400 uppercase text-[8.5px] tracking-wider flex justify-between items-center">
@@ -11051,7 +11077,7 @@
                               </div>
                               <div className="p-2 space-y-1 bg-slate-50/40">
                                 <div className="flex justify-between">
-                                  <span><b>INVOICE NO:</b> <span className="font-mono text-indigo-900 font-bold">{pi.invNumber}</span></span>
+                                  <span><b>{isCommercialDoc ? 'INVOICE NO:' : 'PI NO:'}</b> <span className="font-mono text-indigo-900 font-bold">{pi.invNumber}</span></span>
                                   <span><b>DATE:</b> <span className="font-mono">{pi.date || '04/08/2026'}</span></span>
                                 </div>
                                 <div className="flex justify-between border-t border-slate-200 pt-0.5">
