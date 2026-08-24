@@ -9538,8 +9538,16 @@
               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-20">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Create Proforma Invoice</h3>
-                    <p className="text-[11px] text-slate-500 font-medium">All 5 sections & 41 structured schema fields (Auto-filled from Quotation).</p>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                      {editingPiId
+                        ? (activeEngine === 'invoices' ? 'Edit Commercial Invoice' : 'Edit Proforma Invoice')
+                        : (activeEngine === 'invoices' ? 'Create Commercial Invoice' : 'Create Proforma Invoice')}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      {activeEngine === 'invoices'
+                        ? 'All 5 sections & 41 structured schema fields for Commercial Export Invoice.'
+                        : 'All 5 sections & 41 structured schema fields (Auto-filled from Quotation).'}
+                    </p>
                   </div>
                   <button onClick={() => setIsCreatePiModalOpen(false)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
                 </div>
@@ -9553,12 +9561,14 @@
                     </div>
 
                     <div className="mb-2">
-                      <label className="block text-slate-700 font-bold mb-1">Linked Quotation No. (Search & Select)</label>
+                      <label className="block text-slate-700 font-bold mb-1">
+                        {activeEngine === 'invoices' ? 'Linked Quotation / Proforma Invoice (Search & Select)' : 'Linked Quotation No. (Search & Select)'}
+                      </label>
                       <SearchableComboboxSelect
                         value={piFormData.quotationNo || ''}
                         onChange={(val) => handleSelectLinkedQuotation(val)}
                         options={[
-                          { label: '-- Direct Proforma Invoice (No Linked Quotation) --', value: '', subtext: 'Create a standalone PI without linking', badge: 'DIRECT' },
+                          { label: activeEngine === 'invoices' ? '-- Direct Commercial Invoice (No Linked Doc) --' : '-- Direct Proforma Invoice (No Linked Quotation) --', value: '', subtext: 'Create a standalone document without linking', badge: 'DIRECT' },
                           ...quotations.map((q) => ({
                             label: `${q.quotationNo} - ${q.consignee}`,
                             value: q.quotationNo,
@@ -9573,7 +9583,9 @@
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Proforma Invoice No. (PI No.) <span className="text-red-500">*</span></label>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          {activeEngine === 'invoices' ? 'Commercial Invoice No. (Inv No.)' : 'Proforma Invoice No. (PI No.)'} <span className="text-red-500">*</span>
+                        </label>
                         <input type="text" value={piFormData.piNo} onChange={(e) => setPiFormData({ ...piFormData, piNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold" />
                       </div>
                       <div>
