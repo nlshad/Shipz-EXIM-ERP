@@ -268,6 +268,8 @@
 
     const INITIAL_PROFORMA_INVOICES = [];
 
+    const INITIAL_COMMERCIAL_INVOICES = [];
+
     const INITIAL_BL_DRAFTS = [];
 
     const INITIAL_PACKING_LISTS = [];
@@ -663,6 +665,7 @@
       const [activeEngine, setActiveEngine] = useState('dashboard');
       const [quotations, setQuotations] = useState(() => loadSavedState('shipz_quotations', INITIAL_QUOTATIONS));
       const [proformaInvoices, setProformaInvoices] = useState(() => loadSavedState('shipz_proforma_invoices', INITIAL_PROFORMA_INVOICES));
+      const [commercialInvoices, setCommercialInvoices] = useState(() => loadSavedState('shipz_commercial_invoices', INITIAL_COMMERCIAL_INVOICES));
       const [blRecords, setBlRecords] = useState(() => loadSavedState('shipz_bl_records', INITIAL_BL_DRAFTS));
       const [packingLists, setPackingLists] = useState(() => loadSavedState('shipz_packing_lists', INITIAL_PACKING_LISTS));
       const [selectedPiId, setSelectedPiId] = useState('pi-01');
@@ -681,6 +684,11 @@
             if (resPi.ok) {
               const dbPi = await resPi.json();
               if (Array.isArray(dbPi) && dbPi.length > 0) setProformaInvoices(dbPi);
+            }
+            const resCi = await fetch('api.php?action=get&key=shipz_commercial_invoices');
+            if (resCi.ok) {
+              const dbCi = await resCi.json();
+              if (Array.isArray(dbCi) && dbCi.length > 0) setCommercialInvoices(dbCi);
             }
           } catch (e) {
             console.log('MySQL Database connection fallback: LocalStorage mode active');
@@ -708,6 +716,16 @@
           }).catch(() => { });
         }
       }, [proformaInvoices]);
+
+      React.useEffect(() => {
+        if (commercialInvoices && commercialInvoices.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_commercial_invoices', data: commercialInvoices })
+          }).catch(() => { });
+        }
+      }, [commercialInvoices]);
 
       // Shared Global Header Controls
       const [financialYear, setFinancialYear] = useState('2025-2026');
@@ -828,6 +846,7 @@
       // Auto-save to LocalStorage Effect Hooks
       React.useEffect(() => { try { localStorage.setItem('shipz_quotations', JSON.stringify(quotations)); } catch (e) { } }, [quotations]);
       React.useEffect(() => { try { localStorage.setItem('shipz_proforma_invoices', JSON.stringify(proformaInvoices)); } catch (e) { } }, [proformaInvoices]);
+      React.useEffect(() => { try { localStorage.setItem('shipz_commercial_invoices', JSON.stringify(commercialInvoices)); } catch (e) { } }, [commercialInvoices]);
       React.useEffect(() => { try { localStorage.setItem('shipz_bl_records', JSON.stringify(blRecords)); } catch (e) { } }, [blRecords]);
       React.useEffect(() => { try { localStorage.setItem('shipz_packing_lists', JSON.stringify(packingLists)); } catch (e) { } }, [packingLists]);
       React.useEffect(() => { try { if (companyLogo) localStorage.setItem('shipz_logo', JSON.stringify(companyLogo)); else localStorage.removeItem('shipz_logo'); } catch (e) { } }, [companyLogo]);
@@ -2972,11 +2991,14 @@
         },
       ]);
 
-      // Calculate Top KPI Metrics for Proforma Invoice
-      const piTotalSalesInr = proformaInvoices.reduce((acc, pi) => acc + (pi.amountFx * pi.convRate), 0);
-      const piTotalReceiptsInr = proformaInvoices.reduce((acc, pi) => acc + pi.receipts, 0);
+      // Active List for Commercial Invoices vs Proforma Invoices Engine
+      const activeInvoicesList = activeEngine === 'invoices' ? commercialInvoices : proformaInvoices;
+
+      // Calculate Top KPI Metrics for Invoices / Proforma Invoice
+      const piTotalSalesInr = (activeInvoicesList || []).reduce((acc, pi) => acc + ((pi.amountFx || 0) * (pi.convRate || 85)), 0);
+      const piTotalReceiptsInr = (activeInvoicesList || []).reduce((acc, pi) => acc + (pi.receipts || 0), 0);
       const piTotalDueInr = piTotalSalesInr - piTotalReceiptsInr;
-      const piTotalExpensesInr = proformaInvoices.reduce((acc, pi) => acc + pi.expenses, 0);
+      const piTotalExpensesInr = (activeInvoicesList || []).reduce((acc, pi) => acc + (pi.expenses || 0), 0);
 
       const toggleFolder = (id) => {
         setExpandedFolders((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -3032,7 +3054,7 @@
           return sortOrder === 'oldest' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
         });
 
-      const filteredAndSortedPi = [...proformaInvoices]
+      const filteredAndSortedPi = [...(activeInvoicesList || [])]
         .filter((pi) => {
           const query = tableSearch.toLowerCase();
           const matchesStatus = statusFilter === 'ALL' || (pi.status || '').toUpperCase() === statusFilter.toUpperCase();
@@ -3134,8 +3156,36 @@
 
       const handleConvertToCommercialInvoice = (pi) => {
         setOpenActionMenuId(null);
-        alert(`Advancing ${pi.invNumber} to Commercial Invoice Module...`);
+        setSelectedPiView(null);
+        if (!pi) return;
+
+        const nextCiSeq = (commercialInvoices || []).length + 1;
+        const newCiNumber = `INV/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(nextCiSeq).padStart(3, '0')}`;
+
+        const newCommercialInvoice = {
+          ...pi,
+          id: `ci-${Date.now()}`,
+          invNumber: newCiNumber,
+          piReferenceNo: pi.invNumber,
+          invoiceType: 'Commercial Invoice',
+          status: 'Finalized',
+          createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+        };
+
+        setCommercialInvoices((prev) => [newCommercialInvoice, ...(prev || [])]);
+
+        // Update source PI status
+        setProformaInvoices((prev) => (prev || []).map((p) => p.id === pi.id ? { ...p, status: 'Converted to Commercial Invoice' } : p));
+
+        alert(`Successfully converted ${pi.invNumber} to Commercial Invoice (${newCiNumber})!\n\nDirecting you to the Invoices engine...`);
         setActiveEngine('invoices');
+      };
+
+      const handleDeleteCommercialInvoice = (id) => {
+        if (confirm('Are you sure you want to delete this Commercial Invoice record?')) {
+          setCommercialInvoices((prev) => (prev || []).filter((ci) => ci.id !== id));
+          setOpenActionMenuId(null);
+        }
       };
 
 
@@ -4349,7 +4399,7 @@
       };
 
       const activeTemplates = activeEngine === 'preShipment' ? PRE_SHIPMENT_DOCS : POST_SHIPMENT_DOCS;
-      const activePiCard = proformaInvoices.find((c) => c.id === selectedPiId) || proformaInvoices[0];
+      const activePiCard = (activeInvoicesList || []).find((c) => c.id === selectedPiId) || (activeInvoicesList || [])[0] || {};
 
       const exportDocsSubItems = [
         { id: 'proforma', label: 'Proforma Invoice' },
@@ -7107,6 +7157,26 @@
                   </div>
                 </div>
 
+                {/* ENGINE TITLE HEADER */}
+                <div className="flex items-center justify-between bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-xl ${activeEngine === 'invoices' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                      <i className={`text-lg ${activeEngine === 'invoices' ? 'fi fi-rr-document' : 'fi fi-rr-file-invoice'}`}></i>
+                    </div>
+                    <div>
+                      <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center space-x-2">
+                        <span>{activeEngine === 'invoices' ? 'Commercial Invoices Management Engine' : 'Proforma Invoices (PI) Engine'}</span>
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-extrabold border ${activeEngine === 'invoices' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
+                          {activeEngine === 'invoices' ? 'Commercial Invoices / Customs Compliant' : '7-Zone Commercial Matrix'}
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-500 font-medium">
+                        {activeEngine === 'invoices' ? 'Manage finalized commercial export invoices, customs records & e-way bill links.' : 'Create, track, and convert Proforma Invoices to final Commercial Invoices.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 1. TOP KPI SUMMARY CARDS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* CARD 1: TOTAL SALES */}
@@ -7234,7 +7304,7 @@
                             <th className="py-3 px-2 text-center">Expand</th>
                             <th className="py-3 px-3">Action</th>
                             <th className="py-3 px-3">Doc</th>
-                            <th className="py-3 px-3">PI Number</th>
+                            <th className="py-3 px-3">{activeEngine === 'invoices' ? 'Invoice Number' : 'PI Number'}</th>
                             <th className="py-3 px-3">Consignee</th>
                             <th className="py-3 px-4">Line Items Summary</th>
                             <th className="py-3 px-3">Country</th>
@@ -7252,8 +7322,8 @@
                               <td colSpan={13} className="py-12 text-center text-slate-400">
                                 <div className="flex flex-col items-center justify-center space-y-2">
                                   <i className="fi fi-rr-inbox text-3xl text-slate-300"></i>
-                                  <p className="text-sm font-semibold text-slate-600">No Proforma Invoices Found</p>
-                                  <p className="text-xs text-slate-400">Click <strong>+ Add New</strong> to generate a new Proforma Invoice.</p>
+                                  <p className="text-sm font-semibold text-slate-600">{activeEngine === 'invoices' ? 'No Commercial Invoices Found' : 'No Proforma Invoices Found'}</p>
+                                  <p className="text-xs text-slate-400">{activeEngine === 'invoices' ? 'Convert a Proforma Invoice to Commercial Invoice to list it here.' : 'Click + Add New to generate a new Proforma Invoice.'}</p>
                                 </div>
                               </td>
                             </tr>
@@ -7280,12 +7350,23 @@
                                     {isActionOpen && (
                                       <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                         <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
-                                        <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI</span></button>
                                         <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
-                                        <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
-                                        <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
-                                        <div className="border-t border-slate-100 my-1"></div>
-                                        <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Record</span></button>
+                                        {activeEngine === 'invoices' ? (
+                                          <>
+                                            <button onClick={() => { setActiveEngine('ewayBill'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-emerald-600"><span>🚛</span><span>Generate E-Way Bill</span></button>
+                                            <button onClick={() => { setActiveEngine('eInvoice'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-amber-600"><span>⚡</span><span>Generate E-Invoice</span></button>
+                                            <div className="border-t border-slate-100 my-1"></div>
+                                            <button onClick={() => { handleDeleteCommercialInvoice(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Invoice</span></button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI</span></button>
+                                            <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
+                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
+                                            <div className="border-t border-slate-100 my-1"></div>
+                                            <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Record</span></button>
+                                          </>
+                                        )}
                                       </div>
                                     )}
                                   </td>
