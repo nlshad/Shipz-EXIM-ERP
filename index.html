@@ -2876,6 +2876,7 @@
         placeOfLoading: '',
         countryOfDischarge: '',
         portOfDischarge: '',
+        shippingMarks: '',
         salesBroker: 'No',
         currency: 'USD',
         conversionRate: '85.00',
@@ -2927,6 +2928,7 @@
           placeOfLoading: '',
           countryOfDischarge: '',
           portOfDischarge: '',
+          shippingMarks: '',
           salesBroker: 'No',
           brokerName: '',
           brokerCommission: '',
@@ -4219,6 +4221,7 @@
           placeOfLoading: pi.placeOfLoading || 'NHAVA SHEVA',
           countryOfDischarge: pi.countryOfDischarge || pi.country || '',
           portOfDischarge: pi.portOfDischarge || pi.port || '',
+          shippingMarks: pi.shippingMarks || pi.shippingMark || 'MGLOBAL/VICTORIA/01-150',
           shipmentTerms: pi.shipmentTerms || '',
           shipmentPeriod: pi.shipmentPeriod || '',
           paymentTerms: pi.paymentTerms || '',
@@ -4286,6 +4289,8 @@
           preCarriageBy: piFormData.preCarriageBy,
           placeOfReceipt: piFormData.placeOfReceipt,
           placeOfLoading: piFormData.placeOfLoading,
+          shippingMarks: piFormData.shippingMarks,
+          shippingMark: piFormData.shippingMarks,
           bank: piFormData.bank,
           cbm: '45.2 m³',
           fillPercent: 85,
@@ -9790,7 +9795,7 @@
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Country Of Discharge</label>
                         <SearchableComboboxSelect
@@ -9809,6 +9814,16 @@
                             <option key={`pipod-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
                           ))}
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Shipping Mark / Container Marks</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., MGLOBAL/VICTORIA/01-150"
+                          value={piFormData.shippingMarks || ''}
+                          onChange={(e) => setPiFormData({ ...piFormData, shippingMarks: e.target.value })}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold"
+                        />
                       </div>
                     </div>
                   </div>
