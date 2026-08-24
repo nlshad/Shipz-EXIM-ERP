@@ -4302,9 +4302,18 @@
         };
 
         if (editingPiId) {
+          const isCommEdit = commercialInvoices.some((c) => c.id === editingPiId) || activeEngine === 'invoices';
+          if (isCommEdit) {
+            const updatedComm = { ...newPi, invoiceType: 'Commercial Invoice' };
+            setCommercialInvoices((prev) => prev.map((c) => (c.id === editingPiId ? updatedComm : c)));
+          }
           setProformaInvoices((prev) => prev.map((p) => (p.id === editingPiId ? newPi : p)));
           setEditingPiId(null);
-          setToastNotice(`Proforma Invoice ${newPi.invNumber} updated successfully!`);
+          setToastNotice(`Invoice ${newPi.invNumber} updated successfully!`);
+        } else if (activeEngine === 'invoices') {
+          const newComm = { ...newPi, invoiceType: 'Commercial Invoice', status: 'Finalized' };
+          setCommercialInvoices((prev) => [newComm, ...prev]);
+          setToastNotice(`Commercial Invoice ${newComm.invNumber} created successfully!`);
         } else {
           setProformaInvoices((prev) => [newPi, ...prev]);
           setToastNotice(`Proforma Invoice ${newPi.invNumber} created successfully!`);
@@ -7352,17 +7361,18 @@
                                     {isActionOpen && (
                                       <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                         <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
+                                        <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-700 font-bold"><span>✏️</span><span>{activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI'}</span></button>
                                         <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
                                         {activeEngine === 'invoices' ? (
                                           <>
                                             <button onClick={() => { setActiveEngine('ewayBill'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-emerald-600"><span>🚛</span><span>Generate E-Way Bill</span></button>
                                             <button onClick={() => { setActiveEngine('eInvoice'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-amber-600"><span>⚡</span><span>Generate E-Invoice</span></button>
+                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
                                             <div className="border-t border-slate-100 my-1"></div>
                                             <button onClick={() => { handleDeleteCommercialInvoice(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Invoice</span></button>
                                           </>
                                         ) : (
                                           <>
-                                            <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Update PI</span></button>
                                             <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
                                             <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
                                             <div className="border-t border-slate-100 my-1"></div>
@@ -10945,15 +10955,19 @@
                                 <p className="text-slate-700 text-[9px] mt-0.5 leading-tight">{pi.consigneeAddr || `${pi.port}, ${pi.country}`}</p>
                               </div>
 
-                              <div className="p-2 space-y-1 bg-white text-[8.5px]">
-                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-1">
+                              <div className="p-1.5 space-y-0.5 bg-white text-[8.5px]">
+                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
+                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">SALES MAN:</span> <b className="text-slate-900">{pi.salesperson || 'EXIM DESK'}</b></div>
+                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PHONE:</span> <b className="text-slate-900">{pi.contactPhone || '+91 9867577883'}</b></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
                                   <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">LUT NO:</span> <b className="text-emerald-800 font-mono">{pi.lutNo || activeLut || 'ARN-AD270324009821L'}</b></div>
                                   <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">SHIPPING MARK:</span> <b className="text-slate-900">{pi.shippingMarks || pi.shippingMark || 'MGLOBAL/VICTORIA/01-150'}</b></div>
                                 </div>
-                                <div className="border-b border-slate-200 pb-1">
+                                <div className="border-b border-slate-200 pb-0.5">
                                   <span className="text-slate-500 font-bold uppercase text-[7.5px]">DESCRIPTION OF GOODS:</span> <b className="text-slate-900 leading-tight">{pi.descriptionOfGoods || (piProducts && piProducts.length > 0 ? piProducts.map(p => p.description).filter(Boolean).join(', ') : 'EXPORT GOODS AS PER SPECIFICATION')}</b>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-1">
+                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
                                   <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PORT OF LOADING:</span> <b className="text-slate-900">{pi.placeOfLoading || pi.portOfLoading || 'Nhava Sheva (INNSA)'}</b></div>
                                   <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PORT OF DESTINATION:</span> <b className="text-slate-900">{pi.portOfDestination || pi.port || 'Port Victoria'}</b></div>
                                 </div>
