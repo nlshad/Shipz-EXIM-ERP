@@ -1820,11 +1820,19 @@
           autoAddress = 'Jl. Jend. Sudirman No.52, Jakarta 12190, Indonesia';
         }
 
-        setPiFormData(prev => ({
-          ...prev,
-          consignee: selectedName,
-          consigneeAddress: autoAddress || prev.consigneeAddress || ''
-        }));
+        const shortConsignee = (selectedName || '').replace(/private|limited|pvt|ltd|inc|llc|corp|co\.|gmbh/gi, '').trim().split(' ')[0].toUpperCase();
+
+        setPiFormData(prev => {
+          const destPort = (prev.portOfDischarge || prev.finalDestinationPort || prev.country || 'VICTORIA').replace(/port of|port/gi, '').trim().split(' ')[0].toUpperCase();
+          const dynamicMark = shortConsignee ? `${shortConsignee}/${destPort || 'VICTORIA'}/01-150` : prev.shippingMarks;
+
+          return {
+            ...prev,
+            consignee: selectedName,
+            consigneeAddress: autoAddress || prev.consigneeAddress || '',
+            shippingMarks: dynamicMark || prev.shippingMarks || 'MGLOBAL/VICTORIA/01-150'
+          };
+        });
       };
 
       // Auto-set Consignee Address & Country when Consignee is selected in Quotations
@@ -4107,6 +4115,12 @@
         if (!targetQt) return;
 
         const parsedItems = parseLineItemsForPdf(targetQt);
+        const targetConsignee = targetQt.consignee || '';
+        const shortConsignee = targetConsignee.replace(/private|limited|pvt|ltd|inc|llc|corp|co\.|gmbh/gi, '').trim().split(' ')[0].toUpperCase();
+        const targetPort = targetQt.port || targetQt.finalDestinationPort || targetQt.country || 'VICTORIA';
+        const destPort = targetPort.replace(/port of|port/gi, '').trim().split(' ')[0].toUpperCase();
+        const autoMark = targetQt.shippingMarks || targetQt.shippingMark || `${shortConsignee || 'MGLOBAL'}/${destPort || 'VICTORIA'}/01-150`;
+
         setPiFormData((prev) => ({
           ...prev,
           quotationNo: targetQt.quotationNo,
@@ -4125,6 +4139,7 @@
           placeOfLoading: targetQt.placeOfLoading || 'NHAVA SHEVA',
           countryOfDischarge: targetQt.countryOfDischarge || targetQt.country || '',
           portOfDischarge: targetQt.portOfDischarge || targetQt.port || '',
+          shippingMarks: autoMark,
           shipmentTerms: targetQt.shipmentTerms || '',
           shipmentPeriod: targetQt.shipmentPeriod || '',
           paymentTerms: targetQt.paymentTerms || '',
@@ -9816,13 +9831,28 @@
                         </select>
                       </div>
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Shipping Mark / Container Marks</label>
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between items-center">
+                          <span>Shipping Mark / Container Marks</span>
+                          {piFormData.consignee && (
+                            <span
+                              onClick={() => {
+                                const shortC = (piFormData.consignee || '').replace(/private|limited|pvt|ltd|inc|llc|corp|co\.|gmbh/gi, '').trim().split(' ')[0].toUpperCase();
+                                const destP = (piFormData.portOfDischarge || piFormData.finalDestinationPort || piFormData.country || 'VICTORIA').replace(/port of|port/gi, '').trim().split(' ')[0].toUpperCase();
+                                setPiFormData({ ...piFormData, shippingMarks: `${shortC || 'MGLOBAL'}/${destP || 'VICTORIA'}/01-150` });
+                              }}
+                              title="Click to reset Shipping Mark from selected Consignee & Port"
+                              className="text-indigo-600 font-bold text-[10px] cursor-pointer hover:underline bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200"
+                            >
+                              ⚡ Auto-Fill ({piFormData.consignee.split(' ')[0]})
+                            </span>
+                          )}
+                        </label>
                         <input
                           type="text"
                           placeholder="e.g., MGLOBAL/VICTORIA/01-150"
                           value={piFormData.shippingMarks || ''}
                           onChange={(e) => setPiFormData({ ...piFormData, shippingMarks: e.target.value })}
-                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold"
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                       </div>
                     </div>
