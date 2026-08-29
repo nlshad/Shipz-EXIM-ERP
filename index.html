@@ -3470,6 +3470,36 @@
         }, 300);
       };
 
+      const handleDirectPrintQuotation = (qt) => {
+        setSelectedQuotationPdf(qt);
+        setOpenActionMenuId(null);
+        setOpenDocMenuId(null);
+        setTimeout(() => {
+          window.print();
+        }, 250);
+      };
+
+      const handleDirectPrintPi = (pi) => {
+        setSelectedPiPdf(pi);
+        setOpenActionMenuId(null);
+        setOpenDocMenuId(null);
+        setTimeout(() => {
+          window.print();
+        }, 250);
+      };
+
+      const handleDirectPrintBl = (bl) => {
+        setOpenActionMenuId(null);
+        setOpenDocMenuId(null);
+        window.print();
+      };
+
+      const handleDirectPrintPkl = (pkl) => {
+        setOpenActionMenuId(null);
+        setOpenDocMenuId(null);
+        window.print();
+      };
+
       const handleAddLineItem = () => {
         setQtFormData({
           ...qtFormData,
@@ -7268,6 +7298,7 @@
                                     <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                       <button onClick={() => { setSelectedQuotationView(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View Details</span></button>
                                       <button onClick={() => { handleEditQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Edit Quotation</span></button>
+                                      <button onClick={() => { handleDirectPrintQuotation(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><i className="fi fi-rr-print text-xs"></i><span>Direct Print / PDF</span></button>
                                       <button onClick={() => { handleOpenQuotationPdf(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"><i className="fi fi-rr-document text-xs"></i><span>Download PDF</span></button>
                                       <button onClick={() => { setShareModalQt(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send via Email / WhatsApp</span></button>
                                       <button onClick={() => { handleConvertToPi(qt); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><i className="fi fi-rr-refresh text-xs"></i><span>Convert to Proforma Invoice (PI)</span></button>
@@ -7563,6 +7594,7 @@
                                       <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                         <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
                                         <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-700 font-bold"><span>✏️</span><span>{activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI'}</span></button>
+                                        <button onClick={() => { handleDirectPrintPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
                                         <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
                                         {activeEngine === 'invoices' ? (
                                           <>
@@ -7801,9 +7833,10 @@
                               <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
                                 <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
                                 {isActionOpen && (
-                                  <div className="absolute left-3 top-10 w-44 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                  <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
                                     <button onClick={() => { alert(`Viewing BL Draft for ${r.piNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View</span></button>
                                     <button onClick={() => { handleOpenEditBlModal(r); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Update</span></button>
+                                    <button onClick={() => handleDirectPrintBl(r)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><i className="fi fi-rr-print text-xs"></i><span>Direct Print</span></button>
                                     <div className="border-t border-slate-100 my-1"></div>
                                     <button onClick={() => { handleDeleteBl(r.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete</span></button>
                                   </div>
@@ -7908,6 +7941,7 @@
                                 {isActionOpen && (
                                   <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
                                     <button onClick={() => { alert(`Viewing Packing List ${p.pklNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
+                                    <button onClick={() => handleDirectPrintPkl(p)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
                                     <button onClick={() => { window.print(); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
                                     <button onClick={() => { setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
                                     <div className="border-t border-slate-100 my-1"></div>
