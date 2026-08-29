@@ -12702,43 +12702,66 @@
                       <span>Product Selection & Pricing</span>
                     </h4>
 
-                    {/* PRODUCT IMAGE PREVIEW BANNER */}
-                    <div className="flex items-center space-x-3 p-3 bg-white rounded-xl border border-slate-200 shadow-xs">
-                      <img
-                        src={lineItemModalState.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'}
-                        alt="Product Image"
-                        className="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-xs shrink-0 bg-slate-50"
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'; }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="font-extrabold text-slate-900 text-xs block truncate">{lineItemModalState.itemData.product || 'No Product Selected'}</span>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <button
-                            type="button"
-                            onClick={() => setIsDrivePickerOpen(true)}
-                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-[10px] rounded-md transition-colors flex items-center space-x-1"
-                          >
-                            <i className="fi fi-rr-folder text-[10px]"></i>
-                            <span>Choose from Drive</span>
-                          </button>
-                          <label className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-[10px] rounded-md transition-colors cursor-pointer flex items-center space-x-1">
-                            <i className="fi fi-rr-cloud-upload text-[10px]"></i>
-                            <span>Upload Image</span>
-                            <input type="file" accept="image/*" onChange={handleUploadFileToDriveAndSelect} className="hidden" />
-                          </label>
+                    {/* PRODUCT DISPLAY & INFORMATION BANNER */}
+                    {(() => {
+                      const selectedProd = (masterProducts || []).find(p => p.name === lineItemModalState.itemData.product);
+                      const prodName = lineItemModalState.itemData.product;
+                      const hasProduct = Boolean(prodName);
+                      const displayImg = selectedProd?.imgUrl || lineItemModalState.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
+                      
+                      return (
+                        <div className="flex items-center space-x-3.5 p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                          <img
+                            src={displayImg}
+                            alt={prodName || "Product Template"}
+                            className="w-14 h-14 object-cover rounded-xl border border-slate-200 shadow-2xs shrink-0 bg-slate-50"
+                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            {hasProduct ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-black text-slate-900 text-sm truncate">{prodName}</span>
+                                  {selectedProd?.sku && (
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-mono font-bold rounded-md text-[10px] border border-slate-200">
+                                      {selectedProd.sku}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 font-medium">
+                                  {(selectedProd?.hsn || selectedProd?.hsnCode) && (
+                                    <span className="flex items-center space-x-1">
+                                      <strong className="text-slate-700">HSN:</strong>
+                                      <span className="font-mono text-indigo-700 font-bold">{selectedProd?.hsn || selectedProd?.hsnCode}</span>
+                                    </span>
+                                  )}
+                                  {(selectedProd?.unit || lineItemModalState.itemData.unit) && (
+                                    <span className="flex items-center space-x-1">
+                                      <strong className="text-slate-700">Unit:</strong>
+                                      <span className="font-semibold text-slate-800">{selectedProd?.unit || lineItemModalState.itemData.unit}</span>
+                                    </span>
+                                  )}
+                                  {(selectedProd?.netWeightKg !== undefined || selectedProd?.netWeight !== undefined || lineItemModalState.itemData.netWeight) && (
+                                    <span className="flex items-center space-x-1">
+                                      <strong className="text-slate-700">Net Wt:</strong>
+                                      <span className="font-mono text-emerald-700 font-bold">{selectedProd?.netWeightKg ?? selectedProd?.netWeight ?? lineItemModalState.itemData.netWeight} kg</span>
+                                    </span>
+                                  )}
+                                </div>
+                                {(selectedProd?.description || lineItemModalState.itemData.productDescription) && (
+                                  <p className="text-[10px] text-slate-500 line-clamp-1 italic">{selectedProd?.description || lineItemModalState.itemData.productDescription}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="font-extrabold text-slate-900 text-xs block">No Product Selected</span>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Select a product from the dropdown below to view specifications and commercial pricing.</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="w-5/12">
-                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Image URL / Link</label>
-                        <input
-                          type="text"
-                          value={lineItemModalState.itemData.imgUrl || ''}
-                          onChange={(e) => setLineItemModalState(prev => ({ ...prev, itemData: { ...prev.itemData, imgUrl: e.target.value } }))}
-                          placeholder="https://images.unsplash.com/..."
-                          className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-[11px] font-mono"
-                        />
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
