@@ -1238,7 +1238,7 @@
       const getActiveSubMenuDataset = (subMenuId) => {
         if (subMenuId === 'companyAddress') return masterAddresses;
         if (subMenuId === 'products') return masterProductsSettings;
-        if (subMenuId === 'customers') return masterCustomersSettings;
+        if (subMenuId === 'customers') return masterConsignees;
         if (subMenuId === 'salespersons') return masterSalespersonsSettings;
         if (subMenuId === 'unit') return masterUnits;
         if (subMenuId === 'vendors') return masterVendors;
@@ -1322,7 +1322,21 @@
           });
           setMasterProducts(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? finalProdRecord : r) : [finalProdRecord, ...prev]);
         } else if (subMenuId === 'customers') {
-          setMasterCustomersSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
+          if (!masterFormData.name) {
+            alert('Please enter Customer / Consignee Name');
+            return;
+          }
+          const consigneeObj = {
+            id: recordId || `cs-${Date.now()}`,
+            name: masterFormData.name,
+            country: masterFormData.country || '',
+            address: masterFormData.address || '',
+            phone: masterFormData.phone || '',
+            email: masterFormData.email || '',
+            status: masterFormData.status || 'Active'
+          };
+          setMasterConsignees(prev => masterDrawerMode === 'edit' ? prev.map(r => (r.id === recordId || (editingRecord && r.name === editingRecord.name)) ? consigneeObj : r) : [consigneeObj, ...prev]);
+          setMasterCustomersSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => (r.id === recordId || (editingRecord && r.name === editingRecord.name)) ? consigneeObj : r) : [consigneeObj, ...prev]);
         } else if (subMenuId === 'salespersons') {
           if (!masterFormData.name) {
             alert('Please enter Salesperson Name');
@@ -1542,7 +1556,7 @@
 
         if (subMenuId === 'companyAddress') setMasterAddresses(updater);
         else if (subMenuId === 'products') { setMasterProductsSettings(updater); setMasterProducts(updater); }
-        else if (subMenuId === 'customers') setMasterCustomersSettings(updater);
+        else if (subMenuId === 'customers') { setMasterCustomersSettings(updater); setMasterConsignees(updater); }
         else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(updater);
         else if (subMenuId === 'unit') setMasterUnits(updater);
         else if (subMenuId === 'vendors') setMasterVendors(updater);
@@ -1569,7 +1583,7 @@
 
         if (subMenuId === 'companyAddress') setMasterAddresses(remover);
         else if (subMenuId === 'products') { setMasterProductsSettings(remover); setMasterProducts(remover); }
-        else if (subMenuId === 'customers') setMasterCustomersSettings(remover);
+        else if (subMenuId === 'customers') { setMasterCustomersSettings(remover); setMasterConsignees(remover); }
         else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(remover);
         else if (subMenuId === 'unit') setMasterUnits(remover);
         else if (subMenuId === 'vendors') setMasterVendors(remover);
@@ -4917,126 +4931,126 @@
                     {/* 1. COMPANY INFO & BRANDING ASSETS */}
                     {activeSettingsSubMenu === 'companyInfo' && (
                       <div className="space-y-6">
-                          {/* SECTION A: PRIMARY CORPORATE PROFILE (AUTO-SYNCED FROM COMPANY ADDRESS MASTER) */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                              <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                                <i className="fi fi-rr-building text-indigo-600"></i>
-                                <span>Primary Corporate Profile & Tax Identifiers</span>
-                              </h4>
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-[10px] uppercase flex items-center space-x-1">
-                                <i className="fi fi-rr-check-circle text-emerald-600"></i>
-                                <span>Auto-Synced from Primary Address</span>
-                              </span>
-                            </div>
-
-                            {/* BANNER EXPLAINING SOURCING FROM COMPANY ADDRESS */}
-                            <div className="bg-indigo-50/70 border border-indigo-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-indigo-950 shadow-2xs">
-                              <div className="flex items-start space-x-3">
-                                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 shadow-xs">
-                                  <i className="fi fi-rr-marker"></i>
-                                </div>
-                                <div>
-                                  <div className="font-black text-slate-900 text-xs flex items-center space-x-2">
-                                    <span>Primary Address: {defaultCompanyAddr.label || defaultCompanyAddr.companyName || 'Corporate Head Office'}</span>
-                                    {defaultCompanyAddr.docPrefix && (
-                                      <span className="bg-indigo-200/80 text-indigo-900 font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold">
-                                        [{defaultCompanyAddr.docPrefix}]
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
-                                    Company Legal Name, Address, GSTIN, IEC, PAN, and LUT shown below are sourced from your default primary address. No separate editing is required here — update the Primary record under <strong>Company Address</strong>.
-                                  </p>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setActiveSettingsSubMenu('companyAddress')}
-                                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg text-xs shadow-xs flex items-center space-x-1.5 shrink-0 transition-all cursor-pointer"
-                              >
-                                <i className="fi fi-rr-edit text-xs"></i>
-                                <span>Edit in Company Address</span>
-                              </button>
-                            </div>
-
-                            {/* READ-ONLY INFORMATION CARDS */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Company Legal Name</label>
-                                <div className="font-black text-xs text-slate-900 truncate">
-                                  {defaultCompanyAddr.companyName || defaultCompanyAddr.label || 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Corporate Identification No (CIN)</label>
-                                <div className="font-mono font-black text-xs text-slate-900">
-                                  {defaultCompanyAddr.cinNumber || defaultCompanyAddr.cin || 'U46901MH2024PTC419087'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">GSTIN Number</label>
-                                <div className="font-mono font-black text-xs text-indigo-700">
-                                  {defaultCompanyAddr.gstin || '27AARCM7825K1ZP'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Registered Corporate Address</label>
-                                <div className="font-bold text-xs text-slate-800">
-                                  {defaultCompanyAddr.address || 'G-12, Commercial Hub, Sector 11, CBD Belapur, Navi Mumbai, MH - 400614'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">IEC (Import Export Code)</label>
-                                <div className="font-mono font-black text-xs text-slate-900">
-                                  {defaultCompanyAddr.iecCode || '0314015892'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">PAN Number</label>
-                                <div className="font-mono font-black text-xs text-slate-900">
-                                  {defaultCompanyAddr.panNumber || 'AARCM7825K'}
-                                </div>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Official Website</label>
-                                <div className="font-bold text-xs text-indigo-600">
-                                  {defaultCompanyAddr.website || 'www.mglobalindia.com'}
-                                </div>
-                              </div>
-
-                              <div className="md:col-span-3 bg-emerald-50/70 p-3 rounded-xl border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                <div>
-                                  <div className="flex items-center space-x-2">
-                                    <i className="fi fi-rr-document-signed text-emerald-600 text-sm"></i>
-                                    <span className="text-xs font-extrabold text-emerald-950">LUT Number (Zero-Rated IGST Exemption)</span>
-                                    <span className="text-[9px] bg-emerald-200 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full uppercase border border-emerald-300">GST Rule 96A</span>
-                                  </div>
-                                  <div className="font-mono font-black text-xs text-emerald-900 mt-1">
-                                    {defaultCompanyAddr.lutNumber || companyLutNo || 'AD270325001928F'}
-                                  </div>
-                                </div>
-                                <span className="text-[10px] text-emerald-700 font-medium italic">
-                                  Auto-rendered on Export Proforma Invoices & Shipping Bills
-                                </span>
-                              </div>
-                            </div>
+                        {/* SECTION A: PRIMARY CORPORATE PROFILE (AUTO-SYNCED FROM COMPANY ADDRESS MASTER) */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                              <i className="fi fi-rr-building text-indigo-600"></i>
+                              <span>Primary Corporate Profile & Tax Identifiers</span>
+                            </h4>
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-[10px] uppercase flex items-center space-x-1">
+                              <i className="fi fi-rr-check-circle text-emerald-600"></i>
+                              <span>Auto-Synced from Primary Address</span>
+                            </span>
                           </div>
 
-                        {/* SECTION B: UPLOAD BRANDING ASSETS (LOGOS) */}
+                          {/* BANNER EXPLAINING SOURCING FROM COMPANY ADDRESS */}
+                          <div className="bg-indigo-50/70 border border-indigo-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-indigo-950 shadow-2xs">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 shadow-xs">
+                                <i className="fi fi-rr-marker"></i>
+                              </div>
+                              <div>
+                                <div className="font-black text-slate-900 text-xs flex items-center space-x-2">
+                                  <span>Primary Address: {defaultCompanyAddr.label || defaultCompanyAddr.companyName || 'Corporate Head Office'}</span>
+                                  {defaultCompanyAddr.docPrefix && (
+                                    <span className="bg-indigo-200/80 text-indigo-900 font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold">
+                                      [{defaultCompanyAddr.docPrefix}]
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                                  Company Legal Name, Address, GSTIN, IEC, PAN, and LUT shown below are sourced from your default primary address. No separate editing is required here — update the Primary record under <strong>Company Address</strong>.
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setActiveSettingsSubMenu('companyAddress')}
+                              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg text-xs shadow-xs flex items-center space-x-1.5 shrink-0 transition-all cursor-pointer"
+                            >
+                              <i className="fi fi-rr-edit text-xs"></i>
+                              <span>Edit in Company Address</span>
+                            </button>
+                          </div>
+
+                          {/* READ-ONLY INFORMATION CARDS */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Company Legal Name</label>
+                              <div className="font-black text-xs text-slate-900 truncate">
+                                {defaultCompanyAddr.companyName || defaultCompanyAddr.label || 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Corporate Identification No (CIN)</label>
+                              <div className="font-mono font-black text-xs text-slate-900">
+                                {defaultCompanyAddr.cinNumber || defaultCompanyAddr.cin || 'U46901MH2024PTC419087'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">GSTIN Number</label>
+                              <div className="font-mono font-black text-xs text-indigo-700">
+                                {defaultCompanyAddr.gstin || '27AARCM7825K1ZP'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Registered Corporate Address</label>
+                              <div className="font-bold text-xs text-slate-800">
+                                {defaultCompanyAddr.address || 'G-12, Commercial Hub, Sector 11, CBD Belapur, Navi Mumbai, MH - 400614'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">IEC (Import Export Code)</label>
+                              <div className="font-mono font-black text-xs text-slate-900">
+                                {defaultCompanyAddr.iecCode || '0314015892'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">PAN Number</label>
+                              <div className="font-mono font-black text-xs text-slate-900">
+                                {defaultCompanyAddr.panNumber || 'AARCM7825K'}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Official Website</label>
+                              <div className="font-bold text-xs text-indigo-600">
+                                {defaultCompanyAddr.website || 'www.mglobalindia.com'}
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-3 bg-emerald-50/70 p-3 rounded-xl border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <i className="fi fi-rr-document-signed text-emerald-600 text-sm"></i>
+                                  <span className="text-xs font-extrabold text-emerald-950">LUT Number (Zero-Rated IGST Exemption)</span>
+                                  <span className="text-[9px] bg-emerald-200 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full uppercase border border-emerald-300">GST Rule 96A</span>
+                                </div>
+                                <div className="font-mono font-black text-xs text-emerald-900 mt-1">
+                                  {defaultCompanyAddr.lutNumber || companyLutNo || 'AD270325001928F'}
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-emerald-700 font-medium italic">
+                                Auto-rendered on Export Proforma Invoices & Shipping Bills
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SECTION B: UPLOAD BRANDING ASSETS (LOGO, SEAL, SIGNATURE) */}
                         <div className="space-y-3 pt-2">
                           <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-200 pb-2">
                             <i className="fi fi-rr-picture text-indigo-600"></i>
-                            <span>Company Branding Assets</span>
+                            <span>Company Branding & Authorization Assets</span>
                           </h4>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
                             {/* CARD 1: COMPANY LOGO */}
                             <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col justify-between space-y-3">
@@ -5132,17 +5146,171 @@
                               </div>
                             </div>
 
+                            {/* CARD 3: COMPANY OFFICIAL SEAL */}
+                            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col justify-between space-y-3">
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                                    <i className="fi fi-rr-stamp text-emerald-600"></i>
+                                    <span>Company Official Seal</span>
+                                  </span>
+                                  <span className="text-[9px] bg-emerald-100 text-emerald-700 font-extrabold px-2 py-0.5 rounded uppercase">Official Stamp</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mb-3">Stamped over Authorized Signatory block on Declarations & Shipping Bills.</p>
+
+                                <div className="h-32 bg-white rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center p-2 relative overflow-hidden group">
+                                  {companySeal ? (
+                                    <div className="w-full h-full flex items-center justify-center relative">
+                                      <img src={companySeal} alt="Company Seal" className="max-h-24 max-w-full object-contain" />
+                                      <button onClick={() => setCompanySeal(null)} className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 shadow-md">
+                                        <i className="fi fi-rr-cross-small text-xs"></i>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center space-y-1">
+                                      <i className="fi fi-rr-stamp text-3xl text-emerald-400"></i>
+                                      <div className="text-[11px] font-bold text-slate-700">Upload or Select Seal / Stamp</div>
+                                      <div className="text-[9px] text-slate-400">Cloudinary DAM Synced</div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="pt-2 space-y-2">
+                                <label className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-md shadow-emerald-600/10">
+                                  <i className="fi fi-rr-cloud-upload text-xs"></i>
+                                  <span>{companySeal ? 'Upload & Sync New Seal' : 'Upload Seal to Cloudinary'}</span>
+                                  <input type="file" accept="image/*" onChange={(e) => { setDriveTargetContext('seal'); handleUploadFileToDriveAndSelect(e); }} className="hidden" />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => { setDriveTargetContext('seal'); setIsDrivePickerOpen(true); }}
+                                  className="w-full py-1.5 bg-white hover:bg-slate-100 border border-slate-300 font-bold rounded-xl text-xs text-emerald-700 flex items-center justify-center space-x-1.5 transition-all shadow-xs"
+                                >
+                                  <i className="fi fi-rr-folder text-xs"></i>
+                                  <span>Choose from ShipzyDrive</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* CARD 3: AUTHORIZED SIGNATURE */}
+                            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col justify-between space-y-3">
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                                    <i className="fi fi-rr-signature text-amber-600"></i>
+                                    <span>Authorized Signature</span>
+                                  </span>
+                                  <span className="text-[9px] bg-amber-100 text-amber-700 font-extrabold px-2 py-0.5 rounded uppercase">Signatory</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mb-3">Auto-printed on Export Documents & Legal Custom Declarations.</p>
+
+                                <div className="h-24 bg-white rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center p-2 relative overflow-hidden group mb-3">
+                                  {companySignature ? (
+                                    <div className="w-full h-full flex items-center justify-center relative">
+                                      <img src={companySignature} alt="Authorized Signature" className="max-h-20 max-w-full object-contain" />
+                                      <button onClick={() => setCompanySignature(null)} className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 shadow-md">
+                                        <i className="fi fi-rr-cross-small text-xs"></i>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center space-y-0.5">
+                                      <i className="fi fi-rr-signature text-2xl text-amber-400"></i>
+                                      <div className="text-[11px] font-bold text-slate-700">Upload or Select Signature</div>
+                                      <div className="text-[9px] text-slate-400">Cloudinary DAM Synced</div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div>
+                                    <label className="block text-[10px] text-slate-600 font-bold uppercase">Signatory Full Name</label>
+                                    <input type="text" value={signatoryName} onChange={(e) => setSignatoryName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] text-slate-600 font-bold uppercase">Designation Title</label>
+                                    <input type="text" value={signatoryDesignation} onChange={(e) => setSignatoryDesignation(e.target.value)} className="w-full border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 space-y-2">
+                                <label className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-md shadow-amber-600/10">
+                                  <i className="fi fi-rr-cloud-upload text-xs"></i>
+                                  <span>{companySignature ? 'Upload & Sync New Signature' : 'Upload Signature to Cloudinary'}</span>
+                                  <input type="file" accept="image/*" onChange={(e) => { setDriveTargetContext('signature'); handleUploadFileToDriveAndSelect(e); }} className="hidden" />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => { setDriveTargetContext('signature'); setIsDrivePickerOpen(true); }}
+                                  className="w-full py-1.5 bg-white hover:bg-slate-100 border border-slate-300 font-bold rounded-xl text-xs text-amber-700 flex items-center justify-center space-x-1.5 transition-all shadow-xs"
+                                >
+                                  <i className="fi fi-rr-folder text-xs"></i>
+                                  <span>Choose from ShipzyDrive</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* CARD 4: OFFICIAL COMPANY LETTERHEAD */}
+                            <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col justify-between space-y-3">
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                                    <i className="fi fi-rr-document-signed text-sky-600"></i>
+                                    <span>Official Letterhead</span>
+                                  </span>
+                                  <span className="text-[9px] bg-sky-100 text-sky-700 font-extrabold px-2 py-0.5 rounded uppercase">Quotation PDF</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mb-3">Uploaded background template used for printing Official Quotation PDFs.</p>
+
+                                <div className="h-32 bg-white rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center p-2 relative overflow-hidden group">
+                                  {companyLetterhead ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center relative bg-sky-50/50 p-2 text-center">
+                                      <i className="fi fi-rr-file-pdf text-3xl text-sky-600 mb-1"></i>
+                                      <span className="text-[10px] font-bold text-slate-800 truncate max-w-[140px]">Letterhead Active</span>
+                                      <span className="text-[8px] text-emerald-600 font-bold uppercase">Cloudinary Synced</span>
+                                      <button onClick={() => setCompanyLetterhead(null)} className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 shadow-md">
+                                        <i className="fi fi-rr-cross-small text-xs"></i>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center space-y-1">
+                                      <i className="fi fi-rr-document-signed text-3xl text-sky-400"></i>
+                                      <div className="text-[11px] font-bold text-slate-700">Upload Letterhead PDF/Image</div>
+                                      <div className="text-[9px] text-slate-400">Cloudinary DAM Synced</div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="pt-2 space-y-2">
+                                <label className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-md shadow-sky-600/10">
+                                  <i className="fi fi-rr-cloud-upload text-xs"></i>
+                                  <span>{companyLetterhead ? 'Upload & Sync New Letterhead' : 'Upload Letterhead to Cloudinary'}</span>
+                                  <input type="file" accept="image/*,.pdf" onChange={(e) => { setDriveTargetContext('letterhead'); handleUploadFileToDriveAndSelect(e); }} className="hidden" />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => { setDriveTargetContext('letterhead'); setIsDrivePickerOpen(true); }}
+                                  className="w-full py-1.5 bg-white hover:bg-slate-100 border border-slate-300 font-bold rounded-xl text-xs text-sky-700 flex items-center justify-center space-x-1.5 transition-all shadow-xs"
+                                >
+                                  <i className="fi fi-rr-folder text-xs"></i>
+                                  <span>Choose from ShipzyDrive</span>
+                                </button>
+                              </div>
+                            </div>
+
                           </div>
                         </div>
 
                         {/* SECTION C: SAVE ACTION BUTTON */}
                         <div className="flex justify-end pt-4 border-t border-slate-200">
                           <button
-                            onClick={() => alert('Company Branding Logos saved successfully!')}
+                            onClick={() => alert('Company Registration Info, Logo, Seal, and Signature saved successfully!')}
                             className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 flex items-center space-x-2 transition-all"
                           >
                             <i className="fi fi-rr-disk text-xs"></i>
-                            <span>Save Company Branding Assets</span>
+                            <span>Save Company Info & Branding Assets</span>
                           </button>
                         </div>
                       </div>
@@ -5692,7 +5860,7 @@
                       </div>
                     )}
 
-                    {/* 5. CUSTOMERS */}
+                    {/* 5. CUSTOMERS & CONSIGNEES MASTER */}
                     {activeSettingsSubMenu === 'customers' && (
                       <div className="space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
@@ -5700,20 +5868,20 @@
                             <div className="flex items-center space-x-2">
                               <h4 className="font-black text-slate-900 text-base flex items-center space-x-2">
                                 <i className="fi fi-rr-users-alt text-indigo-600"></i>
-                                <span>Overseas Customers Master</span>
+                                <span>Customers & Consignees Master</span>
                               </h4>
                               <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold rounded-full text-[10px]">
-                                {masterCustomersSettings.length} Buyers
+                                {masterConsignees.length} Accounts
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">Directory of international buyers, destination ports, tax IDs, and payment terms.</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Unified directory of international buyers, consignees, primary destination addresses, and contact details.</p>
                           </div>
                           <button
                             onClick={() => handleOpenMasterDrawer('create')}
-                            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 flex items-center space-x-1.5 transition-all"
+                            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 flex items-center space-x-1.5 transition-all cursor-pointer"
                           >
                             <i className="fi fi-rr-plus text-xs"></i>
-                            <span>+ Add Buyer Account</span>
+                            <span>+ Add New Customer / Consignee</span>
                           </button>
                         </div>
 
@@ -5722,27 +5890,27 @@
                             <thead>
                               <tr className="bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider">
                                 <th className="p-3 w-8"><input type="checkbox" /></th>
-                                <th className="p-3">Customer Name</th>
+                                <th className="p-3">Customer / Consignee Name</th>
                                 <th className="p-3">Country</th>
-                                <th className="p-3">Destination Port</th>
-                                <th className="p-3">Tax / VAT ID</th>
-                                <th className="p-3">Status</th>
+                                <th className="p-3">Primary Address & City</th>
+                                <th className="p-3">Contact Phone</th>
+                                <th className="p-3">Email Address</th>
                                 <th className="p-3 text-right">Actions</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
-                              {masterCustomersSettings.map((r) => (
-                                <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                              {masterConsignees.map((r) => (
+                                <tr key={r.id || r.name} className="hover:bg-slate-50/80 transition-colors">
                                   <td className="p-3"><input type="checkbox" /></td>
                                   <td className="p-3 font-bold text-slate-900">{r.name}</td>
-                                  <td className="p-3 font-bold text-indigo-700">{r.country}</td>
-                                  <td className="p-3 text-slate-600">{r.port}</td>
-                                  <td className="p-3 font-mono">{r.taxId}</td>
-                                  <td className="p-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">{r.status}</span></td>
+                                  <td className="p-3 font-bold text-indigo-700">{r.country || 'N/A'}</td>
+                                  <td className="p-3 text-slate-600 max-w-xs truncate">{r.address || 'N/A'}</td>
+                                  <td className="p-3 font-mono">{r.phone || 'N/A'}</td>
+                                  <td className="p-3 text-indigo-600 font-medium">{r.email || 'N/A'}</td>
                                   <td className="p-3 text-right space-x-1">
-                                    <button onClick={() => handleOpenMasterDrawer('edit', r)} className="px-2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-md text-[11px]">Edit</button>
-                                    <button onClick={() => handleOpenMasterDrawer('clone', r)} className="px-2 py-1 bg-sky-50 text-sky-700 font-bold rounded-md text-[11px]">Clone</button>
-                                    <button onClick={() => handleTriggerDelete(r)} className="px-2 py-1 bg-rose-50 text-rose-700 font-bold rounded-md text-[11px]">Del</button>
+                                    <button onClick={() => handleOpenMasterDrawer('edit', r)} className="px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md text-[11px] cursor-pointer">Edit</button>
+                                    <button onClick={() => handleOpenMasterDrawer('clone', r)} className="px-2 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold rounded-md text-[11px] cursor-pointer">Clone</button>
+                                    <button onClick={() => handleTriggerDelete(r)} className="px-2 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-md text-[11px] cursor-pointer">Del</button>
                                   </td>
                                 </tr>
                               ))}
@@ -11253,8 +11421,8 @@
                           type="button"
                           onClick={() => setCompanyAddressTab('detail')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${companyAddressTab === 'detail'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 1: DETAILS & TAX
@@ -11263,8 +11431,8 @@
                           type="button"
                           onClick={() => setCompanyAddressTab('branding')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${companyAddressTab === 'branding'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 2: BRANDING ASSETS
@@ -11273,8 +11441,8 @@
                           type="button"
                           onClick={() => setCompanyAddressTab('signatory')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${companyAddressTab === 'signatory'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 3: SIGNATORY
@@ -11542,8 +11710,8 @@
                           type="button"
                           onClick={() => setProductMasterTab('detail')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${productMasterTab === 'detail'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 1: PRODUCT DETAIL
@@ -11552,8 +11720,8 @@
                           type="button"
                           onClick={() => setProductMasterTab('advanced')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${productMasterTab === 'advanced'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 2: ADVANCED
@@ -11562,8 +11730,8 @@
                           type="button"
                           onClick={() => setProductMasterTab('scheme')}
                           className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${productMasterTab === 'scheme'
-                              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                             }`}
                         >
                           TAB 3: SCHEME DETAILS
@@ -11992,22 +12160,62 @@
                   )}
 
                   {activeSettingsSubMenu === 'customers' && (
-                    <>
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Customer Legal Name *</label>
-                        <input type="text" value={masterFormData.name || ''} onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Customer / Consignee Name *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Seychelles International Cargo LLC"
+                          value={masterFormData.name || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Country *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Seychelles / United Arab Emirates"
+                          value={masterFormData.country || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, country: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Primary Address & City</label>
+                        <textarea
+                          rows={3}
+                          placeholder="e.g. 789 Logistics Way, Suite 400, Port Victoria, Seychelles"
+                          value={masterFormData.address || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, address: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Country *</label>
-                          <input type="text" value={masterFormData.country || ''} onChange={e => setMasterFormData({ ...masterFormData, country: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+                          <label className="block text-slate-700 font-bold mb-1 text-xs">Contact Phone / Mobile Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. +248 4 123 456"
+                            value={masterFormData.phone || ''}
+                            onChange={e => setMasterFormData({ ...masterFormData, phone: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                          />
                         </div>
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Tax ID / VAT</label>
-                          <input type="text" value={masterFormData.taxId || ''} onChange={e => setMasterFormData({ ...masterFormData, taxId: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono" />
+                          <label className="block text-slate-700 font-bold mb-1 text-xs">Contact Email Address</label>
+                          <input
+                            type="email"
+                            placeholder="e.g. import@seychelles.sc"
+                            value={masterFormData.email || ''}
+                            onChange={e => setMasterFormData({ ...masterFormData, email: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                          />
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {activeSettingsSubMenu === 'salespersons' && (
@@ -12627,8 +12835,8 @@
                         type="button"
                         onClick={() => setQuickAddProductTab('detail')}
                         className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${quickAddProductTab === 'detail'
-                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                            : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                          : 'text-slate-500 hover:text-slate-800'
                           }`}
                       >
                         TAB 1: PRODUCT DETAIL
@@ -12637,8 +12845,8 @@
                         type="button"
                         onClick={() => setQuickAddProductTab('advanced')}
                         className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${quickAddProductTab === 'advanced'
-                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                            : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                          : 'text-slate-500 hover:text-slate-800'
                           }`}
                       >
                         TAB 2: ADVANCED
@@ -12647,8 +12855,8 @@
                         type="button"
                         onClick={() => setQuickAddProductTab('scheme')}
                         className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${quickAddProductTab === 'scheme'
-                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
-                            : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+                          : 'text-slate-500 hover:text-slate-800'
                           }`}
                       >
                         TAB 3: SCHEME DETAILS
@@ -13646,8 +13854,8 @@
                     onClick={handleExecuteCsvImport}
                     disabled={!csvFileRawText}
                     className={`px-5 py-2 text-white font-extrabold rounded-xl text-xs shadow-md transition-all ${csvFileRawText
-                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 cursor-pointer'
-                        : 'bg-slate-300 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 cursor-pointer'
+                      : 'bg-slate-300 cursor-not-allowed'
                       }`}
                   >
                     Primary CTA: Import CSV
