@@ -298,6 +298,7 @@
       { id: 'customizeFields', label: 'Customize Fields', iconClass: 'fi fi-rr-settings-sliders', category: 'System' },
       { id: 'products', label: 'Products', iconClass: 'fi fi-rr-box', category: 'Masters' },
       { id: 'customers', label: 'Customers', iconClass: 'fi fi-rr-users-alt', category: 'Masters' },
+      { id: 'notifyParty', label: 'Notify Party', iconClass: 'fi fi-rr-bell-ring', category: 'Masters' },
       { id: 'salespersons', label: 'Salespersons', iconClass: 'fi fi-rr-user', category: 'Masters' },
       { id: 'port', label: 'Port', iconClass: 'fi fi-rr-anchor', category: 'Logistics' },
       { id: 'unit', label: 'Unit', iconClass: 'fi fi-rr-ruler-combined', category: 'Masters' },
@@ -1002,6 +1003,16 @@
 
       const [masterCustomersSettings, setMasterCustomersSettings] = useState(() => loadSavedState('shipz_master_customers', []));
 
+      const INITIAL_NOTIFY_PARTIES = [
+        { id: 'np-001', name: 'Seychelles Shipping & Logistics Agency', country: 'Seychelles', address: 'Port Victoria Commercial Complex, Suite 102, Port Victoria, Seychelles', phone: '+248 4 321 987', email: 'docs@seychelleslogistics.sc', status: 'Active' },
+        { id: 'np-002', name: 'Gulf Trans Forwarding LLC', country: 'United Arab Emirates', address: 'Cargo Village Tower A, Office 405, Dubai Airport Freezone, Dubai, UAE', phone: '+971 4 299 8811', email: 'notify@gulftrans.ae', status: 'Active' },
+        { id: 'np-003', name: 'EuroCargo Clearing GmbH', country: 'Germany', address: 'Hafenstraße 45, 20457 Hamburg, Germany', phone: '+49 40 311 900', email: 'customs@eurocargo.de', status: 'Active' },
+        { id: 'np-004', name: 'Pacific Clearing Services Inc', country: 'Canada', address: '1250 Rue Guy, Suite 800, Montreal, QC H3H 2L3, Canada', phone: '+1 514 555 0199', email: 'clearance@pacificclearing.ca', status: 'Active' }
+      ];
+
+      const [masterNotifyPartiesSettings, setMasterNotifyPartiesSettings] = useState(() => loadSavedState('shipz_master_notify_parties', INITIAL_NOTIFY_PARTIES));
+      React.useEffect(() => { try { localStorage.setItem('shipz_master_notify_parties', JSON.stringify(masterNotifyPartiesSettings)); } catch (e) { } }, [masterNotifyPartiesSettings]);
+
       const [masterSalespersonsSettings, setMasterSalespersonsSettings] = useState(() => loadSavedState('shipz_master_salespersons_v2', []));
       React.useEffect(() => { try { localStorage.setItem('shipz_master_salespersons_v2', JSON.stringify(masterSalespersonsSettings)); } catch (e) { } }, [masterSalespersonsSettings]);
 
@@ -1239,6 +1250,7 @@
         if (subMenuId === 'companyAddress') return masterAddresses;
         if (subMenuId === 'products') return masterProductsSettings;
         if (subMenuId === 'customers') return masterConsignees;
+        if (subMenuId === 'notifyParty') return masterNotifyPartiesSettings;
         if (subMenuId === 'salespersons') return masterSalespersonsSettings;
         if (subMenuId === 'unit') return masterUnits;
         if (subMenuId === 'vendors') return masterVendors;
@@ -1337,6 +1349,21 @@
           };
           setMasterConsignees(prev => masterDrawerMode === 'edit' ? prev.map(r => (r.id === recordId || (editingRecord && r.name === editingRecord.name)) ? consigneeObj : r) : [consigneeObj, ...prev]);
           setMasterCustomersSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => (r.id === recordId || (editingRecord && r.name === editingRecord.name)) ? consigneeObj : r) : [consigneeObj, ...prev]);
+        } else if (subMenuId === 'notifyParty') {
+          if (!masterFormData.name) {
+            alert('Please enter Notify Party Name');
+            return;
+          }
+          const notifyPartyObj = {
+            id: recordId || `np-${Date.now()}`,
+            name: masterFormData.name,
+            country: masterFormData.country || '',
+            address: masterFormData.address || '',
+            phone: masterFormData.phone || '',
+            email: masterFormData.email || '',
+            status: masterFormData.status || 'Active'
+          };
+          setMasterNotifyPartiesSettings(prev => masterDrawerMode === 'edit' ? prev.map(r => (r.id === recordId || (editingRecord && r.name === editingRecord.name)) ? notifyPartyObj : r) : [notifyPartyObj, ...prev]);
         } else if (subMenuId === 'salespersons') {
           if (!masterFormData.name) {
             alert('Please enter Salesperson Name');
@@ -1557,6 +1584,7 @@
         if (subMenuId === 'companyAddress') setMasterAddresses(updater);
         else if (subMenuId === 'products') { setMasterProductsSettings(updater); setMasterProducts(updater); }
         else if (subMenuId === 'customers') { setMasterCustomersSettings(updater); setMasterConsignees(updater); }
+        else if (subMenuId === 'notifyParty') setMasterNotifyPartiesSettings(updater);
         else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(updater);
         else if (subMenuId === 'unit') setMasterUnits(updater);
         else if (subMenuId === 'vendors') setMasterVendors(updater);
@@ -1584,6 +1612,7 @@
         if (subMenuId === 'companyAddress') setMasterAddresses(remover);
         else if (subMenuId === 'products') { setMasterProductsSettings(remover); setMasterProducts(remover); }
         else if (subMenuId === 'customers') { setMasterCustomersSettings(remover); setMasterConsignees(remover); }
+        else if (subMenuId === 'notifyParty') setMasterNotifyPartiesSettings(remover);
         else if (subMenuId === 'salespersons') setMasterSalespersonsSettings(remover);
         else if (subMenuId === 'unit') setMasterUnits(remover);
         else if (subMenuId === 'vendors') setMasterVendors(remover);
@@ -2139,6 +2168,13 @@
       ]);
 
       const [masterNotifyParties, setMasterNotifyParties] = useState(['Same as Consignee']);
+
+      const allNotifyPartyOptions = React.useMemo(() => {
+        const customPartyNames = (masterNotifyPartiesSettings || []).map(p => p.name).filter(Boolean);
+        const consigneeNames = (masterConsignees || []).map(c => c.name).filter(Boolean);
+        const combined = ['Same as Consignee', ...customPartyNames, ...consigneeNames];
+        return Array.from(new Set(combined));
+      }, [masterNotifyPartiesSettings, masterConsignees]);
 
       const [masterOtherNotifyParties, setMasterOtherNotifyParties] = useState(['None']);
 
@@ -5920,6 +5956,77 @@
                       </div>
                     )}
 
+                    {/* 5.1 NOTIFY PARTY MASTER */}
+                    {activeSettingsSubMenu === 'notifyParty' && (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-black text-slate-900 text-base flex items-center space-x-2">
+                                <i className="fi fi-rr-bell-ring text-indigo-600"></i>
+                                <span>Notify Party Master</span>
+                              </h4>
+                              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold rounded-full text-[10px]">
+                                {masterNotifyPartiesSettings.length} Parties
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Directory of destination notify parties, arrival notification agents, and clearance representatives.</p>
+                          </div>
+                          <button
+                            onClick={() => handleOpenMasterDrawer('create')}
+                            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/20 flex items-center space-x-1.5 transition-all cursor-pointer"
+                          >
+                            <i className="fi fi-rr-plus text-xs"></i>
+                            <span>+ Add Notify Party</span>
+                          </button>
+                        </div>
+
+                        {/* HELPFUL BANNER REGARDING CONSIGNEE AS NOTIFY PARTY */}
+                        <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-start space-x-3 text-xs text-amber-950 shadow-2xs">
+                          <i className="fi fi-rr-info text-amber-600 text-base shrink-0 mt-0.5"></i>
+                          <div>
+                            <span className="font-extrabold text-amber-900 block mb-0.5">Consignee as Notify Party Information</span>
+                            <span className="text-amber-800 font-medium text-[11px]">
+                              When creating Quotations, Proforma Invoices, or Bills of Lading, you can select any registered Notify Party below, or select <strong>"Same as Consignee"</strong> / choose any registered <strong>Consignee</strong> directly.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider">
+                                <th className="p-3 w-8"><input type="checkbox" /></th>
+                                <th className="p-3">Notify Party Name</th>
+                                <th className="p-3">Country</th>
+                                <th className="p-3">Primary Address & City</th>
+                                <th className="p-3">Contact Phone</th>
+                                <th className="p-3">Email Address</th>
+                                <th className="p-3 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
+                              {masterNotifyPartiesSettings.map((r) => (
+                                <tr key={r.id || r.name} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="p-3"><input type="checkbox" /></td>
+                                  <td className="p-3 font-bold text-slate-900">{r.name}</td>
+                                  <td className="p-3 font-bold text-indigo-700">{r.country || 'N/A'}</td>
+                                  <td className="p-3 text-slate-600 max-w-xs truncate">{r.address || 'N/A'}</td>
+                                  <td className="p-3 font-mono">{r.phone || 'N/A'}</td>
+                                  <td className="p-3 text-indigo-600 font-medium">{r.email || 'N/A'}</td>
+                                  <td className="p-3 text-right space-x-1">
+                                    <button onClick={() => handleOpenMasterDrawer('edit', r)} className="px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md text-[11px] cursor-pointer">Edit</button>
+                                    <button onClick={() => handleOpenMasterDrawer('clone', r)} className="px-2 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold rounded-md text-[11px] cursor-pointer">Clone</button>
+                                    <button onClick={() => handleTriggerDelete(r)} className="px-2 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold rounded-md text-[11px] cursor-pointer">Del</button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 5.5 SALESPERSONS */}
                     {activeSettingsSubMenu === 'salespersons' && (
                       <div className="space-y-4">
@@ -9115,7 +9222,7 @@
                         <SearchableComboboxSelect
                           value={qtFormData.notifyParty || ''}
                           onChange={(val) => handleQtNotifyPartyChange(val)}
-                          options={['Same as Consignee', ...masterNotifyParties]}
+                          options={allNotifyPartyOptions}
                           placeholder="-- Search / Select Notify Party --"
                           searchPlaceholder="Search notify party..."
                           onAddNew={() => setActiveQuickAdd('notifyParty')}
@@ -9744,7 +9851,7 @@
                         <SearchableComboboxSelect
                           value={piFormData.notifyParty || ''}
                           onChange={(val) => handlePiNotifyPartyChange(val)}
-                          options={['Same as Consignee', ...masterNotifyParties]}
+                          options={allNotifyPartyOptions}
                           placeholder="-- search / select Notify Party --"
                           searchPlaceholder="Search notify party..."
                           onAddNew={() => setActiveQuickAdd('notifyParty')}
@@ -10292,7 +10399,7 @@
                       </label>
                       <div className="flex space-x-1">
                         <select value={blFormData.notifyParty} onChange={(e) => setBlFormData({ ...blFormData, notifyParty: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
-                          {masterNotifyParties.map((np, i) => (
+                          {allNotifyPartyOptions.map((np, i) => (
                             <option key={`bl-np-${i}`} value={np}>{np}</option>
                           ))}
                         </select>
@@ -12209,6 +12316,65 @@
                           <input
                             type="email"
                             placeholder="e.g. import@seychelles.sc"
+                            value={masterFormData.email || ''}
+                            onChange={e => setMasterFormData({ ...masterFormData, email: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSettingsSubMenu === 'notifyParty' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Notify Party Name *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Seychelles Shipping & Logistics Agency"
+                          value={masterFormData.name || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, name: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Country *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Seychelles / United Arab Emirates"
+                          value={masterFormData.country || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, country: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 text-xs">Primary Address & City</label>
+                        <textarea
+                          rows={3}
+                          placeholder="e.g. Port Victoria Commercial Complex, Suite 102, Port Victoria, Seychelles"
+                          value={masterFormData.address || ''}
+                          onChange={e => setMasterFormData({ ...masterFormData, address: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1 text-xs">Contact Phone / Mobile Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. +248 4 321 987"
+                            value={masterFormData.phone || ''}
+                            onChange={e => setMasterFormData({ ...masterFormData, phone: e.target.value })}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1 text-xs">Contact Email Address</label>
+                          <input
+                            type="email"
+                            placeholder="e.g. docs@seychelleslogistics.sc"
                             value={masterFormData.email || ''}
                             onChange={e => setMasterFormData({ ...masterFormData, email: e.target.value })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500"
