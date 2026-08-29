@@ -381,6 +381,27 @@
       }
     } catch (e) { }
 
+    const formatProductsListSummary = (products) => {
+      if (!products) return 'N/A';
+
+      if (Array.isArray(products)) {
+        const names = products.map(p => {
+          const raw = typeof p === 'string' ? p : (p.name || p.description || p.product || '');
+          return raw.replace(/\s*\(\d+\s*[^)]*\)/gi, '').replace(/\s*\(\s*\)/g, '').trim();
+        }).filter(Boolean);
+        return names.length > 0 ? names.join(', ') : 'N/A';
+      }
+
+      if (typeof products === 'string') {
+        return products
+          .replace(/\s*\(\d+\s*[^)]*\)/gi, '')
+          .replace(/\s*\(\s*\)/g, '')
+          .trim() || 'N/A';
+      }
+
+      return String(products);
+    };
+
     const loadSavedState = (key, fallback) => {
       try {
         const saved = localStorage.getItem(key);
@@ -7375,7 +7396,7 @@
                                 </td>
 
                                 <td className="py-3 px-3 font-bold text-slate-800">{qt.consignee}</td>
-                                <td className="py-3 px-4 max-w-xs text-slate-700 leading-relaxed">{qt.products}</td>
+                                <td className="py-3 px-4 max-w-xs text-slate-700 leading-relaxed font-semibold">{formatProductsListSummary(qt.products)}</td>
                                 <td className="py-3 px-3 font-medium">{qt.country}</td>
                                 <td className="py-3 px-3 font-medium">{qt.port}</td>
                                 <td className="py-3 px-3">
@@ -7680,8 +7701,8 @@
                                   <td className="py-3 px-3 font-bold text-slate-800">{pi.consignee}</td>
 
                                   {/* 6. line_items_summary */}
-                                  <td className="py-3 px-4 max-w-xs text-slate-700 leading-relaxed font-mono">
-                                    {pi.products.map((p) => `${p.description} (${p.qty} ${p.unit})`).join(', ')}
+                                  <td className="py-3 px-4 max-w-xs text-slate-700 leading-relaxed font-semibold">
+                                    {formatProductsListSummary(pi.products)}
                                   </td>
 
                                   {/* 7. destination_country */}
