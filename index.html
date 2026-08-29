@@ -49,18 +49,19 @@
 
   <style>
     @media print {
-      body {
+      html, body {
         background: #ffffff !important;
         color: #000000 !important;
         overflow: visible !important;
+        height: auto !important;
       }
 
-      body>* {
+      body > * {
         visibility: hidden !important;
       }
 
       #root,
-      #root>* {
+      #root > * {
         visibility: hidden !important;
       }
 
@@ -94,11 +95,31 @@
       #quotation-pdf-canvas,
       #proforma-pdf-canvas {
         box-shadow: none !important;
-        border: 1px solid #cbd5e1 !important;
+        border: none !important;
+        outline: none !important;
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
-        margin: 0 auto !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+
+      tr, .print-break-inside-avoid {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      table {
+        page-break-inside: auto !important;
+      }
+
+      thead {
+        display: table-header-group !important;
+      }
+
+      tfoot {
+        display: table-footer-group !important;
       }
 
       @page {
@@ -10741,7 +10762,7 @@
                   <div className="p-4 overflow-y-auto flex-1 bg-slate-200/60">
                     <div
                       id="quotation-pdf-canvas"
-                      className="bg-white p-7 rounded-xl border border-slate-300 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-hidden shadow-xs"
+                      className="bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
                     >
                       {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
                       <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
@@ -11110,7 +11131,7 @@
                   <div className="p-4 overflow-y-auto flex-1 bg-slate-200/60">
                     <div
                       id="proforma-pdf-canvas"
-                      className="bg-white p-7 rounded-xl border border-slate-300 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-hidden shadow-xs"
+                      className="bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
                     >
                       {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
                       <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
