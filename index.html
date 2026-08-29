@@ -10762,7 +10762,7 @@
                     <div className="flex items-center space-x-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => handleDownloadQuotationPdfFile(qt)}
+                        onClick={() => window.print()}
                         className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-extrabold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer"
                       >
                         <i className="fi fi-rr-download text-xs"></i>
@@ -10963,7 +10963,7 @@
                       </div>
 
                       {/* PACKING SUMMARY & TOTALS */}
-                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch">
+                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch print-break-inside-avoid">
                         <div className="col-span-2 space-y-2 flex flex-col justify-between">
                           <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
                             <span className="text-[8px] font-bold text-slate-400 uppercase block">AMOUNT IN WORDS</span>
@@ -10986,7 +10986,7 @@
                       </div>
 
                       {/* TERMS & SIGNATORY */}
-                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs">
+                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs print-break-inside-avoid">
                         <div className="col-span-2 space-y-1.5 border-r border-slate-200 pr-3">
                           <div className="grid grid-cols-3 gap-2 text-[9px]">
                             <div><span className="text-slate-400 block text-[8px] font-bold uppercase">PAYMENT TERMS</span><b className="text-slate-900">{qt.paymentTerms || '100% Payment Before'}</b></div>
@@ -11131,7 +11131,7 @@
 
                       <button
                         type="button"
-                        onClick={() => handleDownloadPiPdfFile(pi)}
+                        onClick={() => window.print()}
                         className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-extrabold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer"
                       >
                         <i className="fi fi-rr-download text-xs"></i>
@@ -11312,7 +11312,7 @@
                       </div>
 
                       {/* PACKING SUMMARY & TOTALS */}
-                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch">
+                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch print-break-inside-avoid">
                         <div className="col-span-2 space-y-2 flex flex-col justify-between">
                           <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
                             <span className="text-[8px] font-bold text-slate-400 uppercase block">AMOUNT IN WORDS</span>
@@ -11335,7 +11335,7 @@
                       </div>
 
                       {/* TERMS & SIGNATORY */}
-                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs">
+                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs print-break-inside-avoid">
                         <div className="col-span-2 space-y-1.5 border-r border-slate-200 pr-3">
                           <div className="grid grid-cols-3 gap-2 text-[9px]">
                             <div><span className="text-slate-400 block text-[8px] font-bold uppercase">PAYMENT TERMS</span><b className="text-slate-900">{pi.paymentTerms || '100% Payment Before'}</b></div>
