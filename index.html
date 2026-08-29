@@ -10741,21 +10741,21 @@
                   <div className="p-4 overflow-y-auto flex-1 bg-slate-200/60">
                     <div
                       id="quotation-pdf-canvas"
-                      className="bg-white p-6 rounded-lg shadow-md border border-slate-300 max-w-2xl mx-auto text-slate-900 font-sans text-xs space-y-3 relative overflow-hidden"
+                      className="bg-white p-7 rounded-xl border border-slate-300 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-hidden shadow-xs"
                     >
-                      {/* ZONE 1: BRANDED HEADER & MASTHEAD (EXACT SPECIFICATION FROM USER ARTBOARD MOCKUP) */}
-                      <div className="bg-sky-50/60 p-5 -mx-6 -mt-6 mb-3 border-b border-slate-200 flex justify-between items-start">
+                      {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
+                      <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
                         {/* LEFT: LOGO */}
                         <div className="flex items-center space-x-3">
                           {activeLogo ? (
-                            <img src={activeLogo} alt={`${activeCompanyName} Logo`} className="h-16 max-w-[240px] object-contain" />
+                            <img src={activeLogo} alt={`${activeCompanyName} Logo`} className="h-14 max-w-[240px] object-contain" />
                           ) : (
                             <div className="flex items-center space-x-3">
-                              <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-700 to-indigo-800 text-white font-black text-lg flex items-center justify-center shadow-md">
+                              <div className="w-11 h-11 rounded-xl bg-slate-900 text-white font-black text-lg flex items-center justify-center shadow-md">
                                 {activeCompanyName.slice(0, 2).toUpperCase()}
                               </div>
                               <div>
-                                <h1 className="text-xl font-black text-[#0F1E36] tracking-tight leading-none uppercase">
+                                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">
                                   {activeCompanyName}
                                 </h1>
                                 <p className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mt-1">
@@ -10767,68 +10767,60 @@
                         </div>
 
                         {/* RIGHT: CORPORATE ADDRESS & TAX REGISTRATIONS */}
-                        <div className="text-right text-[10px] text-slate-700 leading-snug font-sans space-y-0.5 max-w-[280px]">
-                          <p className="font-semibold text-slate-800">{activeCompanyAddr}</p>
-                          <div className="pt-1.5 font-mono text-[9.5px] font-bold text-slate-800 space-y-0.5">
-                            {activeGstin ? <p>GSTIN: <span className="text-indigo-900">{activeGstin}</span></p> : null}
-                            {activeLut ? <p>LUT NO: <span className="text-emerald-800">{activeLut}</span></p> : null}
-                            {activePan ? <p>PAN NO: <span>{activePan}</span></p> : null}
-                            {activeIec ? <p>IEC CODE: <span>{activeIec}</span></p> : null}
+                        <div className="text-right text-[10.5px] text-slate-700 leading-snug font-sans space-y-0.5 max-w-[300px]">
+                          <p className="font-bold text-slate-800">{activeCompanyAddr}</p>
+                          <div className="pt-1 font-mono text-[9px] font-semibold text-slate-700 flex flex-wrap justify-end gap-x-2 gap-y-0.5">
+                            {activeGstin ? <span>GSTIN: <b className="text-slate-900">{activeGstin}</b></span> : null}
+                            {activePan ? <span>PAN: <b className="text-slate-900">{activePan}</b></span> : null}
+                            {activeIec ? <span>IEC: <b className="text-slate-900">{activeIec}</b></span> : null}
+                            {activeLut ? <span>LUT: <b className="text-emerald-800">{activeLut}</b></span> : null}
                           </div>
                         </div>
                       </div>
 
-                      {/* ZONE 2: DOCUMENT METADATA BAR (DARK NAVY #0F1E36) */}
-                      <div className="bg-[#0F1E36] text-white rounded-md px-4 py-2.5 flex justify-between items-center font-mono">
-                        <span className="text-sm font-black tracking-widest text-sky-400">QUOTATION</span>
-                        <div className="flex space-x-5 text-[10.5px]">
-                          <div><span className="text-slate-400">NO:</span> <span className="font-bold text-white">{qt.quotationNo}</span></div>
-                          <div><span className="text-slate-400">DATE:</span> <span className="font-bold text-white">{qt.date || '2026-08-04'}</span></div>
-                          <div><span className="text-slate-400">REF:</span> <span className="font-bold text-white">{qt.buyerOrderNo || 'N/A'}</span></div>
+                      {/* DOCUMENT TITLE BAR (CLEAN GREY TEXT METADATA BAR) */}
+                      <div className="flex justify-between items-center pt-1 pb-2 font-mono text-xs border-b border-slate-200">
+                        <span className="text-sm font-black tracking-widest text-slate-700 uppercase">QUOTATION</span>
+                        <div className="flex space-x-4 text-[11px] text-slate-600 font-bold">
+                          <div><span>NO:</span> <span className="font-bold text-slate-900">{qt.quotationNo}</span></div>
+                          <div><span>DATE:</span> <span className="font-bold text-slate-900">{qt.date || '2026-08-17'}</span></div>
+                          <div><span>REF:</span> <span className="font-bold text-slate-900">{qt.buyerOrderNo || 'B012562'}</span></div>
                         </div>
                       </div>
 
-                      {/* ZONE 3: EXPORTER & CONSIGNEE DETAILS */}
-                      <div className="grid grid-cols-2 gap-2 text-[10px]">
-                        <div className="border border-slate-300 rounded p-2.5 bg-slate-50/50">
-                          <div className="font-bold text-slate-800 uppercase border-b border-slate-200 pb-0.5 mb-1 text-[9px]">EXPORTER / SHIPPER</div>
+                      {/* EXPORTER / SHIPPER & CONSIGNEE / BUYER BOXES */}
+                      <div className="grid grid-cols-2 gap-3 text-[10.5px]">
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 mb-1.5 text-[9px] tracking-wider">EXPORTER / SHIPPER</div>
                           <div className="font-black text-slate-900 text-xs uppercase">{activeCompanyName}</div>
-                          <p className="text-slate-600 text-[9px] mt-0.5 leading-tight">
+                          <p className="text-slate-600 text-[9.5px] mt-0.5 leading-snug">
                             {activeCompanyAddr}
                           </p>
-                          <div className="mt-1.5 pt-1 border-t border-slate-200 grid grid-cols-2 gap-1 font-mono text-[8px]">
-                            {activePan ? <div><span className="text-slate-500 font-sans text-[7.5px] font-bold">PAN NO: </span><b className="text-slate-800">{activePan}</b></div> : null}
-                            {activeGstin ? <div><span className="text-slate-500 font-sans text-[7.5px] font-bold">GSTIN: </span><b className="text-slate-900 font-bold">{activeGstin}</b></div> : null}
-                            {activeIec ? <div><span className="text-slate-500 font-sans text-[7.5px] font-bold">IEC CODE: </span><b className="text-slate-800">{activeIec}</b></div> : null}
-                            {activeLut ? <div className="col-span-2 text-emerald-800"><span className="text-slate-500 font-sans text-[7.5px] font-bold">LUT NO (Rule 96A): </span><b>{activeLut}</b></div> : null}
-                          </div>
                         </div>
 
-                        <div className="border border-slate-300 rounded p-2.5 bg-slate-50/50 flex flex-col justify-between">
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-between">
                           <div>
-                            <div className="font-bold text-slate-800 uppercase border-b border-slate-200 pb-0.5 mb-1 text-[9px]">CONSIGNEE / BUYER</div>
+                            <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 mb-1.5 text-[9px] tracking-wider">CONSIGNEE / BUYER</div>
                             <div className="font-black text-slate-900 text-xs">{qt.consignee}</div>
-                            <p className="text-slate-600 text-[9px] mt-0.5 leading-tight">{qt.consigneeAddress || 'Montreal, Canada'}</p>
+                            <p className="text-slate-600 text-[9.5px] mt-0.5 leading-snug">{qt.consigneeAddress || 'Hydepartk, Dubai'}</p>
                           </div>
-                          <div className="border-t border-slate-200 pt-1 mt-1 text-[8.5px] space-y-0.5">
-                            <div><span className="text-slate-400">NOTIFY PARTY:</span> <b className="text-slate-800">{qt.notifyParty || 'Same as Consignee'}</b></div>
-                            {qt.notifyPartyAddress && <div className="text-[8px] text-slate-600 leading-tight">{qt.notifyPartyAddress}</div>}
-                            {qt.notifyPartyPhone && <div className="text-[8px] text-slate-600 font-mono">Contact: <b>{qt.notifyPartyPhone}</b></div>}
+                          <div className="border-t border-slate-100 pt-1 mt-1 text-[9px] text-slate-600">
+                            <span>NOTIFY PARTY:</span> <b className="text-slate-900">{qt.notifyParty || 'Same as Consignee'}</b>
                           </div>
                         </div>
                       </div>
 
-                      {/* ZONE 4: LOGISTICS & BANK DETAILS */}
-                      <div className="grid grid-cols-2 gap-2 text-[9.5px]">
-                        <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
-                          <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">LOGISTICS & SHIPPING</div>
-                          <div className="grid grid-cols-2 gap-1 text-[9px]">
-                            <div><span className="text-slate-400 block text-[8px]">PRE-CARRIAGE</span><b>{qt.preCarriageBy || 'BY SEA'}</b></div>
-                            <div><span className="text-slate-400 block text-[8px]">RECEIPT PLACE</span><b>{qt.placeOfReceipt || 'N/A'}</b></div>
-                            <div><span className="text-slate-400 block text-[8px]">PORT OF LOADING</span><b>{qt.placeOfLoading || 'NHAVA SHEVA'}</b></div>
-                            <div><span className="text-slate-400 block text-[8px]">DESTINATION PORT</span><b>{qt.finalDestinationPort || qt.port || 'PORT VICTORIA'}</b></div>
-                            <div><span className="text-slate-400 block text-[8px]">COUNTRY ORIGIN</span><b>{qt.countryOfOrigin || 'INDIA'}</b></div>
-                            <div><span className="text-slate-400 block text-[8px]">FINAL DESTINATION</span><b>{qt.country || 'CANADA'}</b></div>
+                      {/* LOGISTICS & SHIPPING + BANK DETAILS BOXES */}
+                      <div className="grid grid-cols-2 gap-3 text-[10px]">
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">LOGISTICS & SHIPPING</div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9.5px] pt-0.5">
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">PRE-CARRIAGE</span><b className="text-slate-900">{qt.preCarriageBy || 'By Sea'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">RECEIPT PLACE</span><b className="text-slate-900">{qt.placeOfReceipt || 'CFS'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">PORT OF LOADING</span><b className="text-slate-900">{qt.placeOfLoading || 'Nhava Sheva / JNPT'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">DESTINATION PORT</span><b className="text-slate-900">{qt.finalDestinationPort || qt.port || 'Port Victoria'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">COUNTRY ORIGIN</span><b className="text-slate-900">{qt.countryOfOrigin || 'India'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">FINAL DESTINATION</span><b className="text-slate-900">{qt.country || 'Seychelles'}</b></div>
                           </div>
                         </div>
 
@@ -10844,125 +10836,125 @@
 
                           if (!qtBankObj) {
                             return (
-                              <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
-                                <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">BANK DETAILS</div>
-                                <p className="text-[8.5px] text-slate-400 italic">No bank account selected.</p>
+                              <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
+                                <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS</div>
+                                <p className="text-[9px] text-slate-400 italic pt-1">No bank account selected.</p>
                               </div>
                             );
                           }
 
                           return (
-                            <div className="border border-slate-300 rounded p-2 bg-white space-y-1">
-                              <div className="font-bold text-slate-700 uppercase border-b border-slate-100 pb-0.5 text-[8.5px]">BANK DETAILS ({qtBankObj.bankName})</div>
-                              <div className="text-[9px] space-y-0.5">
-                                <div><span className="text-slate-400 text-[8px]">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{qtBankObj.beneficiaryName}</b></div>
-                                <div><span className="text-slate-400 text-[8px]">BANK:</span> <b className="text-slate-900">{qtBankObj.bankName}</b></div>
-                                <div className="font-mono text-[8.5px] bg-slate-50 p-1 rounded border border-slate-200 flex justify-between">
-                                  <div><span className="text-slate-400 block text-[7.5px]">A/C NO</span><b>{qtBankObj.accountNumber}</b></div>
-                                  {qtBankObj.swiftCode && <div><span className="text-slate-400 block text-[7.5px]">SWIFT</span><b className="text-sky-800">{qtBankObj.swiftCode}</b></div>}
-                                  {qtBankObj.ifscCode && <div><span className="text-slate-400 block text-[7.5px]">IFSC</span><b className="text-indigo-800">{qtBankObj.ifscCode}</b></div>}
+                            <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
+                              <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({qtBankObj.bankName})</div>
+                              <div className="text-[9.5px] space-y-0.5 pt-0.5">
+                                <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{qtBankObj.beneficiaryName}</b></div>
+                                <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{qtBankObj.bankName}</b></div>
+                                <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
+                                  <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{qtBankObj.accountNumber}</b></div>
+                                  {qtBankObj.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{qtBankObj.swiftCode}</b></div>}
+                                  {qtBankObj.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{qtBankObj.ifscCode}</b></div>}
                                 </div>
-                                {qtBankObj.branchName && <div><span className="text-slate-400 text-[8px]">BRANCH:</span> <span className="font-medium text-slate-700">{qtBankObj.branchName}</span></div>}
+                                {qtBankObj.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{qtBankObj.branchName}</span></div>}
                               </div>
                             </div>
                           );
                         })()}
                       </div>
 
-                      {/* ZONE 5: LINE ITEMS TABLE */}
-                      <div className="overflow-hidden rounded border border-slate-300">
-                        <table className="w-full text-left text-[9.5px] border-collapse">
+                      {/* LINE ITEMS TABLE */}
+                      <div className="border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
+                        <table className="w-full text-left text-[10px] border-collapse">
                           <thead>
-                            <tr className="bg-[#0F1E36] text-white font-bold text-[8.5px] uppercase">
-                              <th className="py-1.5 px-2 text-center w-6 border-r border-slate-700">#</th>
-                              <th className="py-1.5 px-2 border-r border-slate-700">Description of Goods</th>
-                              <th className="py-1.5 px-2 border-r border-slate-700 text-center w-16">HS Code</th>
-                              <th className="py-1.5 px-2 border-r border-slate-700 text-right w-14">Qty</th>
-                              <th className="py-1.5 px-2 border-r border-slate-700 text-center w-12">Unit</th>
-                              <th className="py-1.5 px-2 border-r border-slate-700 text-right w-16">Rate ($)</th>
-                              <th className="py-1.5 px-2 text-right w-20">Total ($)</th>
+                            <tr className="bg-slate-50 text-slate-600 font-extrabold text-[9px] uppercase border-b border-slate-300">
+                              <th className="py-2 px-2.5 text-center w-8 border-r border-slate-200">#</th>
+                              <th className="py-2 px-3 border-r border-slate-200">DESCRIPTION OF GOODS</th>
+                              <th className="py-2 px-2 border-r border-slate-200 text-center w-20">HS CODE</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200 text-right w-16">QTY</th>
+                              <th className="py-2 px-2 border-r border-slate-200 text-center w-14">UNIT</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200 text-right w-20">RATE ($)</th>
+                              <th className="py-2 px-3 text-right w-24">TOTAL ($)</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-200 text-[9.5px]">
+                          <tbody className="divide-y divide-slate-200 text-[10px]">
                             {lineItemsList.map((item, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50">
-                                <td className="py-1.5 px-2 text-center font-mono font-bold text-slate-500 border-r border-slate-200">{idx + 1}</td>
-                                <td className="py-2 px-2.5 border-r border-slate-200">
-                                  <div className="flex items-center space-x-2.5">
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="py-2.5 px-2.5 text-center font-bold text-slate-700 border-r border-slate-200">{idx + 1}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-200">
+                                  <div className="flex items-center space-x-3">
                                     {item.imgUrl ? (
-                                      <img src={item.imgUrl} alt={item.name} className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-xs shrink-0" />
+                                      <img src={item.imgUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0" />
                                     ) : (
-                                      <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
+                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
                                     )}
                                     <div>
-                                      <div className="font-bold text-slate-900 leading-snug">{item.name}</div>
-                                      {item.desc && <div className="text-[8.5px] text-slate-500 italic mt-0.5 leading-tight">{item.desc}</div>}
+                                      <div className="font-extrabold text-slate-900 leading-snug">{item.name}</div>
+                                      {item.desc && <div className="text-[9px] text-slate-500 italic mt-0.5 leading-tight">{item.desc}</div>}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="py-1.5 px-2 text-center font-mono border-r border-slate-200">{item.hsn}</td>
-                                <td className="py-1.5 px-2 text-right font-mono font-bold border-r border-slate-200">{item.qty}</td>
-                                <td className="py-1.5 px-2 text-center border-r border-slate-200">{item.unit}</td>
-                                <td className="py-1.5 px-2 text-right font-mono border-r border-slate-200">${Number(item.rate).toFixed(2)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">${Number(item.total).toFixed(2)}</td>
+                                <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200">{item.hsn}</td>
+                                <td className="py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200">{item.qty}</td>
+                                <td className="py-2.5 px-2 text-center font-semibold text-slate-800 border-r border-slate-200">{item.unit}</td>
+                                <td className="py-2.5 px-2.5 text-right font-mono font-bold text-slate-800 border-r border-slate-200">${Number(item.rate).toFixed(2)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">${Number(item.total).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
                           <tfoot>
-                            <tr className="bg-slate-100 font-bold border-t-2 border-slate-400 text-[9.5px]">
-                              <td colSpan={3} className="py-1.5 px-2 text-right uppercase">TOTAL FOB EVALUATION</td>
-                              <td className="py-1.5 px-2 text-right font-mono">{totalQty}</td>
-                              <td className="py-1.5 px-2 text-center">-</td>
-                              <td className="py-1.5 px-2 text-right">-</td>
-                              <td className="py-1.5 px-2 text-right font-mono font-black text-sky-900">${totalAmountUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <tr className="bg-slate-50 font-bold border-t-2 border-slate-300 text-[10px] text-slate-900">
+                              <td colSpan={3} className="py-2 px-3 text-right font-extrabold uppercase">TOTAL FOB EVALUATION</td>
+                              <td className="py-2 px-2.5 text-right font-mono font-black">{totalQty}</td>
+                              <td className="py-2 px-2 text-center">-</td>
+                              <td className="py-2 px-2.5 text-right">-</td>
+                              <td className="py-2 px-3 text-right font-mono font-black text-slate-900 text-xs">${totalAmountUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                             </tr>
                           </tfoot>
                         </table>
                       </div>
 
-                      {/* ZONE 6: PACKING SUMMARY & TOTALS */}
-                      <div className="grid grid-cols-3 gap-2 text-[9px]">
-                        <div className="col-span-2 space-y-1">
-                          <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
-                            <span className="text-[7.5px] font-bold text-slate-400 uppercase block">AMOUNT IN WORDS</span>
-                            <p className="font-bold text-slate-900 uppercase font-serif tracking-wide text-[9.5px]">{totalAmountWords}</p>
+                      {/* PACKING SUMMARY & TOTALS */}
+                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch">
+                        <div className="col-span-2 space-y-2 flex flex-col justify-between">
+                          <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">AMOUNT IN WORDS</span>
+                            <p className="font-black text-slate-900 uppercase font-sans tracking-wide text-[10.5px] mt-0.5">{totalAmountWords}</p>
                           </div>
-                          <div className="grid grid-cols-3 gap-1 bg-sky-50/50 p-1 rounded border border-sky-200 text-center font-mono text-[8.5px]">
-                            <div><span className="text-slate-400 block text-[7.5px]">PACKAGES</span><b>{qt.totalPackages || '150 DRUMS'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">NET WT</span><b>{qt.totalNetWeight || '150,000 KG'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">GROSS WT</span><b>{qt.totalGrossWeight || '151,500 KG'}</b></div>
+                          <div className="grid grid-cols-3 gap-2 border border-slate-300 rounded-xl p-2.5 bg-white text-center shadow-2xs font-mono text-[9px]">
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">PACKAGES</span><b className="text-slate-900">{qt.totalPackages || '150 DRUMS'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">NET WT</span><b className="text-slate-900">{qt.totalNetWeight || '150,000 KG'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">GROSS WT</span><b className="text-slate-900">{qt.totalGrossWeight || '151,500 KG'}</b></div>
                           </div>
                         </div>
 
-                        <div className="bg-[#0F1E36] text-white p-2 rounded-lg border border-slate-800 flex flex-col justify-center items-center text-center">
-                          <span className="text-[8px] text-sky-400 font-bold uppercase tracking-wider">TOTAL VALUE ({qt.shipmentTerms || 'FOB'})</span>
-                          <div className="text-base font-black font-mono text-white my-0.5">
+                        <div className="border-2 border-slate-300 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-center items-center text-center">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">TOTAL VALUE ({qt.shipmentTerms || 'FREE ON BOARD'})</span>
+                          <div className="text-xl font-black font-mono text-slate-900 my-1">
                             ${totalAmountUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </div>
-                          <span className="text-[7.5px] text-slate-300 uppercase">USD (UNITED STATES DOLLAR)</span>
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">USD (UNITED STATES DOLLAR)</span>
                         </div>
                       </div>
 
-                      {/* ZONE 7: TERMS & SIGNATORY */}
-                      <div className="border border-slate-300 rounded p-2 bg-white text-[9px] grid grid-cols-3 gap-2">
-                        <div className="col-span-2 space-y-1 border-r border-slate-200 pr-2">
-                          <div className="grid grid-cols-3 gap-1 text-[8.5px]">
-                            <div><span className="text-slate-400 block text-[7.5px]">PAYMENT TERMS</span><b>{qt.paymentTerms || 'N/A'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">INCOTERMS</span><b>{qt.shipmentTerms || 'N/A'}</b></div>
-                            <div><span className="text-slate-400 block text-[7.5px]">LEAD TIME</span><b>{qt.shipmentPeriod || 'N/A'}</b></div>
+                      {/* TERMS & SIGNATORY */}
+                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs">
+                        <div className="col-span-2 space-y-1.5 border-r border-slate-200 pr-3">
+                          <div className="grid grid-cols-3 gap-2 text-[9px]">
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">PAYMENT TERMS</span><b className="text-slate-900">{qt.paymentTerms || '100% Payment Before'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">INCOTERMS</span><b className="text-slate-900">{qt.shipmentTerms || 'Free On Board'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">LEAD TIME</span><b className="text-slate-900">{qt.shipmentPeriod || 'N/A'}</b></div>
                           </div>
-                          <p className="text-[8px] text-slate-500 leading-tight pt-0.5 border-t border-slate-100">
+                          <p className="text-[8.5px] text-slate-500 leading-tight pt-1 border-t border-slate-100">
                             DECLARATION: WE HEREBY DECLARE GOODS ARE QUALITY TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
                           </p>
                         </div>
 
                         <div className="flex flex-col justify-between items-center text-center">
-                          <span className="text-[7.5px] font-bold text-slate-800 uppercase">FOR {activeCompanyName}</span>
+                          <span className="text-[8.5px] font-extrabold text-slate-700 uppercase">FOR {activeCompanyName}</span>
                           <div className="h-12 w-full flex items-center justify-center relative my-0.5">
                             {activeSeal ? (
-                              <img src={activeSeal} alt="Official Seal" className="h-11 object-contain opacity-80 absolute" />
+                              <img src={activeSeal} alt="Official Seal" className="h-11 object-contain opacity-85 absolute" />
                             ) : companySeal ? (
-                              <img src={companySeal} alt="Official Seal" className="h-11 object-contain opacity-70 absolute" />
+                              <img src={companySeal} alt="Official Seal" className="h-11 object-contain opacity-75 absolute" />
                             ) : null}
                             {activeSignature ? (
                               <img src={activeSignature} alt="Authorized Signature" className="h-9 object-contain z-10" />
@@ -10970,8 +10962,10 @@
                               <img src={companySignature} alt="Authorized Signature" className="h-9 object-contain z-10" />
                             ) : null}
                           </div>
-                          <span className="text-[8px] font-bold text-slate-700 uppercase border-t border-slate-300 w-full pt-0.5">{activeSignatoryDesignation || 'AUTHORISED SIGNATORY'}</span>
-                          {activeSignatoryName && <span className="text-[7px] text-slate-500 font-semibold">{activeSignatoryName}</span>}
+                          <div className="pt-0.5 border-t border-slate-300 w-full">
+                            <div className="font-extrabold text-slate-900 text-[9px] uppercase">{activeSignatoryDesignation || 'MANAGING DIRECTOR'}</div>
+                            <div className="text-[8.5px] font-bold text-slate-600">{activeSignatoryName || 'Siju Thekkan'}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -11107,412 +11101,6 @@
                         className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1"
                         title="Close Modal"
                       >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PRINT / PREVIEW CANVAS (SIMPLIFIED A4 PDF CANVAS) */}
-                  <div className="p-4 overflow-y-auto flex-1 bg-slate-200/60">
-                    <div
-                      id="proforma-pdf-canvas"
-                      className="bg-white p-6 rounded-lg shadow-md border border-slate-300 max-w-2xl mx-auto text-slate-900 font-sans text-xs space-y-3 relative overflow-hidden"
-                    >
-                      {/* TOP MASTHEAD & ADDRESS */}
-                      <div className="flex justify-between items-start border-b border-slate-300 pb-3 mb-2">
-                        {/* LEFT: LOGO */}
-                        <div className="flex items-center space-x-3">
-                          {activeLogo ? (
-                            <img src={activeLogo} alt={`${activeCompanyName} Logo`} className="h-14 max-w-[220px] object-contain" />
-                          ) : (
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-700 to-indigo-800 text-white font-black text-base flex items-center justify-center shadow-md">
-                                {activeCompanyName.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div>
-                                <h1 className="text-lg font-black text-[#0F1E36] tracking-tight leading-none uppercase">
-                                  {activeCompanyName}
-                                </h1>
-                                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                                  EXIM SUBSIDIARY CORPORATE ENTITY
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* RIGHT: REGISTERED OFFICE ADDRESS */}
-                        <div className="text-right text-[9px] text-slate-700 leading-snug font-sans max-w-[260px]">
-                          <p className="font-semibold text-slate-800">{activeCompanyAddr}</p>
-                          <div className="pt-1 font-mono text-[8.5px] font-bold text-slate-800 space-y-0.5">
-                            {activeGstin ? <p>GSTIN: <span className="text-indigo-900">{activeGstin}</span></p> : null}
-                            {activeLut ? <p>LUT NO: <span className="text-emerald-800">{activeLut}</span></p> : null}
-                            {activePan ? <p>PAN NO: <span>{activePan}</span></p> : null}
-                            {activeIec ? <p>IEC CODE: <span>{activeIec}</span></p> : null}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TITLE BAR */}
-                      <div className="text-center my-1.5">
-                        <h2 className="text-base font-black text-slate-900 tracking-widest uppercase border-b-2 border-slate-900 inline-block pb-0.5">
-                          {isCommercialDoc ? 'COMMERCIAL INVOICE' : 'PROFORMA INVOICE'}
-                        </h2>
-                      </div>
-
-                      {piPdfTemplateMode === 'template1' ? (
-                        /* TEMPLATE 1: CLEAN BLUE ACCENT HEADER & GRID (MATCHING IMAGE 1 EXACTLY) */
-                        <div className="space-y-3">
-                          {/* HEADER PARAMETERS TABLE GRID */}
-                          <div className="border border-slate-400 text-[9.5px]">
-                            {/* ROW 1: EXPORTER & PI DETAILS */}
-                            <div className="grid grid-cols-2 border-b border-slate-400">
-                              {/* LEFT: EXPORTER */}
-                              <div className="p-2 border-r border-slate-400 bg-white">
-                                <div className="font-bold underline text-slate-900 uppercase text-[9px] mb-1">EXPORTER</div>
-                                <div className="font-extrabold text-slate-900 text-[10px] uppercase">
-                                  {activeCompanyName}
-                                </div>
-                                <p className="text-slate-700 text-[9px] mt-0.5 leading-tight">
-                                  {activeCompanyAddr}
-                                </p>
-                                <div className="mt-2 pt-1 border-t border-slate-200 grid grid-cols-2 gap-1 text-[8.5px] font-mono">
-                                  {activePan ? <div><span className="text-slate-500">PAN NO : </span><b>{activePan}</b></div> : null}
-                                  {activeGstin ? <div><span className="text-slate-500">GSTIN: </span><b>{activeGstin}</b></div> : null}
-                                  {activeIec ? <div><span className="text-slate-500">IEC CODE : </span><b>{activeIec}</b></div> : null}
-                                  {activeLut ? <div className="col-span-2 text-emerald-800"><span className="text-slate-500">LUT NO (Rule 96A): </span><b>{activeLut}</b></div> : null}
-                                </div>
-                              </div>
-
-                              {/* RIGHT: PI NO / INVOICE NO, DATE & BANK DETAILS */}
-                              <div className="bg-white">
-                                <div className="grid grid-cols-2 border-b border-slate-400 p-1.5 font-bold">
-                                  <div>
-                                    <b>{isCommercialDoc ? 'INVOICE NO:' : 'PI NO:'}</b> <span className="text-indigo-800 font-mono">{pi.invNumber}</span>
-                                    {pi.piReferenceNo ? <div className="text-[7.5px] text-slate-500 font-mono font-normal">PI REF: <b className="text-slate-800">{pi.piReferenceNo}</b></div> : null}
-                                  </div>
-                                  <div>DATE : <span className="font-mono">{pi.date || pi.createdDate || '04/08/2026'}</span></div>
-                                </div>
-
-                                <div className="bg-[#D9EBF7] p-1 font-bold text-slate-900 border-b border-slate-400 uppercase text-[8.5px] tracking-wider flex justify-between items-center">
-                                  <span>OUR BANK ACCOUNT DETAILS ({bankShortName})</span>
-                                </div>
-                                <div className="p-1.5 space-y-1 text-[8.5px]">
-                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px] block">BENEFICIARY NAME:</span> <b className="text-slate-900 block font-extrabold leading-tight">{selectedBank.beneficiaryName}</b></div>
-                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px]">BENEFICIARY BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
-                                  <div className="bg-slate-50 border border-slate-300 rounded-md p-1 my-1 grid grid-cols-3 gap-1 font-mono text-[8px]">
-                                    <div>
-                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">A/C NO</span>
-                                      <b className="text-slate-900 text-[8.5px]">{selectedBank.accountNumber}</b>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">IFSC CODE</span>
-                                      <b className="text-indigo-900 text-[8px]">{selectedBank.ifscCode || 'N/A'}</b>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">SWIFT CODE</span>
-                                      <b className="text-sky-800 text-[8px]">{selectedBank.swiftCode || 'N/A'}</b>
-                                    </div>
-                                  </div>
-                                  <div><span className="text-slate-600 font-bold uppercase text-[7.5px]">BRANCH:</span> <span className="font-semibold text-slate-800">{selectedBank.branchName}</span></div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* ROW 2: SALESMAN & LOGISTICS PARAMETERS */}
-                            <div className="grid grid-cols-2 border-b border-slate-400">
-                              <div className="p-2 border-r border-slate-400 bg-white">
-                                <div className="font-bold underline text-slate-900 uppercase text-[9px] mb-1">CONSIGNEE</div>
-                                <div className="font-extrabold text-slate-900 text-[10px]">{pi.consignee}</div>
-                                <p className="text-slate-700 text-[9px] mt-0.5 leading-tight">{pi.consigneeAddr || `${pi.port}, ${pi.country}`}</p>
-                              </div>
-
-                              <div className="p-1.5 space-y-0.5 bg-white text-[8.5px]">
-                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">SALES MAN:</span> <b className="text-slate-900">{pi.salesperson || 'EXIM DESK'}</b></div>
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PHONE:</span> <b className="text-slate-900">{pi.contactPhone || '+91 9867577883'}</b></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">LUT NO:</span> <b className="text-emerald-800 font-mono">{pi.lutNo || activeLut || 'ARN-AD270324009821L'}</b></div>
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">SHIPPING MARK:</span> <b className="text-slate-900">{pi.shippingMarks || pi.shippingMark || 'MGLOBAL/VICTORIA/01-150'}</b></div>
-                                </div>
-                                <div className="border-b border-slate-200 pb-0.5">
-                                  <span className="text-slate-500 font-bold uppercase text-[7.5px]">DESCRIPTION OF GOODS:</span> <b className="text-slate-900 leading-tight">{pi.descriptionOfGoods || (piProducts && piProducts.length > 0 ? piProducts.map(p => p.description).filter(Boolean).join(', ') : 'EXPORT GOODS AS PER SPECIFICATION')}</b>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1 border-b border-slate-200 pb-0.5">
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PORT OF LOADING:</span> <b className="text-slate-900">{pi.placeOfLoading || pi.portOfLoading || 'Nhava Sheva (INNSA)'}</b></div>
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">PORT OF DESTINATION:</span> <b className="text-slate-900">{pi.portOfDestination || pi.port || 'Port Victoria'}</b></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1">
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">NO OF PKGS:</span> <b className="text-slate-900">{pi.totalPackages || pi.noOfPackages || '150 DRUMS'}</b></div>
-                                  <div><span className="text-slate-500 font-bold uppercase text-[7.5px]">VESSEL/FLIGHT NO:</span> <b className="text-slate-900">{pi.vesselFlightNo || 'MSC OSCAR V.24B'}</b></div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* ITEMS TABLE */}
-                            <table className="w-full text-left text-[9px] border-collapse">
-                              <thead>
-                                <tr className="bg-[#D9EBF7] text-slate-900 font-extrabold uppercase border-b border-slate-400">
-                                  <th className="py-1.5 px-2 text-center w-8 border-r border-slate-400">NO</th>
-                                  <th className="py-1.5 px-2 border-r border-slate-400">ITEMS DESCRIPTION</th>
-                                  <th className="py-1.5 px-2 text-right w-16 border-r border-slate-400">QTY</th>
-                                  <th className="py-1.5 px-2 text-center w-14 border-r border-slate-400">UNIT</th>
-                                  <th className="py-1.5 px-2 text-right w-20 border-r border-slate-400">Rate -USD$</th>
-                                  <th className="py-1.5 px-2 text-right w-24">Amount $</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-300 text-[9px]">
-                                {piProducts.map((prod, idx) => (
-                                  <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="py-2 px-2 text-center font-mono font-bold border-r border-slate-400">{idx + 1}</td>
-                                    <td className="py-2 px-2.5 border-r border-slate-400">
-                                      <div className="font-bold text-slate-900">{prod.description}</div>
-                                      <div className="text-[8px] text-slate-500 italic">HS Code: {prod.hsn || '291814'} | High Grade Export Packing</div>
-                                    </td>
-                                    <td className="py-2 px-2 text-right font-mono font-bold border-r border-slate-400">{prod.qty}</td>
-                                    <td className="py-2 px-2 text-center border-r border-slate-400">{prod.unit}</td>
-                                    <td className="py-2 px-2 text-right font-mono border-r border-slate-400">${Number(prod.rate).toFixed(2)}</td>
-                                    <td className="py-2 px-2 text-right font-mono font-bold text-slate-900">${Number(prod.total).toFixed(2)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr className="bg-[#D9EBF7] font-bold border-t border-slate-400 text-[9.5px]">
-                                  <td colSpan={2} className="py-1.5 px-2 text-right uppercase font-extrabold text-slate-900">TOTAL AMOUNT</td>
-                                  <td className="py-1.5 px-2 text-right font-mono font-bold">{totalQty}</td>
-                                  <td className="py-1.5 px-2 text-center">-</td>
-                                  <td className="py-1.5 px-2 text-right">-</td>
-                                  <td className="py-1.5 px-2 text-right font-mono font-black text-indigo-900 text-sm">
-                                    ${totalAmountFx.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            </table>
-
-                            {/* TERMS & SIGNATURE BLOCK */}
-                            <div className="p-3 bg-[#D9EBF7]/40 border-t border-slate-400 grid grid-cols-3 gap-3">
-                              <div className="col-span-2 space-y-1.5 text-[8.5px]">
-                                <div className="font-bold text-slate-900 uppercase underline">TERMS AND CONDITIONS</div>
-                                <div><span className="text-slate-600 font-semibold">PAYMENT TERMS :</span> <b className="text-slate-900">{pi.paymentTerms || 'N/A'}</b></div>
-                                <div><span className="text-slate-600 font-semibold">INCOTERMS :</span> <b className="text-indigo-800">{pi.incoterms || pi.shipmentTerms || 'N/A'}</b></div>
-                                <div><span className="text-slate-600 font-semibold">SHIPMENT PERIOD :</span> <span className="font-medium text-slate-800">{pi.shipmentPeriod || 'N/A'}</span></div>
-                                <p className="text-[8px] text-slate-600 italic border-t border-slate-300 pt-1">
-                                  DECLARATION: WE HEREBY DECLARE GOODS ARE TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
-                                </p>
-                              </div>
-
-                              {/* STAMP & SIGNATURE */}
-                              <div className="flex flex-col justify-between items-center text-center">
-                                <span className="text-[8px] font-extrabold text-slate-900 uppercase">FOR {activeCompanyName}</span>
-                                <div className="h-16 w-full flex items-center justify-center relative my-1">
-                                  {activeSeal ? (
-                                    <img src={activeSeal} alt="Official Stamp" className="h-14 object-contain opacity-80 absolute" />
-                                  ) : companySeal ? (
-                                    <img src={companySeal} alt="Official Stamp" className="h-14 object-contain opacity-80 absolute" />
-                                  ) : (
-                                    <div className="w-14 h-14 rounded-full border-2 border-indigo-700/60 flex items-center justify-center text-[7px] font-black text-indigo-900 uppercase text-center p-1 transform -rotate-12 bg-sky-50/40">
-                                      {activeCompanyName}<br />SEAL
-                                    </div>
-                                  )}
-                                  {activeSignature ? (
-                                    <img src={activeSignature} alt="Digital Signature" className="h-10 object-contain z-10" />
-                                  ) : companySignature ? (
-                                    <img src={companySignature} alt="Digital Signature" className="h-10 object-contain z-10" />
-                                  ) : (
-                                    <svg className="w-24 h-10 text-indigo-900 z-10 opacity-90" viewBox="0 0 200 60" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                      <path d="M 10 40 C 30 10, 60 50, 90 20 C 120 0, 150 40, 180 15" strokeLinecap="round" />
-                                    </svg>
-                                  )}
-                                </div>
-                                <span className="text-[7.5px] font-bold text-slate-700 uppercase">{activeSignatoryDesignation || 'AUTHORISED SIGNATORY'} ({activeSignatoryName})</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* FOOTER BAR */}
-                          <div className="pt-2 border-t border-slate-300 flex justify-between items-center text-[8px] text-slate-600 font-medium">
-                            <div className="flex items-center space-x-1">
-                              <span>🌐</span>
-                              <span>www.mglobalindia.com</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <span>✉</span>
-                              <span>info@mglobalindia.com</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <span>📞</span>
-                              <span>+91 9867577883</span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* TEMPLATE 2: FULL 7-ZONE EXIM MATRIX (MATCHING IMAGE 2 EXACTLY) */
-                        <div className="space-y-3">
-                          <div className="border border-slate-900 text-[9px] font-sans">
-                            {/* ZONE 1 & 2: EXPORTER & INVOICE DETAILS */}
-                            <div className="grid grid-cols-2 border-b border-slate-900">
-                              <div className="p-2 border-r border-slate-900">
-                                <span className="font-bold text-slate-900 block text-[8.5px]">EXPORTER / SHIPPER:</span>
-                                <div className="font-extrabold text-slate-900 text-[9.5px] uppercase">{activeCompanyName}</div>
-                                <p className="text-slate-700 text-[8.5px] leading-tight mt-0.5">{activeCompanyAddr}</p>
-                                <div className="mt-1.5 pt-1 border-t border-slate-300 grid grid-cols-2 gap-1 font-mono text-[7.5px]">
-                                  {activePan ? <div><span className="text-slate-500">PAN NO: </span><b>{activePan}</b></div> : null}
-                                  {activeGstin ? <div><span className="text-slate-500">GSTIN: </span><b>{activeGstin}</b></div> : null}
-                                  {activeIec ? <div><span className="text-slate-500">IEC CODE: </span><b>{activeIec}</b></div> : null}
-                                  {activeLut ? <div className="col-span-2 text-emerald-800"><span className="text-slate-500">LUT NO (Rule 96A): </span><b>{activeLut}</b></div> : null}
-                                </div>
-                              </div>
-                              <div className="p-2 space-y-1 bg-slate-50/40">
-                                <div className="flex justify-between">
-                                  <span><b>{isCommercialDoc ? 'INVOICE NO:' : 'PI NO:'}</b> <span className="font-mono text-indigo-900 font-bold">{pi.invNumber}</span></span>
-                                  <span><b>DATE:</b> <span className="font-mono">{pi.date || '04/08/2026'}</span></span>
-                                </div>
-                                <div className="flex justify-between border-t border-slate-200 pt-0.5">
-                                  <span><b>EXPORTER'S REF:</b> {pi.exporterRef || 'EXP/2026/902'}</span>
-                                  {activeGstin ? <span><b>GSTIN:</b> {activeGstin}</span> : null}
-                                </div>
-                                {activeIec ? <div><b>IEC NO:</b> {activeIec}</div> : null}
-                                <div className="flex justify-between border-t border-slate-200 pt-0.5">
-                                  <span><b>BUYER ORDER NO:</b> {pi.buyerOrderNo || 'PO-99201'}</span>
-                                  <span><b>DATE:</b> {pi.orderDate || '04/08/2026'}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* ZONE 3: CONSIGNEE & NOTIFY */}
-                            <div className="grid grid-cols-2 border-b border-slate-900">
-                              <div className="p-2 border-r border-slate-900">
-                                <span className="font-bold text-slate-900 block text-[8.5px]">CONSIGNEE:</span>
-                                <div className="font-extrabold text-slate-900 text-[9.5px]">{pi.consignee}</div>
-                                <p className="text-slate-700 text-[8.5px] leading-tight mt-0.5">{pi.consigneeAddr || `${pi.port}, ${pi.country}`}</p>
-                              </div>
-                              <div className="p-2">
-                                <span className="font-bold text-slate-900 block text-[8.5px]">NOTIFY PARTY / BUYER:</span>
-                                <p className="text-slate-900 font-extrabold text-[9.5px]">{pi.notifyParty || 'SAME AS CONSIGNEE'}</p>
-                                {pi.notifyPartyAddress && <p className="text-slate-700 text-[8.5px] leading-tight mt-0.5">{pi.notifyPartyAddress}</p>}
-                                {pi.notifyPartyPhone && <p className="text-slate-700 text-[8px] font-mono mt-0.5">Contact: <b>{pi.notifyPartyPhone}</b></p>}
-                              </div>
-                            </div>
-
-                            {/* ZONE 4: LOGISTICS & BANK DETAILS (MATCHING IMAGE 2 EXACTLY) */}
-                            <div className="grid grid-cols-2 border-b border-slate-900">
-                              {/* LEFT: LOGISTICS & SHIPPING */}
-                              <div className="p-2 border-r border-slate-900 space-y-1 text-[8.5px]">
-                                <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 uppercase tracking-wider text-[9px]">LOGISTICS & SHIPPING</div>
-                                <div className="grid grid-cols-2 gap-1 pt-0.5">
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">PRE-CARRIAGE</span><b>{pi.preCarriageBy || 'BY SEA'}</b></div>
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">RECEIPT PLACE</span><b>{pi.placeOfReceipt || 'N/A'}</b></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1">
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">PORT OF LOADING</span><b>{pi.placeOfLoading || 'NHAVA SHEVA'}</b></div>
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">DESTINATION PORT</span><b>{pi.port}</b></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1">
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">COUNTRY ORIGIN</span><b>INDIA</b></div>
-                                  <div><span className="text-slate-500 block text-[7.5px] font-bold uppercase">FINAL DESTINATION</span><b>{pi.country || 'Canada'}</b></div>
-                                </div>
-                              </div>
-
-                              {/* RIGHT: BANK DETAILS (KOTAK MAHINDRA / SELECTED BANK) - MATCHING IMAGE 1 & 2 */}
-                              <div className="p-2 space-y-1 bg-white text-[8.5px]">
-                                <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 uppercase tracking-wider text-[9px] flex justify-between items-center">
-                                  <span>BANK DETAILS ({bankShortName})</span>
-                                </div>
-                                <div><span className="text-slate-500 font-bold block text-[7.5px] uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 block font-extrabold leading-tight">{selectedBank.beneficiaryName}</b></div>
-                                <div><span className="text-slate-500 font-bold text-[7.5px] uppercase">BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
-                                <div className="bg-slate-50 border border-slate-300 rounded p-1 my-1 grid grid-cols-3 gap-1 font-mono text-[8px]">
-                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">A/C NO</span><b className="text-slate-900 text-[8.5px]">{selectedBank.accountNumber}</b></div>
-                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">IFSC CODE</span><b className="text-indigo-900 text-[8px]">{selectedBank.ifscCode || 'N/A'}</b></div>
-                                  <div><span className="text-slate-500 font-sans text-[7px] font-bold block uppercase">SWIFT CODE</span><b className="text-sky-800 text-[8px]">{selectedBank.swiftCode || 'N/A'}</b></div>
-                                </div>
-                                <div><span className="text-slate-500 font-bold text-[7.5px] uppercase">BRANCH:</span> <span className="font-semibold text-slate-800">{selectedBank.branchName}</span></div>
-                              </div>
-                            </div>
-
-                            {/* ZONE 5: TERMS PARAMETERS */}
-                            <div className="p-1.5 border-b border-slate-900 grid grid-cols-3 gap-2 text-[8.5px]">
-                              <div><span className="text-slate-500">SHIPMENT PERIOD:</span> <b>{pi.shipmentPeriod || 'N/A'}</b></div>
-                              <div><span className="text-slate-500">INCOTERMS 2020:</span> <b className="text-indigo-900">{pi.incoterms || pi.shipmentTerms || 'N/A'}</b></div>
-                              <div><span className="text-slate-500">PAYMENT TERMS:</span> <b>{pi.paymentTerms || 'N/A'}</b></div>
-                            </div>
-
-                            {/* LINE ITEMS TABLE */}
-                            <table className="w-full text-left text-[8.5px] border-collapse">
-                              <thead>
-                                <tr className="bg-slate-100 font-bold border-b border-slate-900 uppercase">
-                                  <th className="p-1 text-center w-6 border-r border-slate-900">SR NO</th>
-                                  <th className="p-1 border-r border-slate-900">MARKING</th>
-                                  <th className="p-1 text-center border-r border-slate-900">NO OF PKGS</th>
-                                  <th className="p-1 border-r border-slate-900">DESCRIPTION OF GOODS</th>
-                                  <th className="p-1 text-center border-r border-slate-900">HS CODE</th>
-                                  <th className="p-1 text-right border-r border-slate-900">QTY TOTAL</th>
-                                  <th className="p-1 text-right border-r border-slate-900">NET WT</th>
-                                  <th className="p-1 text-right border-r border-slate-900">GROSS WT</th>
-                                  <th className="p-1 text-right border-r border-slate-900">RATE ($)</th>
-                                  <th className="p-1 text-right">TOTAL ($)</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-300">
-                                {piProducts.map((p, idx) => (
-                                  <tr key={idx}>
-                                    <td className="p-1 text-center font-mono border-r border-slate-900">{idx + 1}</td>
-                                    <td className="p-1 border-r border-slate-900">EXPORT GRADE</td>
-                                    <td className="p-1 text-center border-r border-slate-900">50 DRUMS</td>
-                                    <td className="p-1 font-bold border-r border-slate-900">{p.description}</td>
-                                    <td className="p-1 text-center font-mono border-r border-slate-900">{p.hsn || '291814'}</td>
-                                    <td className="p-1 text-right font-mono font-bold border-r border-slate-900">{p.qty} {p.unit}</td>
-                                    <td className="p-1 text-right font-mono border-r border-slate-900">{(p.qty * 1.0).toFixed(0)} KG</td>
-                                    <td className="p-1 text-right font-mono border-r border-slate-900">{(p.qty * 1.05).toFixed(0)} KG</td>
-                                    <td className="p-1 text-right font-mono border-r border-slate-900">${Number(p.rate).toFixed(2)}</td>
-                                    <td className="p-1 text-right font-mono font-bold">${Number(p.total).toFixed(2)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr className="bg-slate-100 font-bold border-t border-slate-900">
-                                  <td colSpan={5} className="p-1 text-right uppercase">TOTAL QTY / TOTAL FOB</td>
-                                  <td className="p-1 text-right font-mono">{totalQty}</td>
-                                  <td colSpan={3} className="p-1 text-right uppercase">TOTAL VALUE:</td>
-                                  <td className="p-1 text-right font-mono font-black text-indigo-900">${totalAmountFx.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                                </tr>
-                              </tfoot>
-                            </table>
-
-                            {/* PACKING, BANK & SIGNATORY GRID */}
-                            <div className="grid grid-cols-3 border-t border-slate-900 divide-x divide-slate-900">
-                              <div className="col-span-2 p-2 space-y-1.5 text-[8.5px]">
-                                <div><span className="text-slate-500 font-bold uppercase block text-[7.5px]">PACKING DETAILS</span><b>TOTAL NET WEIGHT:</b> {(totalQty * 1.0).toFixed(0)} KG | <b>TOTAL GROSS WEIGHT:</b> {(totalQty * 1.05).toFixed(0)} KG</div>
-                                <div><span className="text-slate-500 font-bold uppercase block text-[7.5px]">AMOUNT IN WORDS</span><b className="font-serif uppercase tracking-wide text-slate-900">{totalAmountWords}</b></div>
-                                <p className="text-[7.5px] text-slate-500 italic border-t border-slate-200 pt-1">
-                                  DECLARATION: WE HEREBY DECLARE GOODS ARE QUALITY TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
-                                </p>
-                              </div>
-
-                              <div className="p-2 flex flex-col justify-between items-center text-center bg-slate-50/50">
-                                <span className="text-[7.5px] font-bold text-slate-800 uppercase">FOR {activeCompanyName}</span>
-                                <div className="h-12 w-full flex items-center justify-center relative my-0.5">
-                                  {activeSeal ? (
-                                    <img src={activeSeal} alt="Official Seal" className="h-10 object-contain opacity-80 absolute" />
-                                  ) : companySeal ? (
-                                    <img src={companySeal} alt="Official Seal" className="h-10 object-contain opacity-80 absolute" />
-                                  ) : null}
-                                  {activeSignature ? (
-                                    <img src={activeSignature} alt="Digital Signature" className="h-9 object-contain z-10" />
-                                  ) : companySignature ? (
-                                    <img src={companySignature} alt="Digital Signature" className="h-9 object-contain z-10" />
-                                  ) : (
-                                    <svg className="w-20 h-8 text-indigo-900 z-10 opacity-90" viewBox="0 0 200 60" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                      <path d="M 10 40 C 30 10, 60 50, 90 20 C 120 0, 150 40, 180 15" strokeLinecap="round" />
-                                    </svg>
-                                  )}
-                                </div>
-                                <span className="text-[7.5px] font-bold text-slate-700 uppercase border-t border-slate-300 w-full pt-0.5">{activeSignatoryDesignation || 'AUTHORISED SIGNATORY'} ({activeSignatoryName})</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
