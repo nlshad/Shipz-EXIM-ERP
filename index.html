@@ -11101,6 +11101,222 @@
                         className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1"
                         title="Close Modal"
                       >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PRINT / PREVIEW CANVAS (SIMPLIFIED A4 PDF CANVAS) */}
+                  <div className="p-4 overflow-y-auto flex-1 bg-slate-200/60">
+                    <div
+                      id="proforma-pdf-canvas"
+                      className="bg-white p-7 rounded-xl border border-slate-300 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-hidden shadow-xs"
+                    >
+                      {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
+                      <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
+                        {/* LEFT: LOGO */}
+                        <div className="flex items-center space-x-3">
+                          {activeLogo ? (
+                            <img src={activeLogo} alt={`${activeCompanyName} Logo`} className="h-14 max-w-[240px] object-contain" />
+                          ) : (
+                            <div className="flex items-center space-x-3">
+                              <div className="w-11 h-11 rounded-xl bg-slate-900 text-white font-black text-lg flex items-center justify-center shadow-md">
+                                {activeCompanyName.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">
+                                  {activeCompanyName}
+                                </h1>
+                                <p className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                                  EXIM SUBSIDIARY CORPORATE ENTITY
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RIGHT: CORPORATE ADDRESS & TAX REGISTRATIONS */}
+                        <div className="text-right text-[10.5px] text-slate-700 leading-snug font-sans space-y-0.5 max-w-[300px]">
+                          <p className="font-bold text-slate-800">{activeCompanyAddr}</p>
+                          <div className="pt-1 font-mono text-[9px] font-semibold text-slate-700 flex flex-wrap justify-end gap-x-2 gap-y-0.5">
+                            {activeGstin ? <span>GSTIN: <b className="text-slate-900">{activeGstin}</b></span> : null}
+                            {activePan ? <span>PAN: <b className="text-slate-900">{activePan}</b></span> : null}
+                            {activeIec ? <span>IEC: <b className="text-slate-900">{activeIec}</b></span> : null}
+                            {activeLut ? <span>LUT: <b className="text-emerald-800">{activeLut}</b></span> : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* DOCUMENT TITLE BAR (CLEAN GREY TEXT METADATA BAR) */}
+                      <div className="flex justify-between items-center pt-1 pb-2 font-mono text-xs border-b border-slate-200">
+                        <span className="text-sm font-black tracking-widest text-slate-700 uppercase">
+                          {isCommercialDoc ? 'COMMERCIAL INVOICE' : 'PROFORMA INVOICE'}
+                        </span>
+                        <div className="flex space-x-4 text-[11px] text-slate-600 font-bold">
+                          <div><span>NO:</span> <span className="font-bold text-slate-900">{pi.invNumber}</span></div>
+                          <div><span>DATE:</span> <span className="font-bold text-slate-900">{pi.date || pi.createdDate || '2026-08-17'}</span></div>
+                          <div><span>REF:</span> <span className="font-bold text-slate-900">{pi.piReferenceNo || pi.buyerOrderNo || 'B012562'}</span></div>
+                        </div>
+                      </div>
+
+                      {/* EXPORTER / SHIPPER & CONSIGNEE / BUYER BOXES */}
+                      <div className="grid grid-cols-2 gap-3 text-[10.5px]">
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 mb-1.5 text-[9px] tracking-wider">EXPORTER / SHIPPER</div>
+                          <div className="font-black text-slate-900 text-xs uppercase">{activeCompanyName}</div>
+                          <p className="text-slate-600 text-[9.5px] mt-0.5 leading-snug">
+                            {activeCompanyAddr}
+                          </p>
+                        </div>
+
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 mb-1.5 text-[9px] tracking-wider">CONSIGNEE / BUYER</div>
+                            <div className="font-black text-slate-900 text-xs">{pi.consignee}</div>
+                            <p className="text-slate-600 text-[9.5px] mt-0.5 leading-snug">{pi.consigneeAddr || `${pi.port || 'Dubai'}, ${pi.country || 'UAE'}`}</p>
+                          </div>
+                          <div className="border-t border-slate-100 pt-1 mt-1 text-[9px] text-slate-600">
+                            <span>NOTIFY PARTY:</span> <b className="text-slate-900">{pi.notifyParty || 'Same as Consignee'}</b>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LOGISTICS & SHIPPING + BANK DETAILS BOXES */}
+                      <div className="grid grid-cols-2 gap-3 text-[10px]">
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">LOGISTICS & SHIPPING</div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9.5px] pt-0.5">
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">PRE-CARRIAGE</span><b className="text-slate-900">{pi.preCarriageBy || 'By Sea'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">RECEIPT PLACE</span><b className="text-slate-900">{pi.placeOfReceipt || 'CFS'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">PORT OF LOADING</span><b className="text-slate-900">{pi.placeOfLoading || pi.portOfLoading || 'Nhava Sheva / JNPT'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">DESTINATION PORT</span><b className="text-slate-900">{pi.portOfDestination || pi.port || 'Port Victoria'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">COUNTRY ORIGIN</span><b className="text-slate-900">{pi.countryOfOrigin || 'India'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">FINAL DESTINATION</span><b className="text-slate-900">{pi.country || 'Seychelles'}</b></div>
+                          </div>
+                        </div>
+
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({bankShortName})</div>
+                          <div className="text-[9.5px] space-y-0.5 pt-0.5">
+                            <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{selectedBank.beneficiaryName}</b></div>
+                            <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
+                            <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
+                              <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{selectedBank.accountNumber}</b></div>
+                              {selectedBank.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{selectedBank.swiftCode}</b></div>}
+                              {selectedBank.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{selectedBank.ifscCode}</b></div>}
+                            </div>
+                            {selectedBank.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{selectedBank.branchName}</span></div>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LINE ITEMS TABLE */}
+                      <div className="border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
+                        <table className="w-full text-left text-[10px] border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-600 font-extrabold text-[9px] uppercase border-b border-slate-300">
+                              <th className="py-2 px-2.5 text-center w-8 border-r border-slate-200">#</th>
+                              <th className="py-2 px-3 border-r border-slate-200">DESCRIPTION OF GOODS</th>
+                              <th className="py-2 px-2 border-r border-slate-200 text-center w-20">HS CODE</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200 text-right w-16">QTY</th>
+                              <th className="py-2 px-2 border-r border-slate-200 text-center w-14">UNIT</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200 text-right w-20">RATE ($)</th>
+                              <th className="py-2 px-3 text-right w-24">TOTAL ($)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 text-[10px]">
+                            {piProducts.map((prod, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="py-2.5 px-2.5 text-center font-bold text-slate-700 border-r border-slate-200">{idx + 1}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-200">
+                                  <div className="flex items-center space-x-3">
+                                    {prod.imgUrl ? (
+                                      <img src={prod.imgUrl} alt={prod.description} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0" />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
+                                    )}
+                                    <div>
+                                      <div className="font-extrabold text-slate-900 leading-snug">{prod.description}</div>
+                                      {prod.desc && <div className="text-[9px] text-slate-500 italic mt-0.5 leading-tight">{prod.desc}</div>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200">{prod.hsn || '291814'}</td>
+                                <td className="py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200">{prod.qty}</td>
+                                <td className="py-2.5 px-2 text-center font-semibold text-slate-800 border-r border-slate-200">{prod.unit}</td>
+                                <td className="py-2.5 px-2.5 text-right font-mono font-bold text-slate-800 border-r border-slate-200">${Number(prod.rate).toFixed(2)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">${Number(prod.total).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-50 font-bold border-t-2 border-slate-300 text-[10px] text-slate-900">
+                              <td colSpan={3} className="py-2 px-3 text-right font-extrabold uppercase">TOTAL EVALUATION</td>
+                              <td className="py-2 px-2.5 text-right font-mono font-black">{totalQty}</td>
+                              <td className="py-2 px-2 text-center">-</td>
+                              <td className="py-2 px-2.5 text-right">-</td>
+                              <td className="py-2 px-3 text-right font-mono font-black text-slate-900 text-xs">${totalAmountFx.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+
+                      {/* PACKING SUMMARY & TOTALS */}
+                      <div className="grid grid-cols-3 gap-3 text-[9.5px] items-stretch">
+                        <div className="col-span-2 space-y-2 flex flex-col justify-between">
+                          <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">AMOUNT IN WORDS</span>
+                            <p className="font-black text-slate-900 uppercase font-sans tracking-wide text-[10.5px] mt-0.5">{totalAmountWords}</p>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 border border-slate-300 rounded-xl p-2.5 bg-white text-center shadow-2xs font-mono text-[9px]">
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">PACKAGES</span><b className="text-slate-900">{pi.totalPackages || '150 DRUMS'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">NET WT</span><b className="text-slate-900">{pi.totalNetWeight || '150,000 KG'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-sans font-bold">GROSS WT</span><b className="text-slate-900">{pi.totalGrossWeight || '151,500 KG'}</b></div>
+                          </div>
+                        </div>
+
+                        <div className="border-2 border-slate-300 rounded-xl p-3 bg-white shadow-2xs flex flex-col justify-center items-center text-center">
+                          <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">TOTAL VALUE ({pi.shipmentTerms || pi.incoterms || 'FREE ON BOARD'})</span>
+                          <div className="text-xl font-black font-mono text-slate-900 my-1">
+                            ${totalAmountFx.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </div>
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">USD (UNITED STATES DOLLAR)</span>
+                        </div>
+                      </div>
+
+                      {/* TERMS & SIGNATORY */}
+                      <div className="border border-slate-300 rounded-xl p-3 bg-white text-[9.5px] grid grid-cols-3 gap-3 shadow-2xs">
+                        <div className="col-span-2 space-y-1.5 border-r border-slate-200 pr-3">
+                          <div className="grid grid-cols-3 gap-2 text-[9px]">
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">PAYMENT TERMS</span><b className="text-slate-900">{pi.paymentTerms || '100% Payment Before'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">INCOTERMS</span><b className="text-slate-900">{pi.shipmentTerms || pi.incoterms || 'Free On Board'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] font-bold uppercase">LEAD TIME</span><b className="text-slate-900">{pi.shipmentPeriod || 'N/A'}</b></div>
+                          </div>
+                          <p className="text-[8.5px] text-slate-500 leading-tight pt-1 border-t border-slate-100">
+                            DECLARATION: WE HEREBY DECLARE GOODS ARE QUALITY TESTED & PROCESSED AS PER INTERNATIONAL EXPORT STANDARDS.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col justify-between items-center text-center">
+                          <span className="text-[8.5px] font-extrabold text-slate-700 uppercase">FOR {activeCompanyName}</span>
+                          <div className="h-12 w-full flex items-center justify-center relative my-0.5">
+                            {activeSeal ? (
+                              <img src={activeSeal} alt="Official Seal" className="h-11 object-contain opacity-85 absolute" />
+                            ) : companySeal ? (
+                              <img src={companySeal} alt="Official Seal" className="h-11 object-contain opacity-75 absolute" />
+                            ) : null}
+                            {activeSignature ? (
+                              <img src={activeSignature} alt="Authorized Signature" className="h-9 object-contain z-10" />
+                            ) : companySignature ? (
+                              <img src={companySignature} alt="Authorized Signature" className="h-9 object-contain z-10" />
+                            ) : null}
+                          </div>
+                          <div className="pt-0.5 border-t border-slate-300 w-full">
+                            <div className="font-extrabold text-slate-900 text-[9px] uppercase">{activeSignatoryDesignation || 'MANAGING DIRECTOR'}</div>
+                            <div className="text-[8.5px] font-bold text-slate-600">{activeSignatoryName || 'Siju Thekkan'}</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
