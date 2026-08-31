@@ -3734,6 +3734,141 @@
         });
       };
 
+      const [pklSourceType, setPklSourceType] = useState('proforma');
+
+      const handlePklSourceSelect = (selectedRefNo, chosenType = pklSourceType) => {
+        if (!selectedRefNo) {
+          setPklFormData(prev => ({ ...prev, piInvoiceNo: '' }));
+          return;
+        }
+
+        let selectedDoc = null;
+        if (chosenType === 'commercial') {
+          selectedDoc = (commercialInvoices || []).find(c =>
+            c.invNumber === selectedRefNo ||
+            `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})` === selectedRefNo ||
+            (c.invNumber && selectedRefNo.includes(c.invNumber))
+          );
+        } else {
+          selectedDoc = (proformaInvoices || []).find(p =>
+            p.invNumber === selectedRefNo ||
+            `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})` === selectedRefNo ||
+            (p.invNumber && selectedRefNo.includes(p.invNumber))
+          );
+        }
+
+        if (!selectedDoc) {
+          setPklFormData(prev => ({ ...prev, piInvoiceNo: selectedRefNo, sourceType: chosenType }));
+          return;
+        }
+
+        let packageMatrix = [];
+        if (selectedDoc.lineItems && Array.isArray(selectedDoc.lineItems) && selectedDoc.lineItems.length > 0) {
+          packageMatrix = selectedDoc.lineItems.map((li, idx) => {
+            const q = parseFloat(li.quantity) || 1;
+            const netTotal = parseFloat(li.netWeight) || (q * 25);
+            const grossTotal = parseFloat(li.grossWeight) || (q * 26.5);
+            const uNet = (netTotal / q) || 25;
+            const uGross = (grossTotal / q) || 26.5;
+            const cbmUnit = parseFloat(li.cbmPerPkg || li.dimensionM3 || 0.045);
+            const totalCbmVal = (q * cbmUnit).toFixed(3);
+
+            const startBox = idx * 20 + 1;
+            const endBox = (idx + 1) * 20;
+            const boxRangeStr = `Box ${String(startBox).padStart(2, '0')} - ${String(endBox).padStart(2, '0')}`;
+
+            return {
+              id: `pkli-${Date.now()}-${idx}`,
+              boxRange: boxRangeStr,
+              product: li.product || li.name || 'Export Goods Item',
+              packageType: li.packageType || 'HDPE Bag (25KG)',
+              qtyPerPkg: q,
+              unit: li.unit || 'Bag',
+              netWtPerPkg: Number(uNet.toFixed(2)),
+              grossWtPerPkg: Number(uGross.toFixed(2)),
+              dimensions: li.dimensions || '58 x 58 x 88 cm',
+              cbmPerPkg: cbmUnit,
+              totalNetWt: netTotal.toFixed(2),
+              totalGrossWt: grossTotal.toFixed(2),
+              totalCbm: totalCbmVal
+            };
+          });
+        } else if (selectedDoc.products && typeof selectedDoc.products === 'string') {
+          const parts = selectedDoc.products.split(',');
+          packageMatrix = parts.map((part, idx) => ({
+            id: `pkli-${Date.now()}-${idx}`,
+            boxRange: `Box ${String(idx * 20 + 1).padStart(2, '0')} - ${String((idx + 1) * 20).padStart(2, '0')}`,
+            product: part.trim(),
+            packageType: 'HDPE Bag (25KG)',
+            qtyPerPkg: 100,
+            unit: 'Bag',
+            netWtPerPkg: 25.00,
+            grossWtPerPkg: 26.50,
+            dimensions: '58 x 58 x 88 cm',
+            cbmPerPkg: 0.045,
+            totalNetWt: '2500.00',
+            totalGrossWt: '2650.00',
+            totalCbm: '4.50'
+          }));
+        }
+
+        if (packageMatrix.length === 0) {
+          packageMatrix = [{
+            id: `pkli-${Date.now()}`,
+            boxRange: 'Box 01 - 50',
+            product: selectedDoc.products || 'Export Goods',
+            packageType: 'HDPE Bag (25KG)',
+            qtyPerPkg: 50,
+            unit: 'Bag',
+            netWtPerPkg: 25.00,
+            grossWtPerPkg: 26.50,
+            dimensions: '58 x 58 x 88 cm',
+            cbmPerPkg: 0.045,
+            totalNetWt: '1250.00',
+            totalGrossWt: '1325.00',
+            totalCbm: '2.25'
+          }];
+        }
+
+        const docNoLabel = selectedDoc.invNumber || selectedRefNo;
+        const buyerRef = selectedDoc.buyerOrderNo ? ` (${selectedDoc.buyerOrderNo})` : '';
+
+        setPklFormData(prev => ({
+          ...prev,
+          sourceType: chosenType,
+          piInvoiceNo: `${docNoLabel}${buyerRef}`,
+          companyUnit: selectedDoc.companyAddress || selectedDoc.companyName || prev.companyUnit || (masterAddresses?.[0]?.label || 'MGlobal IMPEX'),
+          consignee: selectedDoc.consignee || prev.consignee,
+          consigneeAddress: selectedDoc.consigneeAddress || selectedDoc.address || prev.consigneeAddress,
+          containerNo: selectedDoc.containerNo || selectedDoc.containerMarks || prev.containerNo || 'MSKU-882901-4',
+          sealNo: selectedDoc.sealNo || prev.sealNo || 'SL-99482',
+          shippingLineVessel: selectedDoc.vesselFlightNo || selectedDoc.vesselNo || selectedDoc.shippingLine || prev.shippingLineVessel || 'Maersk Line / Vessel V-204',
+          items: packageMatrix
+        }));
+
+        setToastNotice(`⚡ Automatically fetched all details & package breakdown from ${chosenType === 'commercial' ? 'Commercial Invoice' : 'Proforma Invoice'} ${docNoLabel}!`);
+        setTimeout(() => setToastNotice(null), 3500);
+      };
+
+      const handleSavePkl = (status = 'Finalized') => {
+        if (!pklFormData.consignee) {
+          alert('Please select or specify a Consignee.');
+          return;
+        }
+
+        const newPklRecord = {
+          ...pklFormData,
+          id: `pkl-${Date.now()}`,
+          status: status,
+          date: pklFormData.date || new Date().toISOString().split('T')[0]
+        };
+
+        setPackingLists(prev => [newPklRecord, ...(prev || [])]);
+        setIsCreatePklModalOpen(false);
+        setToastNotice(`Packing List ${newPklRecord.pklNo} saved successfully as ${status}!`);
+        setTimeout(() => setToastNotice(null), 3500);
+      };
+
       const handleAddPklItem = () => {
         setPklFormData({
           ...pklFormData,
@@ -3741,18 +3876,18 @@
             ...pklFormData.items,
             {
               id: `pkli-new-${Date.now()}`,
-              boxRange: 'Box 61 - 120',
-              product: 'Sodium Benzoate High Purity',
+              boxRange: `Box ${String(pklFormData.items.length * 20 + 1).padStart(2, '0')} - ${String((pklFormData.items.length + 1) * 20).padStart(2, '0')}`,
+              product: 'Cumin Seed High Purity',
               packageType: 'HDPE Bag (25KG)',
               qtyPerPkg: 1,
               unit: 'Bag',
-              netWtPerPkg: 200,
-              grossWtPerPkg: 215,
+              netWtPerPkg: 25.00,
+              grossWtPerPkg: 26.50,
               dimensions: '58 x 58 x 88 cm',
-              cbmPerPkg: 0.30,
-              totalNetWt: '12000.00',
-              totalGrossWt: '12900.00',
-              totalCbm: '18.00'
+              cbmPerPkg: 0.045,
+              totalNetWt: '25.00',
+              totalGrossWt: '26.50',
+              totalCbm: '0.045'
             }
           ]
         });
@@ -10724,21 +10859,132 @@
 
                 <div className="p-6 space-y-6 text-xs text-slate-700">
                   <div className="space-y-4">
-                    <h4 className="font-black text-slate-900 text-sm border-b pb-2">Header & Document References</h4>
+                    <h4 className="font-black text-slate-900 text-sm border-b pb-2 flex items-center justify-between">
+                      <span>Header & Document References</span>
+                      <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                        Linked Source Mode: {pklSourceType === 'commercial' ? 'Commercial Invoice' : 'Proforma Invoice'}
+                      </span>
+                    </h4>
+
+                    {/* SOURCE DOCUMENT TYPE CHOICE RADIO SELECTION */}
+                    <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 p-3.5 rounded-xl border border-indigo-100/80 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-indigo-950 font-black text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                          <i className="fi fi-rr-document text-indigo-600 text-sm"></i>
+                          <span>Choose Document Source to Link Packing List</span>
+                        </label>
+                        <span className="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full shadow-xs">
+                          ⚡ Auto-Fetch Enabled
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Option 1: Proforma Invoice */}
+                        <div
+                          onClick={() => {
+                            setPklSourceType('proforma');
+                            if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'proforma');
+                          }}
+                          className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                            pklSourceType === 'proforma'
+                              ? 'bg-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
+                              : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-white'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="pklSourceTypeChoice"
+                            value="proforma"
+                            checked={pklSourceType === 'proforma'}
+                            onChange={() => {
+                              setPklSourceType('proforma');
+                              if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'proforma');
+                            }}
+                            className="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div>
+                            <div className="text-xs font-black flex items-center space-x-1.5">
+                              <span>Proforma Invoice (PI)</span>
+                              <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded-md font-mono font-bold">
+                                {proformaInvoices.length} Registered
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium">Link & fetch details directly from Proforma Invoice</div>
+                          </div>
+                        </div>
+
+                        {/* Option 2: Commercial Invoice */}
+                        <div
+                          onClick={() => {
+                            setPklSourceType('commercial');
+                            if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'commercial');
+                          }}
+                          className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                            pklSourceType === 'commercial'
+                              ? 'bg-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
+                              : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-white'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="pklSourceTypeChoice"
+                            value="commercial"
+                            checked={pklSourceType === 'commercial'}
+                            onChange={() => {
+                              setPklSourceType('commercial');
+                              if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'commercial');
+                            }}
+                            className="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div>
+                            <div className="text-xs font-black flex items-center space-x-1.5">
+                              <span>Commercial Invoice (CI)</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-md font-mono font-bold">
+                                {commercialInvoices.length} Registered
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium">Link & fetch details directly from Finalized Commercial Invoice</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Linked PI / Invoice No. (Search & Select) <span className="text-red-500">*</span></label>
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between items-center">
+                          <span>
+                            Select {pklSourceType === 'commercial' ? 'Commercial Invoice (CI)' : 'Proforma Invoice (PI)'} <span className="text-red-500">*</span>
+                          </span>
+                          {pklFormData.piInvoiceNo && (
+                            <span
+                              onClick={() => handlePklSourceSelect(pklFormData.piInvoiceNo, pklSourceType)}
+                              className="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200"
+                              title="Click to re-fetch all details & package matrix"
+                            >
+                              ⚡ Re-fetch
+                            </span>
+                          )}
+                        </label>
                         <SearchableComboboxSelect
                           value={pklFormData.piInvoiceNo || ''}
-                          onChange={(val) => setPklFormData({ ...pklFormData, piInvoiceNo: val })}
-                          options={proformaInvoices.map((p) => ({
-                            label: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
-                            value: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
-                            subtext: `${p.consignee} | ${p.port}, ${p.country}`,
-                            badge: p.status || 'PI'
-                          }))}
-                          placeholder="-- search / select Linked PI / Invoice No. --"
-                          searchPlaceholder="Type PI No., Consignee..."
+                          onChange={(val) => handlePklSourceSelect(val, pklSourceType)}
+                          options={
+                            pklSourceType === 'commercial'
+                              ? (commercialInvoices || []).map((c) => ({
+                                  label: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
+                                  value: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
+                                  subtext: `${c.consignee} | ${c.port || c.portOfDischarge || 'Port'}, ${c.country || 'Country'}`,
+                                  badge: c.status || 'Commercial Invoice'
+                                }))
+                              : (proformaInvoices || []).map((p) => ({
+                                  label: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
+                                  value: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
+                                  subtext: `${p.consignee} | ${p.port || p.portOfDischarge || 'Port'}, ${p.country || 'Country'}`,
+                                  badge: p.status || 'Proforma Invoice'
+                                }))
+                          }
+                          placeholder={`-- search / select ${pklSourceType === 'commercial' ? 'Commercial Invoice (CI)' : 'Proforma Invoice (PI)'} --`}
+                          searchPlaceholder={`Type ${pklSourceType === 'commercial' ? 'CI No.' : 'PI No.'}, Consignee...`}
                         />
                       </div>
 
@@ -10756,20 +11002,36 @@
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Company Unit / Exporter <span className="text-red-500">*</span></label>
-                        <select value={pklFormData.companyUnit} onChange={(e) => setPklFormData({ ...pklFormData, companyUnit: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
-                          <option value="Andhra Pradesh Unit">Andhra Pradesh Unit</option>
-                          <option value="Gujarat SEZ Unit">Gujarat SEZ Unit</option>
+                        <select value={pklFormData.companyUnit || ''} onChange={(e) => setPklFormData({ ...pklFormData, companyUnit: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
+                          <option value="">-- Select Company Exporter Unit --</option>
+                          {masterAddresses.map((a) => (
+                            <option key={`pkl-addr-${a.id}`} value={a.label || a.companyName}>
+                              {a.label || a.companyName}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Consignee <span className="text-red-500">*</span></label>
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                          <span>Consignee <span className="text-red-500">*</span></span>
+                          <span className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline" onClick={() => setActiveQuickAdd('consignee')}>+ Add New</span>
+                        </label>
                         <div className="flex space-x-1">
-                          <select value={pklFormData.consignee} onChange={(e) => setPklFormData({ ...pklFormData, consignee: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
-                            <option value="Global Trade Partners LLC">Global Trade Partners LLC</option>
-                            <option value="BERLIN (Indonesia)">BERLIN (Indonesia)</option>
+                          <select value={pklFormData.consignee || ''} onChange={(e) => {
+                            const match = masterConsignees.find(c => c.name === e.target.value);
+                            setPklFormData({
+                              ...pklFormData,
+                              consignee: e.target.value,
+                              consigneeAddress: match ? match.address : pklFormData.consigneeAddress
+                            });
+                          }} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
+                            <option value="">-- Select Consignee --</option>
+                            {masterConsignees.map((c) => (
+                              <option key={`pkl-cons-${c.id}`} value={c.name}>{c.name} ({c.country})</option>
+                            ))}
                           </select>
-                          <button className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
+                          <button type="button" onClick={() => setActiveQuickAdd('consignee')} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shrink-0">+</button>
                         </div>
                       </div>
 
@@ -10787,7 +11049,7 @@
 
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Seal No.</label>
-                        <input type="text" value={pklFormData.sealNo} onChange={(e) => setPklFormData({ ...pklFormData, sealNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
+                        <input type="text" value={pklFormData.sealNo} onChange={(e) => setPiFormData ? setPklFormData({ ...pklFormData, sealNo: e.target.value }) : null} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
                       </div>
 
                       <div>
@@ -10830,6 +11092,8 @@
                               <option value="HDPE Bag (25KG)">HDPE Bag (25KG)</option>
                               <option value="Wooden Pallet">Wooden Pallet</option>
                               <option value="Carton Box">Carton Box</option>
+                              <option value="Paper Sack">Paper Sack</option>
+                              <option value="Jute Bag">Jute Bag</option>
                             </select>
                           </div>
                         </div>
@@ -10837,12 +11101,26 @@
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                           <div>
                             <label className="block text-slate-700 font-bold text-[10px] mb-1">Net Wt per Pkg (KG)</label>
-                            <input type="number" value={item.netWtPerPkg} onChange={(e) => { const updated = [...pklFormData.items]; updated[idx].netWtPerPkg = parseFloat(e.target.value) || 0; setPklFormData({ ...pklFormData, items: updated }); }} className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono font-bold" />
+                            <input type="number" step="any" value={item.netWtPerPkg} onChange={(e) => {
+                              const updated = [...pklFormData.items];
+                              const val = parseFloat(e.target.value) || 0;
+                              updated[idx].netWtPerPkg = val;
+                              const q = parseFloat(updated[idx].qtyPerPkg) || 1;
+                              updated[idx].totalNetWt = (val * q).toFixed(2);
+                              setPklFormData({ ...pklFormData, items: updated });
+                            }} className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono font-bold" />
                           </div>
 
                           <div>
                             <label className="block text-slate-700 font-bold text-[10px] mb-1">Gross Wt per Pkg (KG)</label>
-                            <input type="number" value={item.grossWtPerPkg} onChange={(e) => { const updated = [...pklFormData.items]; updated[idx].grossWtPerPkg = parseFloat(e.target.value) || 0; setPklFormData({ ...pklFormData, items: updated }); }} className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono font-bold" />
+                            <input type="number" step="any" value={item.grossWtPerPkg} onChange={(e) => {
+                              const updated = [...pklFormData.items];
+                              const val = parseFloat(e.target.value) || 0;
+                              updated[idx].grossWtPerPkg = val;
+                              const q = parseFloat(updated[idx].qtyPerPkg) || 1;
+                              updated[idx].totalGrossWt = (val * q).toFixed(2);
+                              setPklFormData({ ...pklFormData, items: updated });
+                            }} className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono font-bold" />
                           </div>
 
                           <div>
