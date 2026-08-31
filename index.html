@@ -1363,7 +1363,6 @@
 
       const [masterDeliveryAddresses, setMasterDeliveryAddresses] = useState(() => loadSavedState('shipz_master_delivery_addresses', []));
 
-      // Master Auto-Save to LocalStorage Effect Hooks
       React.useEffect(() => { try { localStorage.setItem('shipz_master_addresses', JSON.stringify(masterAddresses)); } catch (e) { } }, [masterAddresses]);
       React.useEffect(() => { try { localStorage.setItem('shipz_master_products', JSON.stringify(masterProductsSettings)); } catch (e) { } }, [masterProductsSettings]);
       React.useEffect(() => { try { localStorage.setItem('shipz_master_customers', JSON.stringify(masterCustomersSettings)); } catch (e) { } }, [masterCustomersSettings]);
@@ -4743,29 +4742,6 @@
         setTimeout(() => setToastNotice(null), 4000);
       };
 
-      const handleSavePkl = (status) => {
-        const newPkl = {
-          id: `pkl-${Date.now()}`,
-          pklNo: pklFormData.pklNo || 'PKL/03/25-26',
-          piInvoiceNo: pklFormData.piInvoiceNo,
-          consignee: pklFormData.consignee,
-          totalPackages: `${pklFormData.items.length * 60} Packages`,
-          netWeight: '24,000.00 KG',
-          grossWeight: '25,800.00 KG',
-          cbm: '45.20 m³',
-          status: status,
-          date: pklFormData.date,
-          companyUnit: pklFormData.companyUnit,
-          containerNo: pklFormData.containerNo,
-          sealNo: pklFormData.sealNo,
-          vessel: pklFormData.shippingLineVessel,
-          items: pklFormData.items
-        };
-
-        setPackingLists([newPkl, ...packingLists]);
-        setIsCreatePklModalOpen(false);
-        alert(`Packing List ${newPkl.pklNo} saved successfully!`);
-      };
 
       const handleOpenAddBlModal = () => {
         setEditingBlId(null);
@@ -11049,7 +11025,7 @@
 
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Seal No.</label>
-                        <input type="text" value={pklFormData.sealNo} onChange={(e) => setPiFormData ? setPklFormData({ ...pklFormData, sealNo: e.target.value }) : null} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
+                        <input type="text" value={pklFormData.sealNo} onChange={(e) => setPklFormData({ ...pklFormData, sealNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
                       </div>
 
                       <div>
