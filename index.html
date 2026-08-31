@@ -3173,6 +3173,41 @@
         });
       };
 
+      const handlePiCountryChange = (val) => {
+        const matchingPorts = masterPorts.filter(p => p.country === val);
+        const defaultPort = matchingPorts.length > 0 ? matchingPorts[0].name : '';
+
+        setPiFormData(prev => ({
+          ...prev,
+          country: val,
+          finalDestinationPort: defaultPort || prev.finalDestinationPort,
+          countryOfDischarge: prev.countryOfDischarge ? prev.countryOfDischarge : val,
+          portOfDischarge: prev.portOfDischarge ? prev.portOfDischarge : defaultPort
+        }));
+      };
+
+      const handlePiCountryDischargeChange = (val) => {
+        const matchingPorts = masterPorts.filter(p => p.country === val);
+        const defaultPod = matchingPorts.length > 0 ? matchingPorts[0].name : '';
+
+        setPiFormData(prev => ({
+          ...prev,
+          countryOfDischarge: val,
+          portOfDischarge: defaultPod || prev.portOfDischarge
+        }));
+      };
+
+      const handlePiCountryLoadingChange = (val) => {
+        const matchingPorts = masterPorts.filter(p => p.country === val);
+        const defaultPol = matchingPorts.length > 0 ? matchingPorts[0].name : '';
+
+        setPiFormData(prev => ({
+          ...prev,
+          countryOfLoading: val,
+          placeOfLoading: defaultPol || prev.placeOfLoading
+        }));
+      };
+
       const [modalFormData, setModalFormData] = useState({
         invoiceNo: 'INV/02/25-26',
         shippingBillNo: 'SB-8829104',
@@ -10101,23 +10136,35 @@
                         <label className="block text-slate-700 font-bold mb-1">Country <span className="text-red-500">*</span></label>
                         <SearchableComboboxSelect
                           value={piFormData.country || ''}
-                          onChange={(val) => setPiFormData({ ...piFormData, country: val })}
+                          onChange={(val) => handlePiCountryChange(val)}
                           options={worldCountries}
                           placeholder="-- Select Country --"
                           searchPlaceholder="Search destination country..."
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Final Destination / Port Name</label>
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                          <span>Final Destination / Port Name</span>
+                          <span className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline" onClick={() => setActiveQuickAdd('port')}>+ Add Port</span>
+                        </label>
                         <div className="flex space-x-1">
                           <select value={piFormData.finalDestinationPort || ''} onChange={(e) => setPiFormData({ ...piFormData, finalDestinationPort: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                             <option value="">-- Select Destination Port --</option>
-                            {masterPorts.map((p) => (
-                              <option key={`pip-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
-                            ))}
+                            {masterPorts.filter(p => p.country === piFormData.country).length > 0 ? (
+                              masterPorts.filter(p => p.country === piFormData.country).map((p) => (
+                                <option key={`pip-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                              ))
+                            ) : (
+                              masterPorts.map((p) => (
+                                <option key={`pip-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                              ))
+                            )}
                           </select>
-                          <button title="+ Add New Port" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs">+</button>
+                          <button type="button" onClick={() => setActiveQuickAdd('port')} title="+ Add New Port" className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs shrink-0">+</button>
                         </div>
+                        {piFormData.country && masterPorts.filter(p => p.country === piFormData.country).length === 0 && (
+                          <p className="text-[10px] text-amber-700 font-medium mt-1">⚠️ No registered ports for {piFormData.country}. You can select any port or click + Add Port.</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Country Of Origin Of Goods</label>
@@ -10156,20 +10203,28 @@
                         <label className="block text-slate-700 font-bold mb-1">Country Of Loading</label>
                         <SearchableComboboxSelect
                           value={piFormData.countryOfLoading || ''}
-                          onChange={(val) => setPiFormData({ ...piFormData, countryOfLoading: val })}
+                          onChange={(val) => handlePiCountryLoadingChange(val)}
                           options={Array.from(new Set(['India', ...worldCountries]))}
                           placeholder="-- Select Country of Loading --"
                           searchPlaceholder="Search country of loading..."
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Place Of Loading</label>
-                        <select value={piFormData.placeOfLoading || ''} onChange={(e) => setPiFormData({ ...piFormData, placeOfLoading: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs">
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                          <span>Place Of Loading</span>
+                          <span className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline" onClick={() => setActiveQuickAdd('port')}>+ Add Port</span>
+                        </label>
+                        <select value={piFormData.placeOfLoading || ''} onChange={(e) => setPiFormData({ ...piFormData, placeOfLoading: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                           <option value="">-- Select Place of Loading --</option>
-                          <option value="Nhava Sheva (INNSA)">Nhava Sheva (INNSA)</option>
-                          <option value="Mundra Port (INMUN)">Mundra Port (INMUN)</option>
-                          <option value="Chennai Port (INMAA)">Chennai Port (INMAA)</option>
-                          <option value="Visakhapatnam Port (INVTZ)">Visakhapatnam Port (INVTZ)</option>
+                          {masterPorts.filter(p => p.country === piFormData.countryOfLoading).length > 0 ? (
+                            masterPorts.filter(p => p.country === piFormData.countryOfLoading).map((p) => (
+                              <option key={`pipol-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                            ))
+                          ) : (
+                            masterPorts.map((p) => (
+                              <option key={`pipol-all-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                            ))
+                          )}
                         </select>
                       </div>
                     </div>
@@ -10179,19 +10234,28 @@
                         <label className="block text-slate-700 font-bold mb-1">Country Of Discharge</label>
                         <SearchableComboboxSelect
                           value={piFormData.countryOfDischarge || ''}
-                          onChange={(val) => setPiFormData({ ...piFormData, countryOfDischarge: val })}
+                          onChange={(val) => handlePiCountryDischargeChange(val)}
                           options={worldCountries}
                           placeholder="-- Select Country of Discharge --"
                           searchPlaceholder="Search country of discharge..."
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Port Of Discharge</label>
-                        <select value={piFormData.portOfDischarge || ''} onChange={(e) => setPiFormData({ ...piFormData, portOfDischarge: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs">
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between">
+                          <span>Port Of Discharge</span>
+                          <span className="text-blue-600 font-bold text-[10px] cursor-pointer hover:underline" onClick={() => setActiveQuickAdd('port')}>+ Add Port</span>
+                        </label>
+                        <select value={piFormData.portOfDischarge || ''} onChange={(e) => setPiFormData({ ...piFormData, portOfDischarge: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
                           <option value="">-- Select Port of Discharge --</option>
-                          {masterPorts.map((p) => (
-                            <option key={`pipod-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
-                          ))}
+                          {masterPorts.filter(p => p.country === piFormData.countryOfDischarge).length > 0 ? (
+                            masterPorts.filter(p => p.country === piFormData.countryOfDischarge).map((p) => (
+                              <option key={`pipod-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                            ))
+                          ) : (
+                            masterPorts.map((p) => (
+                              <option key={`pipod-all-${p.id}`} value={p.name}>{p.name} ({p.country})</option>
+                            ))
+                          )}
                         </select>
                       </div>
                       <div>
