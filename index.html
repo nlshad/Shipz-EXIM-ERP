@@ -1829,6 +1829,7 @@
       // Packing List Form Data
       const [pklFormData, setPklFormData] = useState({
         piInvoiceNo: 'PI/6/25-26 (INV/02/25-26)',
+        ciInvoiceNo: '',
         pklNo: 'PKL/03/25-26',
         date: '2025-06-21',
         companyUnit: 'Andhra Pradesh Unit',
@@ -3831,11 +3832,13 @@
 
         const docNoLabel = selectedDoc.invNumber || selectedRefNo;
         const buyerRef = selectedDoc.buyerOrderNo ? ` (${selectedDoc.buyerOrderNo})` : '';
+        const formattedRef = `${docNoLabel}${buyerRef}`;
 
         setPklFormData(prev => ({
           ...prev,
           sourceType: chosenType,
-          piInvoiceNo: `${docNoLabel}${buyerRef}`,
+          piInvoiceNo: chosenType === 'proforma' ? formattedRef : (selectedDoc.piReferenceNo || prev.piInvoiceNo),
+          ciInvoiceNo: chosenType === 'commercial' ? formattedRef : prev.ciInvoiceNo,
           companyUnit: selectedDoc.companyAddress || selectedDoc.companyName || prev.companyUnit || (masterAddresses?.[0]?.label || 'MGlobal IMPEX'),
           consignee: selectedDoc.consignee || prev.consignee,
           consigneeAddress: selectedDoc.consigneeAddress || selectedDoc.address || prev.consigneeAddress,
@@ -10838,137 +10841,85 @@
                     <h4 className="font-black text-slate-900 text-sm border-b pb-2 flex items-center justify-between">
                       <span>Header & Document References</span>
                       <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                        Linked Source Mode: {pklSourceType === 'commercial' ? 'Commercial Invoice' : 'Proforma Invoice'}
+                        ⚡ Dual Source Auto-Fetch Active
                       </span>
                     </h4>
 
-                    {/* SOURCE DOCUMENT TYPE CHOICE RADIO SELECTION */}
-                    <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 p-3.5 rounded-xl border border-indigo-100/80 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-indigo-950 font-black text-xs uppercase tracking-wider flex items-center space-x-1.5">
-                          <i className="fi fi-rr-document text-indigo-600 text-sm"></i>
-                          <span>Choose Document Source to Link Packing List</span>
-                        </label>
-                        <span className="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full shadow-xs">
-                          ⚡ Auto-Fetch Enabled
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {/* Option 1: Proforma Invoice */}
-                        <div
-                          onClick={() => {
-                            setPklSourceType('proforma');
-                            if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'proforma');
-                          }}
-                          className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            pklSourceType === 'proforma'
-                              ? 'bg-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
-                              : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-white'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="pklSourceTypeChoice"
-                            value="proforma"
-                            checked={pklSourceType === 'proforma'}
-                            onChange={() => {
-                              setPklSourceType('proforma');
-                              if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'proforma');
-                            }}
-                            className="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                          />
-                          <div>
-                            <div className="text-xs font-black flex items-center space-x-1.5">
-                              <span>Proforma Invoice (PI)</span>
-                              <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded-md font-mono font-bold">
-                                {proformaInvoices.length} Registered
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-slate-500 font-medium">Link & fetch details directly from Proforma Invoice</div>
-                          </div>
-                        </div>
-
-                        {/* Option 2: Commercial Invoice */}
-                        <div
-                          onClick={() => {
-                            setPklSourceType('commercial');
-                            if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'commercial');
-                          }}
-                          className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            pklSourceType === 'commercial'
-                              ? 'bg-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
-                              : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-white'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="pklSourceTypeChoice"
-                            value="commercial"
-                            checked={pklSourceType === 'commercial'}
-                            onChange={() => {
-                              setPklSourceType('commercial');
-                              if (pklFormData.piInvoiceNo) handlePklSourceSelect(pklFormData.piInvoiceNo, 'commercial');
-                            }}
-                            className="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                          />
-                          <div>
-                            <div className="text-xs font-black flex items-center space-x-1.5">
-                              <span>Commercial Invoice (CI)</span>
-                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-md font-mono font-bold">
-                                {commercialInvoices.length} Registered
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-slate-500 font-medium">Link & fetch details directly from Finalized Commercial Invoice</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* DUAL DOCUMENT SELECTION FIELDS: PROFORMA INVOICE & COMMERCIAL INVOICE */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gradient-to-r from-slate-50 to-indigo-50/40 p-4 rounded-xl border border-indigo-100">
+                      {/* Field 1: Select Proforma Invoice (PI) */}
                       <div>
                         <label className="block text-slate-700 font-bold mb-1 flex justify-between items-center">
                           <span>
-                            Select {pklSourceType === 'commercial' ? 'Commercial Invoice (CI)' : 'Proforma Invoice (PI)'} <span className="text-red-500">*</span>
+                            Select Proforma Invoice (PI)
                           </span>
                           {pklFormData.piInvoiceNo && (
                             <span
-                              onClick={() => handlePklSourceSelect(pklFormData.piInvoiceNo, pklSourceType)}
+                              onClick={() => handlePklSourceSelect(pklFormData.piInvoiceNo, 'proforma')}
                               className="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200"
-                              title="Click to re-fetch all details & package matrix"
+                              title="Click to fetch / re-fetch details from this PI"
                             >
-                              ⚡ Re-fetch
+                              ⚡ Fetch PI
                             </span>
                           )}
                         </label>
                         <SearchableComboboxSelect
                           value={pklFormData.piInvoiceNo || ''}
-                          onChange={(val) => handlePklSourceSelect(val, pklSourceType)}
-                          options={
-                            pklSourceType === 'commercial'
-                              ? (commercialInvoices || []).map((c) => ({
-                                  label: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
-                                  value: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
-                                  subtext: `${c.consignee} | ${c.port || c.portOfDischarge || 'Port'}, ${c.country || 'Country'}`,
-                                  badge: c.status || 'Commercial Invoice'
-                                }))
-                              : (proformaInvoices || []).map((p) => ({
-                                  label: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
-                                  value: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
-                                  subtext: `${p.consignee} | ${p.port || p.portOfDischarge || 'Port'}, ${p.country || 'Country'}`,
-                                  badge: p.status || 'Proforma Invoice'
-                                }))
-                          }
-                          placeholder={`-- search / select ${pklSourceType === 'commercial' ? 'Commercial Invoice (CI)' : 'Proforma Invoice (PI)'} --`}
-                          searchPlaceholder={`Type ${pklSourceType === 'commercial' ? 'CI No.' : 'PI No.'}, Consignee...`}
+                          onChange={(val) => {
+                            setPklFormData(prev => ({ ...prev, piInvoiceNo: val }));
+                            if (val) handlePklSourceSelect(val, 'proforma');
+                          }}
+                          options={(proformaInvoices || []).map((p) => ({
+                            label: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
+                            value: `${p.invNumber} (${p.buyerOrderNo || 'INV/02/25-26'})`,
+                            subtext: `${p.consignee} | ${p.port || p.portOfDischarge || 'Port'}, ${p.country || 'Country'}`,
+                            badge: p.status || 'PI'
+                          }))}
+                          placeholder="-- Select Proforma Invoice (PI) --"
+                          searchPlaceholder="Type PI No., Consignee..."
                         />
                       </div>
 
+                      {/* Field 2: Select Commercial Invoice (CI) */}
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1 flex justify-between items-center">
+                          <span>
+                            Select Commercial Invoice (CI)
+                          </span>
+                          {pklFormData.ciInvoiceNo && (
+                            <span
+                              onClick={() => handlePklSourceSelect(pklFormData.ciInvoiceNo, 'commercial')}
+                              className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                              title="Click to fetch / re-fetch details from this CI"
+                            >
+                              ⚡ Fetch CI
+                            </span>
+                          )}
+                        </label>
+                        <SearchableComboboxSelect
+                          value={pklFormData.ciInvoiceNo || ''}
+                          onChange={(val) => {
+                            setPklFormData(prev => ({ ...prev, ciInvoiceNo: val }));
+                            if (val) handlePklSourceSelect(val, 'commercial');
+                          }}
+                          options={(commercialInvoices || []).map((c) => ({
+                            label: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
+                            value: `${c.invNumber} (${c.buyerOrderNo || c.piReferenceNo || 'CI'})`,
+                            subtext: `${c.consignee} | ${c.port || c.portOfDischarge || 'Port'}, ${c.country || 'Country'}`,
+                            badge: c.status || 'CI'
+                          }))}
+                          placeholder="-- Select Commercial Invoice (CI) --"
+                          searchPlaceholder="Type CI No., Consignee..."
+                        />
+                      </div>
+
+                      {/* Field 3: Packing List No. */}
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Packing List No. <span className="text-red-500">*</span></label>
                         <input type="text" value={pklFormData.pklNo} onChange={(e) => setPklFormData({ ...pklFormData, pklNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold" />
                       </div>
 
+                      {/* Field 4: Date */}
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Date <span className="text-red-500">*</span></label>
                         <input type="date" value={pklFormData.date} onChange={(e) => setPklFormData({ ...pklFormData, date: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" />
