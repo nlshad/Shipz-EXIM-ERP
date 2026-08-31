@@ -892,6 +892,7 @@
       const [selectedQuotationView, setSelectedQuotationView] = useState(null);
       const [selectedQuotationPdf, setSelectedQuotationPdf] = useState(null);
       const [selectedPiPdf, setSelectedPiPdf] = useState(null);
+      const [selectedPklPdf, setSelectedPklPdf] = useState(null);
       const [piPdfTemplateMode, setPiPdfTemplateMode] = useState('template1');
       const [selectedPiView, setSelectedPiView] = useState(null);
       const [shareModalQt, setShareModalQt] = useState(null);
@@ -8238,9 +8239,9 @@
                                 <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
                                 {isActionOpen && (
                                   <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
-                                    <button onClick={() => { alert(`Viewing Packing List ${p.pklNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
-                                    <button onClick={() => handleDirectPrintPkl(p)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
-                                    <button onClick={() => { window.print(); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
+                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
+                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
+                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
                                     <button onClick={() => { setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
                                     <div className="border-t border-slate-100 my-1"></div>
                                     <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete</span></button>
@@ -10926,11 +10927,12 @@
                       </div>
                     </div>
 
+                    {/* SECTION 2: EXPORTER, CONSIGNEE & NOTIFY PARTY */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Company Unit / Exporter <span className="text-red-500">*</span></label>
+                        <label className="block text-slate-700 font-bold mb-1">Exporter / Company Unit <span className="text-red-500">*</span></label>
                         <select value={pklFormData.companyUnit || ''} onChange={(e) => setPklFormData({ ...pklFormData, companyUnit: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
-                          <option value="">-- Select Company Exporter Unit --</option>
+                          <option value="">-- Select Exporter Unit --</option>
                           {masterAddresses.map((a) => (
                             <option key={`pkl-addr-${a.id}`} value={a.label || a.companyName}>
                               {a.label || a.companyName}
@@ -10964,24 +10966,93 @@
 
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Consignee Address</label>
-                        <input type="text" value={pklFormData.consigneeAddress} onChange={(e) => setPklFormData({ ...pklFormData, consigneeAddress: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" />
+                        <input type="text" value={pklFormData.consigneeAddress || ''} onChange={(e) => setPklFormData({ ...pklFormData, consigneeAddress: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="P.O Box, Street, City, Country" />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Notify Party</label>
+                        <input type="text" value={pklFormData.notifyParty || ''} onChange={(e) => setPklFormData({ ...pklFormData, notifyParty: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold" placeholder="Notify Party Name" />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Notify Party Address</label>
+                        <input type="text" value={pklFormData.notifyPartyAddress || ''} onChange={(e) => setPklFormData({ ...pklFormData, notifyPartyAddress: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="Notify Party Address" />
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: BANK & SALESMAN DETAILS */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Our Bank Account Details</label>
+                        <select value={pklFormData.bankDetails || ''} onChange={(e) => setPklFormData({ ...pklFormData, bankDetails: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold">
+                          <option value="">-- Select Bank Account --</option>
+                          {masterBankDetails.map((b) => (
+                            <option key={`pkl-bank-${b.id}`} value={b.id || b.accountNumber}>
+                              {b.bankName} - {b.accountNumber} ({b.branchName})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Sales Man & Contact</label>
+                        <input type="text" value={pklFormData.salesman || ''} onChange={(e) => setPklFormData({ ...pklFormData, salesman: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="Mr. JAFER AVARAN- +917025349696" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Sales Man Email</label>
+                        <input type="text" value={pklFormData.salesmanEmail || ''} onChange={(e) => setPklFormData({ ...pklFormData, salesmanEmail: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="jafer@mglobalindia.com" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Description of Service</label>
+                        <input type="text" value={pklFormData.descriptionOfService || ''} onChange={(e) => setPklFormData({ ...pklFormData, descriptionOfService: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold" placeholder="SEA FREIGHT LCL" />
+                      </div>
+                    </div>
+
+                    {/* SECTION 4: SHIPPING, PORTS & CONTAINER DETAILS */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Port of Loading</label>
+                        <input type="text" value={pklFormData.portOfLoading || ''} onChange={(e) => setPklFormData({ ...pklFormData, portOfLoading: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold" placeholder="NHAVA SHEVA, MUMBAI" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Port of Destination</label>
+                        <input type="text" value={pklFormData.portOfDestination || ''} onChange={(e) => setPklFormData({ ...pklFormData, portOfDestination: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold" placeholder="PORT VICTORIA, SEYCHELLES" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Vessel / Flight No.</label>
+                        <input type="text" value={pklFormData.vesselFlightNo || ''} onChange={(e) => setPklFormData({ ...pklFormData, vesselFlightNo: e.target.value, shippingLineVessel: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold" placeholder="UAFL DUBAI 235 S" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">No of Packages</label>
+                        <input type="text" value={pklFormData.noOfPkgs || ''} onChange={(e) => setPklFormData({ ...pklFormData, noOfPkgs: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold" placeholder="39PKG" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Shipping Mark</label>
+                        <input type="text" value={pklFormData.shippingMarks || ''} onChange={(e) => setPklFormData({ ...pklFormData, shippingMarks: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold" placeholder="DIJAN" />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Total CBM (m³)</label>
+                        <input type="text" value={pklFormData.totalCbm || ''} onChange={(e) => setPklFormData({ ...pklFormData, totalCbm: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold" placeholder="1.15" />
+                      </div>
+
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Container No.</label>
-                        <input type="text" value={pklFormData.containerNo} onChange={(e) => setPklFormData({ ...pklFormData, containerNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
+                        <input type="text" value={pklFormData.containerNo || ''} onChange={(e) => setPklFormData({ ...pklFormData, containerNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" placeholder="MSKU-8820194" />
                       </div>
 
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Seal No.</label>
-                        <input type="text" value={pklFormData.sealNo} onChange={(e) => setPklFormData({ ...pklFormData, sealNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" />
-                      </div>
-
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Shipping Line & Vessel</label>
-                        <input type="text" value={pklFormData.shippingLineVessel} onChange={(e) => setPklFormData({ ...pklFormData, shippingLineVessel: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs" />
+                        <input type="text" value={pklFormData.sealNo || ''} onChange={(e) => setPklFormData({ ...pklFormData, sealNo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono" placeholder="SL-MDR-9921" />
                       </div>
                     </div>
                   </div>
@@ -11078,6 +11149,271 @@
               </div>
             </div>
           )}
+
+          {/* DYNAMIC PACKING LIST PDF ENGINE MODAL (EXACT SPECIFICATION & PDF MATCH) */}
+          {selectedPklPdf && (() => {
+            const pkl = selectedPklPdf;
+            const resolvedCompanyEntity = (masterAddresses || []).find(a =>
+              a.companyName === pkl.companyUnit ||
+              a.label === pkl.companyUnit ||
+              a.address === pkl.companyUnit ||
+              (a.companyName && pkl.companyUnit && pkl.companyUnit.includes(a.companyName)) ||
+              (a.label && pkl.companyUnit && pkl.companyUnit.includes(a.label))
+            ) || masterAddresses[0] || {};
+
+            const activeCompanyName = resolvedCompanyEntity.companyName || 'MGLOBAL IMPEX-INDIA PRIVATE LIMITED';
+            const activeCompanyAddr = resolvedCompanyEntity.address ? `${resolvedCompanyEntity.address}, ${resolvedCompanyEntity.city || ''}, ${resolvedCompanyEntity.state || ''}` : 'Suite No. 1101, Greenscape Shakti Ventures. Plot No.12, Sector -15, CBD Belapur, Navi Mumbai, India-400614';
+            const activeGstin = resolvedCompanyEntity.gstin || '27AARCM7825K1ZP';
+            const activePan = resolvedCompanyEntity.panNumber || 'AARCM7825K';
+            const activeIec = resolvedCompanyEntity.iecCode || 'AARCM7825K';
+
+            const selectedBank = masterBankDetails.find(b =>
+              b.id === pkl.bankDetails ||
+              b.accountNumber === pkl.bankDetails ||
+              b.bankName === pkl.bankDetails
+            ) || masterBankDetails.find(b => b.isPrimary) || masterBankDetails[0] || {
+              beneficiaryName: activeCompanyName,
+              bankName: 'KOTAK MAHINDRA BANK LIMITED.',
+              branchName: 'CBD BELAPUR, NAVI MUMBAI, MAHARASHTRA, INDIA.',
+              accountNumber: '6748421381',
+              swiftCode: 'KKBKINBB'
+            };
+
+            const pklItems = pkl.items || [];
+            const totalQty = pklItems.reduce((sum, item) => sum + (parseFloat(item.qtyPerPkg) || parseFloat(item.qty) || 0), 0);
+            const totalNetWt = pklItems.reduce((sum, item) => sum + (parseFloat(item.totalNetWt) || parseFloat(item.netWtPerPkg) || 0), 0).toFixed(2);
+            const totalGrossWt = pklItems.reduce((sum, item) => sum + (parseFloat(item.totalGrossWt) || parseFloat(item.grossWtPerPkg) || 0), 0).toFixed(2);
+
+            return (
+              <div id="pkl-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
+                  {/* MODAL HEADER WITH ACTION BUTTONS */}
+                  <div className="no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <span className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-[10px] shadow-sm shrink-0">PDF</span>
+                      <div className="min-w-0">
+                        <h3 className="font-extrabold text-xs sm:text-sm text-white tracking-tight flex items-center space-x-2 truncate">
+                          <span>Packing List</span>
+                          <span className="text-[10px] bg-slate-800 text-emerald-300 px-2 py-0.5 rounded-md border border-slate-700 font-mono font-bold">{pkl.pklNo}</span>
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <button type="button" onClick={() => window.print()} className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-extrabold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer">
+                        <span>📥 Download PDF</span>
+                      </button>
+                      <button type="button" onClick={() => window.print()} className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer">
+                        <span>🖨️ Print</span>
+                      </button>
+                      <button type="button" onClick={() => setSelectedPklPdf(null)} className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1">
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PRINTABLE PACKING LIST PDF DOCUMENT BODY (MATCHES USER PDF) */}
+                  <div className="p-6 sm:p-10 overflow-y-auto font-sans text-slate-900 space-y-4 print:p-0 bg-white">
+                    {/* TOP COMPANY HEADER & BRANDING */}
+                    <div className="flex justify-between items-start border-b border-slate-300 pb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-sky-600 rounded-lg text-white font-black text-xl flex items-center justify-center shadow-md">
+                          ✦
+                        </div>
+                        <div>
+                          <h1 className="text-xl font-black tracking-wider text-sky-900 leading-tight">MGLOBAL</h1>
+                          <p className="text-[10px] font-bold text-slate-600 tracking-widest">IMPEX-INDIA PRIVATE LIMITED</p>
+                        </div>
+                      </div>
+                      <div className="text-right text-[11px] leading-tight text-slate-700 max-w-sm">
+                        <p className="font-bold text-slate-900">{activeCompanyName}</p>
+                        <p>{activeCompanyAddr}</p>
+                        <p className="mt-1 font-semibold">CIN : U46901MH2024PTC419087</p>
+                        <p className="font-semibold">GST: {activeGstin}</p>
+                      </div>
+                    </div>
+
+                    {/* BLUE TITLE BANNER */}
+                    <div className="bg-sky-100 border border-sky-300 py-1.5 text-center font-black text-sm text-sky-950 uppercase tracking-widest">
+                      PACKING LIST
+                    </div>
+
+                    {/* 4-COLUMN HEADER INFORMATION GRID */}
+                    <div className="border border-slate-900 text-[11px]">
+                      {/* ROW 1: INVOICE REFERENCES */}
+                      <div className="grid grid-cols-4 border-b border-slate-900 bg-sky-50/50 font-bold">
+                        <div className="p-1.5 border-r border-slate-900">INV NO : <span className="font-mono text-slate-900">{pkl.ciInvoiceNo || pkl.invNo || 'MGEX00273/26-27'}</span></div>
+                        <div className="p-1.5 border-r border-slate-900">DATE : <span className="font-mono">{pkl.date || '21-07-2026'}</span></div>
+                        <div className="p-1.5 col-span-2">PI NO : <span className="font-mono text-slate-900">{pkl.piInvoiceNo || 'MG EX :PI00151/26-27'}</span></div>
+                      </div>
+
+                      {/* MAIN TWO-COLUMN SPLIT GRID */}
+                      <div className="grid grid-cols-2 divide-x divide-slate-900">
+                        {/* LEFT COLUMN: EXPORTER & BANK ACCOUNT DETAILS */}
+                        <div className="space-y-0">
+                          {/* EXPORTER BLOCK */}
+                          <div className="p-2 border-b border-slate-900 bg-slate-50">
+                            <span className="font-black underline block text-slate-950 mb-0.5">EXPORTER</span>
+                            <p className="font-bold">{activeCompanyName}</p>
+                            <p>{activeCompanyAddr}</p>
+                            <p>TEL: +91 9846612931 | PAN No : {activePan}</p>
+                            <p>IEC CODE : {activeIec} | GSTIN: {activeGstin}</p>
+                          </div>
+
+                          {/* OUR BANK ACCOUNT DETAILS BLOCK */}
+                          <div className="p-2">
+                            <span className="font-black underline block text-slate-950 mb-0.5">OUR BANK ACCOUNT DETAILS</span>
+                            <p><span className="font-semibold">BENEFICIARY NAME :</span> {selectedBank.beneficiaryName || activeCompanyName}</p>
+                            <p><span className="font-semibold">BENEFICIARY BANK :</span> {selectedBank.bankName}</p>
+                            <p><span className="font-semibold">BRANCH :</span> {selectedBank.branchName}</p>
+                            <p><span className="font-semibold">BANK A/C NO :</span> <span className="font-mono font-bold">{selectedBank.accountNumber}</span></p>
+                            <p><span className="font-semibold">SWIFT CODE :</span> <span className="font-mono font-bold">{selectedBank.swiftCode}</span></p>
+                          </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: CONSIGNEE, NOTIFY, SALESMAN & LOGISTICS */}
+                        <div className="divide-y divide-slate-900">
+                          {/* CONSIGNEE */}
+                          <div className="p-2">
+                            <span className="font-black underline block text-slate-950 mb-0.5">CONSIGNEE</span>
+                            <p className="font-bold">{pkl.consignee || 'SEYCHELLES INTERNATIONAL CARGO LLC'}</p>
+                            <p>{pkl.consigneeAddress || 'P.O BOX 236892, BEHIND HYDE PARK HOTEL , BUR DUBAI,DUBAI,UAE'}</p>
+                          </div>
+
+                          {/* NOTIFY PARTY */}
+                          <div className="p-2">
+                            <span className="font-black underline block text-slate-950 mb-0.5">NOTIFY PARTY</span>
+                            <p className="font-bold">{pkl.notifyParty || pkl.consignee || 'SEYCHELLES INTERNATIONAL CARGO LLC'}</p>
+                            <p>{pkl.notifyPartyAddress || pkl.consigneeAddress || 'P.O BOX 236892, BEHIND HYDE PARK HOTEL , BUR DUBAI,DUBAI,UAE'}</p>
+                          </div>
+
+                          {/* LOGISTICS & METADATA ROWS */}
+                          <div className="grid grid-cols-2 divide-x divide-slate-900 border-t border-slate-900">
+                            <div className="p-1.5 font-bold">SALES MAN</div>
+                            <div className="p-1.5 font-mono">{pkl.salesman || 'Mr. JAFER AVARAN- +917025349696'}<br/><span className="text-[10px] text-slate-600 font-normal">{pkl.salesmanEmail || 'jafer@mglobalindia.com'}</span></div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">DESCRIPTION OF SERVICE</div>
+                            <div className="p-1.5 font-mono">{pkl.descriptionOfService || 'SEA FREIGHT LCL'}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">PORT OF LOADING</div>
+                            <div className="p-1.5 font-mono">{pkl.portOfLoading || 'NHAVA SHEVA, MUMBAI'}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">PORT OF DESTINATION</div>
+                            <div className="p-1.5 font-mono">{pkl.portOfDestination || 'PORT VICTORIA, SEYCHELLES'}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">NO OF PKGS</div>
+                            <div className="p-1.5 font-mono font-bold">{pkl.noOfPkgs || `${pklItems.length}PKG`}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">SHIPPING MARK</div>
+                            <div className="p-1.5 font-mono font-bold">{pkl.shippingMarks || 'DIJAN'}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">CBM</div>
+                            <div className="p-1.5 font-mono font-bold">{pkl.totalCbm || '1.15'}</div>
+                          </div>
+
+                          <div className="grid grid-cols-2 divide-x divide-slate-900">
+                            <div className="p-1.5 font-bold">VESSEL/FLIGHT NO</div>
+                            <div className="p-1.5 font-mono font-bold">{pkl.vesselFlightNo || pkl.shippingLineVessel || 'UAFL DUBAI 235 S'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ITEM MATRIX BREAKDOWN TABLE */}
+                    <table className="w-full border-collapse border border-slate-900 text-[11px]">
+                      <thead>
+                        <tr className="bg-sky-100/70 border-b border-slate-900 font-black text-slate-950 uppercase">
+                          <th className="border-r border-slate-900 py-1.5 px-2 text-center w-12">NO</th>
+                          <th className="border-r border-slate-900 py-1.5 px-3 text-left">ITEMS DESCRIPTION</th>
+                          <th className="border-r border-slate-900 py-1.5 px-2 text-center w-20">QTY</th>
+                          <th className="border-r border-slate-900 py-1.5 px-2 text-center w-16">UNIT</th>
+                          <th className="border-r border-slate-900 py-1.5 px-2 text-center w-36">PER BOX DIME</th>
+                          <th className="border-r border-slate-900 py-1.5 px-2 text-right w-28">NET WEIGHT (KG)</th>
+                          <th className="py-1.5 px-2 text-right w-28">GROSS WEIGHT (KG)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900">
+                        {pklItems.map((item, idx) => {
+                          const getSafeVal = (val, fallback = '') => {
+                            if (val === null || val === undefined) return fallback;
+                            if (typeof val === 'string' || typeof val === 'number') return String(val);
+                            if (typeof val === 'object') return val.product || val.description || val.name || fallback;
+                            return String(val);
+                          };
+
+                          const itemBoxRange = getSafeVal(item.boxRange, `BOX NO ${idx * 5 + 1}-${(idx + 1) * 5}`);
+                          const itemDesc = getSafeVal(item.product || item.itemDescription || item.description || item.name, 'EXPORT GOODS');
+                          const itemQty = getSafeVal(item.qtyPerPkg || item.qty || item.quantity, '1');
+                          const itemUnit = getSafeVal(item.unit, 'MTR');
+                          const itemDime = getSafeVal(item.dimensions || item.perBoxDime, '43.18 × 43.18 × 15.24');
+                          const itemNet = getSafeVal(item.totalNetWt || item.netWtPerPkg || item.netWeight, '0.00');
+                          const itemGross = getSafeVal(item.totalGrossWt || item.grossWtPerPkg || item.grossWeight, '0.00');
+
+                          return (
+                            <React.Fragment key={`pdf-item-${item.id || idx}`}>
+                              {/* BOX RANGE SUBHEADER ROW */}
+                              <tr className="bg-sky-100/50 font-bold border-t border-b border-slate-900">
+                                <td colSpan={7} className="py-1 px-3 text-slate-900 uppercase font-mono tracking-wide">
+                                  {itemBoxRange}
+                                </td>
+                              </tr>
+                              {/* ITEM ROW */}
+                              <tr>
+                                <td className="border-r border-slate-900 py-2 px-2 text-center font-bold">{idx + 1}</td>
+                                <td className="border-r border-slate-900 py-2 px-3 font-semibold uppercase">{itemDesc}</td>
+                                <td className="border-r border-slate-900 py-2 px-2 text-center font-mono font-bold">{itemQty}</td>
+                                <td className="border-r border-slate-900 py-2 px-2 text-center font-bold">{itemUnit}</td>
+                                <td className="border-r border-slate-900 py-2 px-2 text-center font-mono">{itemDime}</td>
+                                <td className="border-r border-slate-900 py-2 px-2 text-right font-mono font-bold">{itemNet}</td>
+                                <td className="py-2 px-2 text-right font-mono font-bold">{itemGross}</td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        })}
+
+                        {/* TOTAL ROW */}
+                        <tr className="bg-sky-100/80 font-black border-t-2 border-slate-900 text-slate-950">
+                          <td colSpan={2} className="border-r border-slate-900 py-2 px-3 text-right uppercase">TOTAL</td>
+                          <td className="border-r border-slate-900 py-2 px-2 text-center font-mono">{totalQty}</td>
+                          <td className="border-r border-slate-900 py-2 px-2"></td>
+                          <td className="border-r border-slate-900 py-2 px-2"></td>
+                          <td className="border-r border-slate-900 py-2 px-2 text-right font-mono">{totalNetWt}</td>
+                          <td className="py-2 px-2 text-right font-mono">{totalGrossWt}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* TERMS AND CONDITIONS & STAMP BLOCK */}
+                    <div className="border border-slate-900 p-3 text-[11px] space-y-1">
+                      <span className="font-black underline block text-slate-950">TERMS AND CONDITIONS</span>
+                      <p className="font-semibold text-slate-800">PAYMENT TERMS : 100% advance transfer</p>
+                    </div>
+
+                    <div className="flex justify-between items-end pt-6">
+                      <div className="text-[11px] font-bold text-slate-600">
+                        <p>{activeCompanyName}</p>
+                      </div>
+                      <div className="text-center border-t border-slate-900 pt-1 px-8">
+                        <p className="font-black text-xs text-slate-950">AUTHORISED SIGNATORY</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* DYNAMIC QUOTATION PDF ENGINE MODAL (MGLOBAL IMPEX PRD SPEC) */}
           {selectedQuotationPdf && (() => {
