@@ -2337,6 +2337,61 @@
       const [masterMaterials, setMasterMaterials] = useState(['Steel Drum', 'Poly Bag', 'Fiber Drum', 'Corrugated Box', 'Wooden Pallet']);
       const [masterProducts, setMasterProducts] = useState(masterProductsSettings);
 
+      const resolveSalespersonContact = (spName) => {
+        if (!spName) return { phone: '', email: '' };
+        const clean = String(spName).toLowerCase().trim();
+
+        // 1. Search masterSalespersonsSettings
+        const foundMaster = (masterSalespersonsSettings || []).find(s =>
+          s && s.name && (s.name.toLowerCase().trim() === clean || s.name.toLowerCase().includes(clean) || clean.includes(s.name.toLowerCase()))
+        );
+        if (foundMaster && (foundMaster.phone || foundMaster.email)) {
+          return { phone: foundMaster.phone || '', email: foundMaster.email || '' };
+        }
+
+        // 2. Search systemUsers
+        const foundUser = (systemUsers || []).find(u => {
+          const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().trim();
+          return fullName === clean || fullName.includes(clean) || clean.includes(fullName);
+        });
+        if (foundUser && (foundUser.phone_number || foundUser.email)) {
+          return { phone: foundUser.phone_number || '', email: foundUser.email || '' };
+        }
+
+        // 3. Fallback defaults
+        if (clean.includes('jafer') || clean.includes('avaran')) {
+          return { phone: '+91 70253 49696', email: 'jafer@mglobalindia.com' };
+        }
+        if (clean.includes('ananya') || clean.includes('patel')) {
+          return { phone: '+91 98765 43210', email: 'ananya@mglobalindia.com' };
+        }
+        if (clean.includes('siju') || clean.includes('thekkan')) {
+          return { phone: '+91 98470 12345', email: 'siju@mglobalindia.com' };
+        }
+
+        return { phone: '', email: '' };
+      };
+
+      const handlePiSalespersonChange = (spName) => {
+        const contact = resolveSalespersonContact(spName);
+        setPiFormData((prev) => ({
+          ...prev,
+          salesperson: spName,
+          salesmanPhone: contact.phone || prev.salesmanPhone || '',
+          salesmanEmail: contact.email || prev.salesmanEmail || ''
+        }));
+      };
+
+      const handleQtSalespersonChange = (spName) => {
+        const contact = resolveSalespersonContact(spName);
+        setQtFormData((prev) => ({
+          ...prev,
+          salesperson: spName,
+          salesmanPhone: contact.phone || prev.salesmanPhone || '',
+          salesmanEmail: contact.email || prev.salesmanEmail || ''
+        }));
+      };
+
       // ISO World Countries List (Global 5-Region Master Dataset)
       const worldCountries = [
         'Argentina', 'Australia', 'Belgium', 'Bhutan', 'Brazil', 'Canada', 'Canary Islands', 'Cape Verde',
@@ -3089,6 +3144,8 @@
         countryOfDischarge: '',
         portOfDischarge: '',
         shippingMarks: '',
+        descriptionOfService: '',
+        noOfPkgs: '',
         salesBroker: 'No',
         currency: 'USD',
         conversionRate: '85.00',
@@ -3098,6 +3155,8 @@
         shipmentTerms: '',
         paymentTerms: '',
         salesperson: '',
+        salesmanPhone: '',
+        salesmanEmail: '',
         lineItems: [
           {
             id: 'pili-1',
@@ -3141,6 +3200,8 @@
           countryOfDischarge: '',
           portOfDischarge: '',
           shippingMarks: '',
+          descriptionOfService: '',
+          noOfPkgs: '',
           salesBroker: 'No',
           brokerName: '',
           brokerCommission: '',
@@ -3153,6 +3214,8 @@
           shipmentTerms: '',
           paymentTerms: '',
           salesperson: '',
+          salesmanPhone: '',
+          salesmanEmail: '',
           remarks: '',
           lineItems: [
             {
@@ -3849,6 +3912,14 @@
           containerNo: selectedDoc.containerNo || selectedDoc.containerMarks || prev.containerNo || 'MSKU-882901-4',
           sealNo: selectedDoc.sealNo || prev.sealNo || 'SL-99482',
           shippingLineVessel: selectedDoc.vesselFlightNo || selectedDoc.vesselNo || selectedDoc.shippingLine || prev.shippingLineVessel || 'Maersk Line / Vessel V-204',
+          salesman: selectedDoc.salesperson || prev.salesman,
+          salesmanEmail: selectedDoc.salesmanEmail || resolveSalespersonContact(selectedDoc.salesperson).email || prev.salesmanEmail,
+          salesmanPhone: selectedDoc.salesmanPhone || resolveSalespersonContact(selectedDoc.salesperson).phone || prev.salesmanPhone,
+          descriptionOfService: selectedDoc.descriptionOfService || prev.descriptionOfService,
+          noOfPkgs: selectedDoc.noOfPkgs || selectedDoc.totalPackages || prev.noOfPkgs,
+          shippingMarks: selectedDoc.shippingMarks || prev.shippingMarks,
+          portOfLoading: selectedDoc.placeOfLoading || selectedDoc.portOfLoading || prev.portOfLoading,
+          portOfDestination: selectedDoc.portOfDestination || selectedDoc.finalDestinationPort || selectedDoc.port || prev.portOfDestination,
           items: packageMatrix
         }));
 
@@ -3973,7 +4044,12 @@
           } catch (e) { }
 
           setQtFormData((prev) => ({ ...prev, salesperson: spName }));
-          setPiFormData((prev) => ({ ...prev, salesperson: spName }));
+          setPiFormData((prev) => ({
+            ...prev,
+            salesperson: spName,
+            salesmanPhone: spPhone || prev.salesmanPhone || '',
+            salesmanEmail: spEmail || prev.salesmanEmail || ''
+          }));
         } else if (activeQuickAdd === 'material') {
           setMasterMaterials((prev) => [...prev, val1]);
           if (activeLineItemIdx !== null) {
@@ -4349,6 +4425,12 @@
           placeOfReceipt: qtFormData.placeOfReceipt,
           placeOfLoading: qtFormData.placeOfLoading,
           bank: qtFormData.bank,
+          descriptionOfService: qtFormData.descriptionOfService || '',
+          noOfPkgs: qtFormData.noOfPkgs || qtFormData.totalPackages || '',
+          totalPackages: qtFormData.noOfPkgs || qtFormData.totalPackages || '',
+          salesperson: qtFormData.salesperson || '',
+          salesmanPhone: qtFormData.salesmanPhone || resolveSalespersonContact(qtFormData.salesperson).phone || '',
+          salesmanEmail: qtFormData.salesmanEmail || resolveSalespersonContact(qtFormData.salesperson).email || '',
           lineItems: qtFormData.lineItems
         };
 
@@ -4556,6 +4638,8 @@
           totalNetWeight: targetQt.totalNetWeight || '',
           totalGrossWeight: targetQt.totalGrossWeight || '',
           salesperson: targetQt.salesperson || '',
+          salesmanPhone: targetQt.salesmanPhone || resolveSalespersonContact(targetQt.salesperson).phone || prev.salesmanPhone || '',
+          salesmanEmail: targetQt.salesmanEmail || resolveSalespersonContact(targetQt.salesperson).email || prev.salesmanEmail || '',
           buyerOrderNo: targetQt.buyerOrderNo || '',
           orderDate: targetQt.orderDate || targetQt.date || '',
           remarks: targetQt.remarks || `Auto-fetched from Linked Quotation ${targetQt.quotationNo}`,
@@ -4643,13 +4727,21 @@
           countryOfDischarge: pi.countryOfDischarge || pi.country || '',
           portOfDischarge: pi.portOfDischarge || pi.port || '',
           shippingMarks: pi.shippingMarks || pi.shippingMark || 'MGLOBAL/VICTORIA/01-150',
+          descriptionOfService: pi.descriptionOfService || pi.serviceDescription || '',
+          noOfPkgs: pi.noOfPkgs || pi.totalPackages || '',
+          salesBroker: pi.salesBroker || 'No',
+          brokerName: pi.brokerName || '',
+          brokerCommission: pi.brokerCommission || '',
+          brokerageAmount: pi.brokerageAmount || '',
           shipmentTerms: pi.shipmentTerms || '',
           shipmentPeriod: pi.shipmentPeriod || '',
           paymentTerms: pi.paymentTerms || '',
           currency: pi.currencyFx || pi.currency || 'USD',
           conversionRate: `${pi.convRate || 85.0}`,
           bank: pi.bank || '',
-          salesperson: pi.salesperson || '',
+          salesperson: pi.salesperson || pi.salesman || '',
+          salesmanPhone: pi.salesmanPhone || resolveSalespersonContact(pi.salesperson || pi.salesman).phone || '',
+          salesmanEmail: pi.salesmanEmail || resolveSalespersonContact(pi.salesperson || pi.salesman).email || '',
           buyerOrderNo: pi.buyerOrderNo || '',
           orderDate: formatIsoDate(pi.orderDate || pi.date),
           remarks: pi.remarks || '',
@@ -4712,6 +4804,12 @@
           placeOfLoading: piFormData.placeOfLoading,
           shippingMarks: piFormData.shippingMarks,
           shippingMark: piFormData.shippingMarks,
+          descriptionOfService: piFormData.descriptionOfService || '',
+          noOfPkgs: piFormData.noOfPkgs || piFormData.totalPackages || '',
+          totalPackages: piFormData.noOfPkgs || piFormData.totalPackages || '',
+          salesperson: piFormData.salesperson || '',
+          salesmanPhone: piFormData.salesmanPhone || resolveSalespersonContact(piFormData.salesperson).phone || '',
+          salesmanEmail: piFormData.salesmanEmail || resolveSalespersonContact(piFormData.salesperson).email || '',
           bank: piFormData.bank,
           cbm: '45.2 m³',
           fillPercent: 85,
@@ -10402,6 +10500,29 @@
                         />
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Description of Service / Freight Type</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., SEA FREIGHT LCL / AIR FREIGHT EXPRESS"
+                          value={piFormData.descriptionOfService || ''}
+                          onChange={(e) => setPiFormData({ ...piFormData, descriptionOfService: e.target.value })}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">No. of Packages (Total Package Count)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., 150 DRUMS / 39 PKG"
+                          value={piFormData.noOfPkgs || piFormData.totalPackages || ''}
+                          onChange={(e) => setPiFormData({ ...piFormData, noOfPkgs: e.target.value, totalPackages: e.target.value })}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* SECTION 3 */}
@@ -10484,7 +10605,7 @@
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Payment Terms</label>
                         <SearchableComboboxSelect
@@ -10501,10 +10622,10 @@
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-700 font-bold mb-1">Salesperson</label>
+                        <label className="block text-slate-700 font-bold mb-1">Salesperson / Representative</label>
                         <SearchableComboboxSelect
                           value={piFormData.salesperson || ''}
-                          onChange={(val) => setPiFormData({ ...piFormData, salesperson: val })}
+                          onChange={(val) => handlePiSalespersonChange(val)}
                           options={Array.from(new Set([
                             ...masterSalespersonsSettings.map(sp => sp.name),
                             ...masterSalespersons.filter(sp => typeof sp === 'string')
@@ -10513,6 +10634,29 @@
                           searchPlaceholder="Search salesperson..."
                           onAddNew={() => setActiveQuickAdd('salesperson')}
                           addNewLabel="Add New Salesperson"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Salesman Phone / Contact</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. +917025349696"
+                          value={piFormData.salesmanPhone || ''}
+                          onChange={(e) => setPiFormData({ ...piFormData, salesmanPhone: e.target.value })}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Salesman Email Address</label>
+                        <input
+                          type="email"
+                          placeholder="e.g. jafer@mglobalindia.com"
+                          value={piFormData.salesmanEmail || ''}
+                          onChange={(e) => setPiFormData({ ...piFormData, salesmanEmail: e.target.value })}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-semibold"
                         />
                       </div>
                     </div>
@@ -11578,6 +11722,10 @@
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">DESTINATION PORT</span><b className="text-slate-900">{qt.finalDestinationPort || qt.port || 'Port Victoria'}</b></div>
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">COUNTRY ORIGIN</span><b className="text-slate-900">{qt.countryOfOrigin || 'India'}</b></div>
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">FINAL DESTINATION</span><b className="text-slate-900">{qt.country || 'Seychelles'}</b></div>
+                            <div className="col-span-2 pt-1 border-t border-slate-100">
+                              <span className="text-slate-400 block text-[8px] uppercase font-bold">DESCRIPTION OF SERVICE</span>
+                              <b className="text-indigo-950 font-mono text-[9.5px]">{qt.descriptionOfService || 'SEA FREIGHT LCL / EXPORT LOGISTICS'}</b>
+                            </div>
                           </div>
                         </div>
 
@@ -11591,27 +11739,47 @@
                             ))
                           ) || masterBankDetails.find(b => b.isPrimary) || masterBankDetails[0];
 
+                          const qtSalesman = qt.salesperson || qt.salesman || 'JAFER AVARAN';
+                          const qtPhone = qt.salesmanPhone || '+91 70253 49696';
+                          const qtEmail = qt.salesmanEmail || 'jafer@mglobalindia.com';
+
                           if (!qtBankObj) {
                             return (
-                              <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
-                                <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS</div>
-                                <p className="text-[9px] text-slate-400 italic pt-1">No bank account selected.</p>
+                              <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1 flex flex-col justify-between">
+                                <div>
+                                  <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS</div>
+                                  <p className="text-[9px] text-slate-400 italic pt-1">No bank account selected.</p>
+                                </div>
+                                <div className="border-t border-slate-200 pt-1.5 mt-1.5">
+                                  <span className="text-slate-400 block text-[8px] uppercase font-bold">SALES MAN / REP CONTACT</span>
+                                  <b className="text-slate-900 text-[9.5px]">
+                                    {qtSalesman} {qtPhone ? `• ${qtPhone}` : ''} {qtEmail ? `(${qtEmail})` : ''}
+                                  </b>
+                                </div>
                               </div>
                             );
                           }
 
                           return (
-                            <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
-                              <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({qtBankObj.bankName})</div>
-                              <div className="text-[9.5px] space-y-0.5 pt-0.5">
-                                <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{qtBankObj.beneficiaryName}</b></div>
-                                <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{qtBankObj.bankName}</b></div>
-                                <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
-                                  <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{qtBankObj.accountNumber}</b></div>
-                                  {qtBankObj.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{qtBankObj.swiftCode}</b></div>}
-                                  {qtBankObj.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{qtBankObj.ifscCode}</b></div>}
+                            <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1 flex flex-col justify-between">
+                              <div>
+                                <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({qtBankObj.bankName})</div>
+                                <div className="text-[9.5px] space-y-0.5 pt-0.5">
+                                  <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{qtBankObj.beneficiaryName}</b></div>
+                                  <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{qtBankObj.bankName}</b></div>
+                                  <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
+                                    <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{qtBankObj.accountNumber}</b></div>
+                                    {qtBankObj.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{qtBankObj.swiftCode}</b></div>}
+                                    {qtBankObj.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{qtBankObj.ifscCode}</b></div>}
+                                  </div>
+                                  {qtBankObj.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{qtBankObj.branchName}</span></div>}
                                 </div>
-                                {qtBankObj.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{qtBankObj.branchName}</span></div>}
+                              </div>
+                              <div className="border-t border-slate-200 pt-1.5 mt-1.5">
+                                <span className="text-slate-400 block text-[8px] uppercase font-bold">SALES MAN / REP CONTACT</span>
+                                <b className="text-slate-900 text-[9.5px]">
+                                  {qtSalesman} {qtPhone ? `• ${qtPhone}` : ''} {qtEmail ? `(${qtEmail})` : ''}
+                                </b>
                               </div>
                             </div>
                           );
@@ -11735,10 +11903,35 @@
           {/* DYNAMIC PROFORMA INVOICE PDF ENGINE MODAL (MGLOBAL IMPEX PRD SPEC - IMAGES 1 & 2) */}
           {selectedPiPdf && (() => {
             const pi = selectedPiPdf;
-            const piProducts = pi.products || [
-              { description: 'Degaser 200 (Aluminium Degassing)', qty: 10, unit: 'Litre', rate: 200, total: 2000 },
-              { description: 'Sodium Benzoate High Purity', qty: 3000, unit: 'KG', rate: 3.5, total: 10500 },
-              { description: 'Citric Acid Anhydrous USP', qty: 4000, unit: 'KG', rate: 3.25, total: 13000 }
+            const findProdImg = (prodName) => {
+              if (!prodName) return null;
+              const matched = (masterProductsSettings || []).find(p => p.name && (p.name.toLowerCase().trim() === prodName.toLowerCase().trim() || p.name.toLowerCase().includes(prodName.toLowerCase()) || prodName.toLowerCase().includes(p.name.toLowerCase())));
+              return matched ? matched.imgUrl : null;
+            };
+
+            const rawItems = (pi.lineItems && pi.lineItems.length > 0 && pi.lineItems[0].product)
+              ? pi.lineItems
+              : (pi.products && Array.isArray(pi.products))
+                ? pi.products
+                : [];
+
+            const piProducts = rawItems.length > 0 ? rawItems.map(item => {
+              const nameStr = item.product || item.description || item.productDescription || 'Export Goods Item';
+              const foundImg = item.imgUrl || item.img || findProdImg(nameStr) || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
+              return {
+                description: nameStr,
+                desc: item.productDescription || item.qualitySpec || item.desc || '',
+                hsn: item.hsn || '09093100',
+                qty: Number(item.quantity || item.qty || 0),
+                unit: item.unit || 'KG',
+                rate: Number(item.price || item.rate || 0),
+                total: Number(item.quantity || item.qty || 0) * Number(item.price || item.rate || 0),
+                imgUrl: foundImg
+              };
+            }) : [
+              { description: 'Degaser 200 (Aluminium Degassing)', qty: 10, unit: 'Litre', rate: 200, total: 2000, imgUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=150&auto=format&fit=crop&q=80' },
+              { description: 'Sodium Benzoate High Purity', qty: 3000, unit: 'KG', rate: 3.5, total: 10500, imgUrl: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=150&auto=format&fit=crop&q=80' },
+              { description: 'Citric Acid Anhydrous USP', qty: 4000, unit: 'KG', rate: 3.25, total: 13000, imgUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=150&auto=format&fit=crop&q=80' }
             ];
             const totalAmountFx = piProducts.reduce((acc, item) => acc + (Number(item.total) || 0), 0);
             const totalQty = piProducts.reduce((acc, item) => acc + (Number(item.qty) || 0), 0);
@@ -11941,7 +12134,7 @@
                       {/* LOGISTICS & SHIPPING + BANK DETAILS BOXES */}
                       <div className="grid grid-cols-2 gap-3 text-[10px]">
                         <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
-                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">LOGISTICS & SHIPPING</div>
+                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">LOGISTICS & SHIPPING DETAILS</div>
                           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9.5px] pt-0.5">
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">PRE-CARRIAGE</span><b className="text-slate-900">{pi.preCarriageBy || 'By Sea'}</b></div>
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">RECEIPT PLACE</span><b className="text-slate-900">{pi.placeOfReceipt || 'CFS'}</b></div>
@@ -11949,21 +12142,42 @@
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">DESTINATION PORT</span><b className="text-slate-900">{pi.portOfDestination || pi.port || 'Port Victoria'}</b></div>
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">COUNTRY ORIGIN</span><b className="text-slate-900">{pi.countryOfOrigin || 'India'}</b></div>
                             <div><span className="text-slate-400 block text-[8px] uppercase font-bold">FINAL DESTINATION</span><b className="text-slate-900">{pi.country || 'Seychelles'}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">NO OF PKGS</span><b className="text-slate-900">{pi.noOfPkgs || pi.totalPackages || `${totalQty} PKG`}</b></div>
+                            <div><span className="text-slate-400 block text-[8px] uppercase font-bold">SHIPPING MARK</span><b className="text-slate-900">{pi.shippingMarks || 'MGLOBAL/VICTORIA/01-150'}</b></div>
+                            <div className="col-span-2 pt-1 border-t border-slate-100">
+                               <span className="text-slate-400 block text-[8px] uppercase font-bold">DESCRIPTION OF SERVICE</span>
+                               <b className="text-indigo-950 font-mono text-[9.5px]">{pi.descriptionOfService || pi.serviceDescription || 'SEA FREIGHT LCL / EXPORT LOGISTICS'}</b>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1">
-                          <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({bankShortName})</div>
-                          <div className="text-[9.5px] space-y-0.5 pt-0.5">
-                            <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{selectedBank.beneficiaryName}</b></div>
-                            <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
-                            <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
-                              <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{selectedBank.accountNumber}</b></div>
-                              {selectedBank.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{selectedBank.swiftCode}</b></div>}
-                              {selectedBank.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{selectedBank.ifscCode}</b></div>}
+                        <div className="border border-slate-300 rounded-xl p-3 bg-white shadow-2xs space-y-1 flex flex-col justify-between">
+                          <div>
+                            <div className="font-bold text-slate-700 uppercase border-b border-slate-200 pb-1 text-[9px] tracking-wider">BANK DETAILS ({bankShortName})</div>
+                            <div className="text-[9.5px] space-y-0.5 pt-0.5">
+                              <div><span className="text-slate-400 text-[8px] font-bold uppercase">BENEFICIARY NAME:</span> <b className="text-slate-900 uppercase">{selectedBank.beneficiaryName}</b></div>
+                              <div><span className="text-slate-400 text-[8px] font-bold uppercase">BANK:</span> <b className="text-slate-900">{selectedBank.bankName}</b></div>
+                              <div className="font-mono text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex justify-between mt-1">
+                                <div><span className="text-slate-400 block text-[7.5px] font-bold">A/C NO</span><b className="text-slate-900">{selectedBank.accountNumber}</b></div>
+                                {selectedBank.swiftCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">SWIFT</span><b className="text-slate-800">{selectedBank.swiftCode}</b></div>}
+                                {selectedBank.ifscCode && <div><span className="text-slate-400 block text-[7.5px] font-bold">IFSC</span><b className="text-slate-800">{selectedBank.ifscCode}</b></div>}
+                              </div>
+                              {selectedBank.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{selectedBank.branchName}</span></div>}
                             </div>
-                            {selectedBank.branchName && <div><span className="text-slate-400 text-[8px] font-bold uppercase">BRANCH:</span> <span className="font-bold text-slate-800">{selectedBank.branchName}</span></div>}
                           </div>
+                          {(() => {
+                            const piSalesman = pi.salesperson || pi.salesman || pi.salesRep || pi.salesExecutive || 'JAFER AVARAN';
+                            const piPhone = pi.salesmanPhone || pi.salesmanContact || '+91 70253 49696';
+                            const piEmail = pi.salesmanEmail || 'jafer@mglobalindia.com';
+                            return (
+                              <div className="border-t border-slate-200 pt-1.5 mt-1.5">
+                                <span className="text-slate-400 block text-[8px] uppercase font-bold">SALES MAN / REP CONTACT</span>
+                                <b className="text-slate-900 text-[9.5px]">
+                                  {piSalesman} {piPhone ? `• ${piPhone}` : ''} {piEmail ? `(${piEmail})` : ''}
+                                </b>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
