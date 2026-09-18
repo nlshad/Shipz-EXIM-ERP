@@ -1,7 +1,7 @@
 <?php
 // ============================================================
-// EXPORTFLOW ERP (SHIPZ) - CENTRAL MYSQL BACKEND API
-// For Local Network Sync & Data Sharing
+// EXPORTFLOW ERP (SHIPZ) - CENTRAL REAL-TIME MYSQL BACKEND API
+// Live Multi-User Network Synchronization Engine
 // ============================================================
 
 header("Access-Control-Allow-Origin: *");
@@ -21,7 +21,7 @@ $pass = '';
 $db   = 'shipz_db';
 
 try {
-    // 1. Connect to MySQL Server (without DB)
+    // 1. Connect to MySQL Server
     $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
@@ -31,7 +31,7 @@ try {
     $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("USE `$db`");
 
-    // 3. Auto Create Tables if not exist
+    // 3. Auto Create Comprehensive ERP Sync Tables
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS `quotations` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,33 +57,67 @@ try {
           `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-        CREATE TABLE IF NOT EXISTS `customers` (
+        CREATE TABLE IF NOT EXISTS `commercial_invoices` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
-          `code` VARCHAR(50) UNIQUE,
-          `name` VARCHAR(255) NOT NULL,
-          `email` VARCHAR(255),
-          `phone` VARCHAR(100),
+          `ci_no` VARCHAR(100) UNIQUE NOT NULL,
+          `consignee` VARCHAR(255),
           `country` VARCHAR(100),
-          `address` TEXT,
-          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          `total_amount` DECIMAL(15,2) DEFAULT 0.00,
+          `status` VARCHAR(50) DEFAULT 'Finalized',
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-        CREATE TABLE IF NOT EXISTS `consignees` (
+        CREATE TABLE IF NOT EXISTS `packing_lists` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
-          `name` VARCHAR(255) NOT NULL,
-          `country` VARCHAR(100),
-          `address` TEXT,
-          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          `pkl_no` VARCHAR(100) UNIQUE NOT NULL,
+          `buyer_name` VARCHAR(255),
+          `container_no` VARCHAR(255),
+          `status` VARCHAR(50) DEFAULT 'Draft',
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-        CREATE TABLE IF NOT EXISTS `products` (
+        CREATE TABLE IF NOT EXISTS `bl_records` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
-          `name` VARCHAR(255) NOT NULL,
-          `hsn` VARCHAR(50),
-          `unit` VARCHAR(50),
-          `price` DECIMAL(12,2) DEFAULT 0.00,
-          `description` TEXT,
-          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          `rec_id` VARCHAR(100) UNIQUE NOT NULL,
+          `pi_no` VARCHAR(100),
+          `shipping_line` VARCHAR(255),
+          `container_no` VARCHAR(100),
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS `system_users` (
+          `id` VARCHAR(100) PRIMARY KEY,
+          `email` VARCHAR(255) UNIQUE NOT NULL,
+          `first_name` VARCHAR(100),
+          `last_name` VARCHAR(100),
+          `role_name` VARCHAR(100),
+          `status` VARCHAR(50) DEFAULT 'Active',
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS `recent_activities` (
+          `id` VARCHAR(100) PRIMARY KEY,
+          `type` VARCHAR(50),
+          `title` VARCHAR(255),
+          `badge` VARCHAR(100),
+          `timestamp_iso` VARCHAR(100),
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS `erp_sync_store` (
+          `key_name` VARCHAR(150) PRIMARY KEY,
+          `data_json` LONGTEXT NOT NULL,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
@@ -102,63 +136,258 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+    // High-efficiency all-in-one live synchronization endpoint
+    if ($action === 'get_all_live') {
+        $data = [
+            'quotations'         => [],
+            'proformaInvoices'   => [],
+            'commercialInvoices' => [],
+            'packingLists'       => [],
+            'blRecords'          => [],
+            'systemUsers'        => [],
+            'recentActivities'   => [],
+            'serverTime'         => date('Y-m-d H:i:s')
+        ];
+
+        // 1. Quotations
+        $stmt = $pdo->query("SELECT data_json FROM quotations ORDER BY id DESC LIMIT 500");
+        $data['quotations'] = array_map(fn($r) => json_decode($r, true), $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        // 2. Proforma Invoices
+        $stmt = $pdo->query("SELECT data_json FROM proforma_invoices ORDER BY id DESC LIMIT 500");
+        $data['proformaInvoices'] = array_map(fn($r) => json_decode($r, true), $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        // 3. Commercial Invoices
+        $stmt = $pdo->query("SELECT data_json FROM commercial_invoices ORDER BY id DESC LIMIT 500");
+        $rowsCi = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($rowsCi)) {
+            $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_commercial_invoices'");
+            $stmtFallback->execute();
+            $fb = $stmtFallback->fetchColumn();
+            if ($fb) $data['commercialInvoices'] = json_decode($fb, true) ?: [];
+        } else {
+            $data['commercialInvoices'] = array_map(fn($r) => json_decode($r, true), $rowsCi);
+        }
+
+        // 4. Packing Lists
+        $stmt = $pdo->query("SELECT data_json FROM packing_lists ORDER BY id DESC LIMIT 500");
+        $rowsPkl = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($rowsPkl)) {
+            $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_packing_lists'");
+            $stmtFallback->execute();
+            $fb = $stmtFallback->fetchColumn();
+            if ($fb) $data['packingLists'] = json_decode($fb, true) ?: [];
+        } else {
+            $data['packingLists'] = array_map(fn($r) => json_decode($r, true), $rowsPkl);
+        }
+
+        // 5. BL Records
+        $stmt = $pdo->query("SELECT data_json FROM bl_records ORDER BY id DESC LIMIT 500");
+        $rowsBl = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($rowsBl)) {
+            $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_bl_records'");
+            $stmtFallback->execute();
+            $fb = $stmtFallback->fetchColumn();
+            if ($fb) $data['blRecords'] = json_decode($fb, true) ?: [];
+        } else {
+            $data['blRecords'] = array_map(fn($r) => json_decode($r, true), $rowsBl);
+        }
+
+        // 6. System Users
+        $stmt = $pdo->query("SELECT data_json FROM system_users ORDER BY updated_at DESC LIMIT 500");
+        $rowsUsers = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($rowsUsers)) {
+            $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_system_users_v2'");
+            $stmtFallback->execute();
+            $fb = $stmtFallback->fetchColumn();
+            if ($fb) $data['systemUsers'] = json_decode($fb, true) ?: [];
+        } else {
+            $data['systemUsers'] = array_map(fn($r) => json_decode($r, true), $rowsUsers);
+        }
+
+        // 7. Recent Activities
+        $stmt = $pdo->query("SELECT data_json FROM recent_activities ORDER BY id DESC LIMIT 100");
+        $rowsAct = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($rowsAct)) {
+            $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_recent_activities'");
+            $stmtFallback->execute();
+            $fb = $stmtFallback->fetchColumn();
+            if ($fb) $data['recentActivities'] = json_decode($fb, true) ?: [];
+        } else {
+            $data['recentActivities'] = array_map(fn($r) => json_decode($r, true), $rowsAct);
+        }
+
+        echo json_encode($data);
+        exit;
+    }
+
+    // Individual Key GET
     if ($action === 'get') {
         $key = $_GET['key'] ?? '';
         $tableMap = [
-            'shipz_quotations' => 'quotations',
-            'shipz_proforma_invoices' => 'proforma_invoices'
+            'shipz_quotations'          => 'quotations',
+            'shipz_proforma_invoices'   => 'proforma_invoices',
+            'shipz_commercial_invoices' => 'commercial_invoices',
+            'shipz_packing_lists'       => 'packing_lists',
+            'shipz_bl_records'          => 'bl_records',
+            'shipz_system_users_v2'     => 'system_users',
+            'shipz_recent_activities'   => 'recent_activities'
         ];
 
         if (isset($tableMap[$key])) {
             $table = $tableMap[$key];
             $stmt = $pdo->query("SELECT data_json FROM `$table` ORDER BY id DESC");
             $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            $result = array_map(fn($r) => json_decode($r, true), $rows);
-            echo json_encode($result);
+            if (!empty($rows)) {
+                $result = array_map(fn($r) => json_decode($r, true), $rows);
+                echo json_encode($result);
+                exit;
+            }
+        }
+
+        // Fallback to erp_sync_store
+        $stmtStore = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = ?");
+        $stmtStore->execute([$key]);
+        $val = $stmtStore->fetchColumn();
+        if ($val) {
+            echo $val;
             exit;
         }
+
+        echo json_encode([]);
+        exit;
     }
 
     echo json_encode(['status' => 'online', 'message' => 'ExportFlow Local MySQL API Active']);
     exit;
 }
 
-// POST REQUESTS - WRITE & SYNC DATA
+// POST REQUESTS - WRITE & LIVE SYNC DATA ACROSS USERS & PCs
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $key = $input['key'] ?? '';
     $data = $input['data'] ?? null;
 
-    if ($key && is_array($data)) {
-        if ($key === 'shipz_quotations') {
+    if ($key && $data !== null) {
+        // 1. Always back up to erp_sync_store for universal network sharing
+        $stmtStore = $pdo->prepare("INSERT INTO erp_sync_store (key_name, data_json) VALUES (?, ?) ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP");
+        $stmtStore->execute([$key, json_encode($data)]);
+
+        // 2. Specialized relational table upserts
+        if ($key === 'shipz_quotations' && is_array($data)) {
             $stmt = $pdo->prepare("INSERT INTO quotations (quotation_no, consignee, country, total_amount, status, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE consignee=VALUES(consignee), country=VALUES(country), total_amount=VALUES(total_amount), status=VALUES(status), data_json=VALUES(data_json)");
             foreach ($data as $item) {
-                $qNo = $item['quotationNo'] ?? uniqid('QT-');
+                $qNo = $item['quotationNo'] ?? ('QT-' . ($item['id'] ?? uniqid()));
                 $consignee = $item['consignee'] ?? '';
                 $country = $item['country'] ?? '';
-                $total = floatval($item['totalAmount'] ?? 0);
+                $total = floatval($item['totalAmount'] ?? $item['amount'] ?? 0);
                 $status = $item['status'] ?? 'Draft';
                 $stmt->execute([$qNo, $consignee, $country, $total, $status, json_encode($item)]);
             }
-            echo json_encode(['success' => true, 'count' => count($data)]);
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
             exit;
         }
 
-        if ($key === 'shipz_proforma_invoices') {
+        if ($key === 'shipz_proforma_invoices' && is_array($data)) {
             $stmt = $pdo->prepare("INSERT INTO proforma_invoices (pi_no, consignee, country, total_amount, status, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE consignee=VALUES(consignee), country=VALUES(country), total_amount=VALUES(total_amount), status=VALUES(status), data_json=VALUES(data_json)");
             foreach ($data as $item) {
-                $piNo = $item['invNumber'] ?? uniqid('PI-');
+                $piNo = $item['invNumber'] ?? $item['piNo'] ?? ('PI-' . ($item['id'] ?? uniqid()));
                 $consignee = $item['consignee'] ?? '';
                 $country = $item['country'] ?? '';
-                $total = floatval($item['totalAmount'] ?? 0);
+                $total = floatval($item['totalAmount'] ?? $item['amount'] ?? 0);
                 $status = $item['status'] ?? 'Draft';
                 $stmt->execute([$piNo, $consignee, $country, $total, $status, json_encode($item)]);
             }
-            echo json_encode(['success' => true, 'count' => count($data)]);
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
             exit;
         }
+
+        if ($key === 'shipz_commercial_invoices' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO commercial_invoices (ci_no, consignee, country, total_amount, status, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE consignee=VALUES(consignee), country=VALUES(country), total_amount=VALUES(total_amount), status=VALUES(status), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $ciNo = $item['invNumber'] ?? ('CI-' . ($item['id'] ?? uniqid()));
+                $consignee = $item['consignee'] ?? '';
+                $country = $item['country'] ?? '';
+                $total = floatval($item['totalAmount'] ?? $item['amount'] ?? 0);
+                $status = $item['status'] ?? 'Finalized';
+                $stmt->execute([$ciNo, $consignee, $country, $total, $status, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        if ($key === 'shipz_packing_lists' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO packing_lists (pkl_no, buyer_name, container_no, status, data_json) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE buyer_name=VALUES(buyer_name), container_no=VALUES(container_no), status=VALUES(status), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $pklNo = $item['pklNo'] ?? ('PKL-' . ($item['id'] ?? uniqid()));
+                $buyer = $item['buyerName'] ?? $item['consignee'] ?? '';
+                $container = $item['containerNo'] ?? '';
+                $status = $item['status'] ?? 'Draft';
+                $stmt->execute([$pklNo, $buyer, $container, $status, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        if ($key === 'shipz_bl_records' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO bl_records (rec_id, pi_no, shipping_line, container_no, data_json) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE pi_no=VALUES(pi_no), shipping_line=VALUES(shipping_line), container_no=VALUES(container_no), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $rId = $item['id'] ?? ('BL-' . uniqid());
+                $piNo = $item['piNo'] ?? '';
+                $shipLine = $item['shippingLine'] ?? '';
+                $container = $item['containerNo'] ?? '';
+                $stmt->execute([$rId, $piNo, $shipLine, $container, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        if ($key === 'shipz_system_users_v2' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO system_users (id, email, first_name, last_name, role_name, status, data_json) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email=VALUES(email), first_name=VALUES(first_name), last_name=VALUES(last_name), role_name=VALUES(role_name), status=VALUES(status), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $uId = $item['id'] ?? ('usr-' . uniqid());
+                $email = $item['email'] ?? ($uId . '@exportflow.internal');
+                $fn = $item['first_name'] ?? '';
+                $ln = $item['last_name'] ?? '';
+                $role = $item['role_name'] ?? 'Staff';
+                $status = $item['status'] ?? 'Active';
+                $stmt->execute([$uId, $email, $fn, $ln, $role, $status, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        if ($key === 'shipz_recent_activities' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO recent_activities (id, type, title, badge, timestamp_iso, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE type=VALUES(type), title=VALUES(title), badge=VALUES(badge), timestamp_iso=VALUES(timestamp_iso), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $actId = $item['id'] ?? ('act-' . uniqid());
+                $type = $item['type'] ?? 'doc';
+                $title = $item['title'] ?? 'Document Action';
+                $badge = $item['badge'] ?? '';
+                $iso = $item['timestamp'] ?? date('c');
+                $stmt->execute([$actId, $type, $title, $badge, $iso, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        // Single activity append helper
+        if ($key === 'shipz_single_activity' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO recent_activities (id, type, title, badge, timestamp_iso, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE type=VALUES(type), title=VALUES(title), badge=VALUES(badge), timestamp_iso=VALUES(timestamp_iso), data_json=VALUES(data_json)");
+            $actId = $data['id'] ?? ('act-' . uniqid());
+            $type = $data['type'] ?? 'doc';
+            $title = $data['title'] ?? 'Document Action';
+            $badge = $data['badge'] ?? '';
+            $iso = $data['timestamp'] ?? date('c');
+            $stmt->execute([$actId, $type, $title, $badge, $iso, json_encode($data)]);
+            echo json_encode(['success' => true, 'activity_id' => $actId]);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'key' => $key]);
+        exit;
     }
 
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => false, 'error' => 'Missing key or data']);
     exit;
 }

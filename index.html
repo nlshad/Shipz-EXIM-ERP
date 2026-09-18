@@ -926,12 +926,31 @@
 
       // Global Live Document Activity Recorder
       const recordActivity = (activity) => {
+        let author = activity.userName || '';
+        if (!author) {
+          try {
+            const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+            const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+            const matched = savedUsers.find(u => u.id === savedUid);
+            if (matched) author = `${matched.first_name || ''} ${matched.last_name || ''}`.trim();
+          } catch (e) { }
+        }
+        if (!author) author = 'Active User';
+
         const newEntry = {
           id: `act-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
           timestamp: new Date().toISOString(),
+          userName: author,
           ...activity
         };
         setRecentActivities(prev => [newEntry, ...(prev || []).filter(a => a.id !== newEntry.id)].slice(0, 50));
+
+        // Immediately broadcast to central server so another PC / user sees it live
+        fetch('api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'shipz_single_activity', data: newEntry })
+        }).catch(() => { });
       };
 
       const formatRelativeTime = (isoString) => {
@@ -1031,61 +1050,7 @@
       const [selectedPiId, setSelectedPiId] = useState('pi-01');
       const [piViewMode, setPiViewMode] = useState('grid'); // 'grid' or 'split'
 
-      // Central MySQL Database Synchronization
-      React.useEffect(() => {
-        async function fetchMySQLData() {
-          try {
-            const resQt = await fetch('api.php?action=get&key=shipz_quotations');
-            if (resQt.ok) {
-              const dbQt = await resQt.json();
-              if (Array.isArray(dbQt) && dbQt.length > 0) setQuotations(dbQt);
-            }
-            const resPi = await fetch('api.php?action=get&key=shipz_proforma_invoices');
-            if (resPi.ok) {
-              const dbPi = await resPi.json();
-              if (Array.isArray(dbPi) && dbPi.length > 0) setProformaInvoices(dbPi);
-            }
-            const resCi = await fetch('api.php?action=get&key=shipz_commercial_invoices');
-            if (resCi.ok) {
-              const dbCi = await resCi.json();
-              if (Array.isArray(dbCi) && dbCi.length > 0) setCommercialInvoices(dbCi);
-            }
-          } catch (e) {
-            console.log('MySQL Database connection fallback: LocalStorage mode active');
-          }
-        }
-        fetchMySQLData();
-      }, []);
-
-      React.useEffect(() => {
-        if (quotations && quotations.length > 0) {
-          fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'shipz_quotations', data: quotations })
-          }).catch(() => { });
-        }
-      }, [quotations]);
-
-      React.useEffect(() => {
-        if (proformaInvoices && proformaInvoices.length > 0) {
-          fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'shipz_proforma_invoices', data: proformaInvoices })
-          }).catch(() => { });
-        }
-      }, [proformaInvoices]);
-
-      React.useEffect(() => {
-        if (commercialInvoices && commercialInvoices.length > 0) {
-          fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'shipz_commercial_invoices', data: commercialInvoices })
-          }).catch(() => { });
-        }
-      }, [commercialInvoices]);
+      // (Central Real-Time Multi-User Network Synchronization Engine is initialized below all state declarations)
 
       // Shared Global Header Controls
       const [financialYear, setFinancialYear] = useState('2025-2026');
@@ -1428,6 +1393,192 @@
 
       React.useEffect(() => { try { localStorage.setItem('shipz_system_users_v2', JSON.stringify(systemUsers)); } catch (e) { } }, [systemUsers]);
       React.useEffect(() => { try { localStorage.setItem('shipz_user_roles_v2', JSON.stringify(userRoles)); } catch (e) { } }, [userRoles]);
+
+      // =========================================================================
+      // CENTRAL REAL-TIME MULTI-USER NETWORK SYNCHRONIZATION ENGINE
+      // Syncs documents, users, and activities across different computers & users
+      // =========================================================================
+      const [isNetworkLiveSyncing, setIsNetworkLiveSyncing] = useState(false);
+      const [lastSyncServerTime, setLastSyncServerTime] = useState(null);
+
+      // Safe deep merge helper: keeps all remote additions from all users, while preserving local in-progress items
+      const mergeArraysByIdOrNo = (localArr, remoteArr, idKey = 'id', altKey = null) => {
+        if (!Array.isArray(remoteArr) || remoteArr.length === 0) return localArr || [];
+        if (!Array.isArray(localArr) || localArr.length === 0) return remoteArr;
+
+        const map = new Map();
+        // 1. Index remote items from server (shared across all users)
+        remoteArr.forEach(item => {
+          if (!item) return;
+          const k = String(item[idKey] || (altKey && item[altKey]) || '');
+          if (k) map.set(k, item);
+        });
+        // 2. Preserve any local items not yet on the server
+        localArr.forEach(item => {
+          if (!item) return;
+          const k = String(item[idKey] || (altKey && item[altKey]) || '');
+          if (k && !map.has(k)) {
+            map.set(k, item);
+          }
+        });
+        return Array.from(map.values());
+      };
+
+      const mergeActivities = (localArr, remoteArr) => {
+        if (!Array.isArray(remoteArr) || remoteArr.length === 0) return localArr || [];
+        if (!Array.isArray(localArr) || localArr.length === 0) return remoteArr;
+
+        const map = new Map();
+        remoteArr.forEach(act => {
+          if (act && act.id) map.set(act.id, act);
+        });
+        localArr.forEach(act => {
+          if (act && act.id && !map.has(act.id)) {
+            map.set(act.id, act);
+          }
+        });
+        return Array.from(map.values())
+          .sort((a, b) => new Date(b.timestamp || b.timestamp_iso || 0) - new Date(a.timestamp || a.timestamp_iso || 0))
+          .slice(0, 50);
+      };
+
+      // Heartbeat Polling Loop: Fetches all updates from MySQL every 3 seconds
+      React.useEffect(() => {
+        let isPolling = false;
+        const fetchAllLiveUpdates = async () => {
+          if (isPolling) return;
+          isPolling = true;
+          try {
+            const res = await fetch('api.php?action=get_all_live');
+            if (res.ok) {
+              const bundle = await res.json();
+              if (bundle && typeof bundle === 'object') {
+                // 1. Sync Quotations created by any user
+                if (Array.isArray(bundle.quotations) && bundle.quotations.length > 0) {
+                  setQuotations(prev => mergeArraysByIdOrNo(prev, bundle.quotations, 'id', 'quotationNo'));
+                }
+                // 2. Sync Proforma Invoices created by any user
+                if (Array.isArray(bundle.proformaInvoices) && bundle.proformaInvoices.length > 0) {
+                  setProformaInvoices(prev => mergeArraysByIdOrNo(prev, bundle.proformaInvoices, 'id', 'invNumber'));
+                }
+                // 3. Sync Commercial Invoices created by any user
+                if (Array.isArray(bundle.commercialInvoices) && bundle.commercialInvoices.length > 0) {
+                  setCommercialInvoices(prev => mergeArraysByIdOrNo(prev, bundle.commercialInvoices, 'id', 'invNumber'));
+                }
+                // 4. Sync Packing Lists created by any user
+                if (Array.isArray(bundle.packingLists) && bundle.packingLists.length > 0) {
+                  setPackingLists(prev => mergeArraysByIdOrNo(prev, bundle.packingLists, 'id', 'pklNo'));
+                }
+                // 5. Sync BL Records created by any user
+                if (Array.isArray(bundle.blRecords) && bundle.blRecords.length > 0) {
+                  setBlRecords(prev => mergeArraysByIdOrNo(prev, bundle.blRecords, 'id', 'rec_id'));
+                }
+                // 6. Sync System Users created by any user/admin on any PC
+                if (Array.isArray(bundle.systemUsers) && bundle.systemUsers.length > 0) {
+                  setSystemUsers(prev => mergeArraysByIdOrNo(prev, bundle.systemUsers, 'id', 'email'));
+                }
+                // 7. Sync Recent Activities from all users
+                if (Array.isArray(bundle.recentActivities) && bundle.recentActivities.length > 0) {
+                  setRecentActivities(prev => mergeActivities(prev, bundle.recentActivities));
+                }
+
+                if (bundle.serverTime) setLastSyncServerTime(bundle.serverTime);
+                setIsNetworkLiveSyncing(true);
+              }
+            }
+          } catch (e) {
+            setIsNetworkLiveSyncing(false);
+          } finally {
+            isPolling = false;
+          }
+        };
+
+        // Run immediately
+        fetchAllLiveUpdates();
+
+        // High frequency poll every 3 seconds for live multi-user collaboration
+        const pollTimer = setInterval(fetchAllLiveUpdates, 3000);
+
+        // Immediate poll whenever user focuses window or returns to tab
+        const handleFocus = () => fetchAllLiveUpdates();
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+          clearInterval(pollTimer);
+          window.removeEventListener('focus', handleFocus);
+        };
+      }, []);
+
+      // Real-time Push: Push local changes immediately to central MySQL database
+      React.useEffect(() => {
+        if (quotations && quotations.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_quotations', data: quotations })
+          }).catch(() => { });
+        }
+      }, [quotations]);
+
+      React.useEffect(() => {
+        if (proformaInvoices && proformaInvoices.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_proforma_invoices', data: proformaInvoices })
+          }).catch(() => { });
+        }
+      }, [proformaInvoices]);
+
+      React.useEffect(() => {
+        if (commercialInvoices && commercialInvoices.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_commercial_invoices', data: commercialInvoices })
+          }).catch(() => { });
+        }
+      }, [commercialInvoices]);
+
+      React.useEffect(() => {
+        if (packingLists && packingLists.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_packing_lists', data: packingLists })
+          }).catch(() => { });
+        }
+      }, [packingLists]);
+
+      React.useEffect(() => {
+        if (blRecords && blRecords.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_bl_records', data: blRecords })
+          }).catch(() => { });
+        }
+      }, [blRecords]);
+
+      React.useEffect(() => {
+        if (systemUsers && systemUsers.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_system_users_v2', data: systemUsers })
+          }).catch(() => { });
+        }
+      }, [systemUsers]);
+
+      React.useEffect(() => {
+        if (recentActivities && recentActivities.length > 0) {
+          fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_recent_activities', data: recentActivities })
+          }).catch(() => { });
+        }
+      }, [recentActivities]);
 
       // AUTHENTICATION SESSION STATE & HANDLERS
       const [isProductionSecurityMode, setIsProductionSecurityMode] = useState(() => {
@@ -6713,13 +6864,13 @@
                           </h3>
                           <span className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>Live Audit</span>
+                            <span>{isNetworkLiveSyncing ? 'Live Network Synced' : 'Syncing...'}</span>
                           </span>
                           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full tabular-nums">
                             {recentActivities ? recentActivities.length : 0} Events
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">Real-time audit log of documents, quotations, invoices, packing lists & user changes</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Real-time audit log of documents, quotations, invoices, packing lists & user changes across all devices</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
@@ -6749,8 +6900,14 @@
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                                  {act.description}
+                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1 flex items-center flex-wrap gap-1">
+                                  <span>{act.description}</span>
+                                  {act.userName && (
+                                    <span className="inline-flex items-center space-x-1 px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[9.5px] font-semibold border border-slate-200">
+                                      <i className="fi fi-rr-user text-[8.5px]"></i>
+                                      <span>{act.userName}</span>
+                                    </span>
+                                  )}
                                 </p>
                               </div>
                             </div>
