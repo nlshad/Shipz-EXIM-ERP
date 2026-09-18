@@ -1,0 +1,8 @@
+# Secrets & Database Credentials
+db_config.json
+.env
+
+# Dependencies
+node_modules/
+dist/
+.DS_Store

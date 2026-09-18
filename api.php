@@ -2,6 +2,7 @@
 // ============================================================
 // EXPORTFLOW ERP (SHIPZ) - CENTRAL REAL-TIME MYSQL BACKEND API
 // Live Multi-User Network Synchronization Engine
+// Compatible with cPanel, Hostinger, VPS, Cloud & Local XAMPP
 // ============================================================
 
 header("Access-Control-Allow-Origin: *");
@@ -14,25 +15,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Database Credentials
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db   = 'shipz_db';
+// 1. Load Database Configuration
+require_once __DIR__ . '/config.php';
+
+// Action dispatcher
+$action = $_GET['action'] ?? '';
+
+// 2. Handle DB Configuration Save & Test Endpoint
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_db_config') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $testHost = trim($input['db_host'] ?? 'localhost');
+    $testName = trim($input['db_name'] ?? '');
+    $testUser = trim($input['db_user'] ?? '');
+    $testPass = $input['db_pass'] ?? '';
+    $testPort = trim($input['db_port'] ?? '3306');
+
+    try {
+        $testDsn = "mysql:host={$testHost};port={$testPort};dbname={$testName};charset=utf8mb4";
+        $testPdo = new PDO($testDsn, $testUser, $testPass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 5
+        ]);
+
+        // Auto Create Tables
+        createErpTables($testPdo);
+
+        // Save to db_config.json
+        $saveData = [
+            'db_host' => $testHost,
+            'db_name' => $testName,
+            'db_user' => $testUser,
+            'db_pass' => $testPass,
+            'db_port' => $testPort,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        file_put_contents(__DIR__ . '/db_config.json', json_encode($saveData, JSON_PRETTY_PRINT));
+
+        echo json_encode([
+            'success' => true,
+            'message' => "Successfully connected to {$testName} on {$testHost} and verified ERP tables!"
+        ]);
+        exit;
+    } catch (\PDOException $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+        exit;
+    }
+}
+
+// 3. Connect to Database using Configured Credentials
+$pdo = null;
+$dbConnectionError = null;
 
 try {
-    // 1. Connect to MySQL Server
-    $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass, [
+    $dsn = "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};charset=utf8mb4";
+    $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 5
     ]);
+    createErpTables($pdo);
+} catch (\PDOException $e) {
+    // If database does not exist and we are root on localhost (local dev), try creating it
+    if ($e->getCode() == 1049 && ($DB_USER === 'root' || $DB_HOST === 'localhost' || $DB_HOST === '127.0.0.1')) {
+        try {
+            $rootPdo = new PDO("mysql:host={$DB_HOST};port={$DB_PORT};charset=utf8mb4", $DB_USER, $DB_PASS, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
+            $rootPdo->exec("CREATE DATABASE IF NOT EXISTS `{$DB_NAME}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
+            createErpTables($pdo);
+        } catch (\Exception $e2) {
+            $dbConnectionError = $e2->getMessage();
+        }
+    } else {
+        $dbConnectionError = $e->getMessage();
+    }
+}
 
-    // 2. Auto Create Database if not exists
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("USE `$db`");
-
-    // 3. Auto Create Comprehensive ERP Sync Tables
-    $pdo->exec("
+// Helper: Ensure all necessary ERP tables exist
+function createErpTables($db) {
+    $db->exec("
         CREATE TABLE IF NOT EXISTS `quotations` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
           `quotation_no` VARCHAR(100) UNIQUE NOT NULL,
@@ -120,25 +188,43 @@ try {
           `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
+}
 
-} catch (\PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database Connection Failed: ' . $e->getMessage()]);
+// 4. If Database Connection Failed, Return Diagnostic Response
+if (!$pdo) {
+    echo json_encode([
+        'status' => 'db_error',
+        'is_connected' => false,
+        'message' => 'Live Database Connection Failed: ' . $dbConnectionError,
+        'config' => [
+            'host' => $DB_HOST,
+            'database' => $DB_NAME,
+            'user' => $DB_USER,
+            'port' => $DB_PORT
+        ],
+        'help' => 'Please set your live database credentials in config.php or click Database Settings in the ERP header.'
+    ]);
     exit;
 }
 
-$action = $_GET['action'] ?? '';
-
-// GET REQUESTS - READ DATA
+// 5. GET REQUESTS - READ DATA
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if ($action === 'ping') {
-        echo json_encode(['status' => 'online', 'database' => 'shipz_db', 'server_time' => date('Y-m-d H:i:s')]);
+    if ($action === 'ping' || $action === 'db_status') {
+        echo json_encode([
+            'status' => 'online',
+            'is_connected' => true,
+            'database' => $DB_NAME,
+            'host' => $DB_HOST,
+            'server_time' => date('Y-m-d H:i:s')
+        ]);
         exit;
     }
 
     // High-efficiency all-in-one live synchronization endpoint
     if ($action === 'get_all_live') {
         $data = [
+            'status'             => 'online',
+            'is_connected'       => true,
             'quotations'         => [],
             'proformaInvoices'   => [],
             'commercialInvoices' => [],
@@ -262,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// POST REQUESTS - WRITE & LIVE SYNC DATA ACROSS USERS & PCs
+// 6. POST REQUESTS - WRITE & LIVE SYNC DATA ACROSS USERS & PCs
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $key = $input['key'] ?? '';

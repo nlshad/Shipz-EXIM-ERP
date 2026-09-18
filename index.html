@@ -1400,6 +1400,45 @@
       // =========================================================================
       const [isNetworkLiveSyncing, setIsNetworkLiveSyncing] = useState(false);
       const [lastSyncServerTime, setLastSyncServerTime] = useState(null);
+      const [dbConnectionStatus, setDbConnectionStatus] = useState({ connected: true, message: '', config: null });
+      const [isDbConfigModalOpen, setIsDbConfigModalOpen] = useState(false);
+      const [dbConfigInput, setDbConfigInput] = useState({
+        db_host: 'localhost',
+        db_name: 'shipz_db',
+        db_user: 'root',
+        db_pass: '',
+        db_port: '3306'
+      });
+      const [dbConfigSaving, setDbConfigSaving] = useState(false);
+      const [dbConfigNotice, setDbConfigNotice] = useState(null);
+
+      const handleSaveAndTestDbConfig = async () => {
+        setDbConfigSaving(true);
+        setDbConfigNotice(null);
+        try {
+          const res = await fetch('api.php?action=save_db_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dbConfigInput)
+          });
+          const result = await res.json();
+          if (result.success) {
+            setDbConfigNotice({ isSuccess: true, text: result.message || 'Connected successfully!' });
+            setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
+            setIsNetworkLiveSyncing(true);
+            setTimeout(() => {
+              setIsDbConfigModalOpen(false);
+              setDbConfigNotice(null);
+            }, 2000);
+          } else {
+            setDbConfigNotice({ isSuccess: false, text: result.error || 'Connection failed. Please verify credentials.' });
+          }
+        } catch (e) {
+          setDbConfigNotice({ isSuccess: false, text: `Server error: ${e.message}` });
+        } finally {
+          setDbConfigSaving(false);
+        }
+      };
 
       // Safe deep merge helper: keeps all remote additions from all users, while preserving local in-progress items
       const mergeArraysByIdOrNo = (localArr, remoteArr, idKey = 'id', altKey = null) => {
@@ -1453,6 +1492,27 @@
             if (res.ok) {
               const bundle = await res.json();
               if (bundle && typeof bundle === 'object') {
+                if (bundle.status === 'db_error' || bundle.is_connected === false) {
+                  setDbConnectionStatus({
+                    connected: false,
+                    message: bundle.message || 'Database connection error',
+                    config: bundle.config || null
+                  });
+                  if (bundle.config) {
+                    setDbConfigInput(prev => ({
+                      ...prev,
+                      db_host: bundle.config.host || prev.db_host,
+                      db_name: bundle.config.database || prev.db_name,
+                      db_user: bundle.config.user || prev.db_user,
+                      db_port: bundle.config.port || prev.db_port
+                    }));
+                  }
+                  setIsNetworkLiveSyncing(false);
+                  return;
+                }
+
+                setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
+
                 // 1. Sync Quotations created by any user
                 if (Array.isArray(bundle.quotations) && bundle.quotations.length > 0) {
                   setQuotations(prev => mergeArraysByIdOrNo(prev, bundle.quotations, 'id', 'quotationNo'));
@@ -1485,8 +1545,12 @@
                 if (bundle.serverTime) setLastSyncServerTime(bundle.serverTime);
                 setIsNetworkLiveSyncing(true);
               }
+            } else {
+              setDbConnectionStatus({ connected: false, message: `Server HTTP ${res.status}`, config: null });
+              setIsNetworkLiveSyncing(false);
             }
           } catch (e) {
+            setDbConnectionStatus({ connected: false, message: e.message || 'Network error', config: null });
             setIsNetworkLiveSyncing(false);
           } finally {
             isPolling = false;
@@ -6693,6 +6757,29 @@
                   </div>
 
                   <div className="flex items-center space-x-3 text-xs">
+                    {/* Live Database Status / Configure Button */}
+                    {dbConnectionStatus.connected ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsDbConfigModalOpen(true)}
+                        title="Database Connected: Click to view or adjust live credentials"
+                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Live DB</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsDbConfigModalOpen(true)}
+                        title="Database Disconnected: Click to configure live MySQL credentials"
+                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-black transition-all cursor-pointer animate-pulse"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span>🔴 Connect DB</span>
+                      </button>
+                    )}
+
                     <div className="flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700">
                       <span>FY:</span>
                       <select
@@ -6812,6 +6899,34 @@
                     <span>→</span>
                   </button>
                 </div>
+
+                {/* DATABASE CONNECTION ALERT BANNER IF DISCONNECTED ON LIVE SERVER */}
+                {!dbConnectionStatus.connected && (
+                  <div className="bg-gradient-to-r from-rose-50 to-amber-50 border-2 border-rose-300 p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center space-x-3.5 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xl shrink-0 border border-rose-200">
+                        <i className="fi fi-rr-database"></i>
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-black text-rose-900 text-sm">Live MySQL Database Disconnected</h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Action Required</span>
+                        </div>
+                        <p className="text-xs text-rose-700 mt-0.5 max-w-2xl font-medium">
+                          {dbConnectionStatus.message || "Cannot connect to MySQL database with current credentials. Documents and activities will not sync across other PCs until connected."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsDbConfigModalOpen(true)}
+                      className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-600/20 transition-all cursor-pointer flex items-center space-x-2 shrink-0"
+                    >
+                      <i className="fi fi-rr-settings text-sm"></i>
+                      <span>Configure Live DB Credentials →</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* ZONE 1: 4 SIMPLE METRIC CARDS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -17771,6 +17886,138 @@
                       <i className="fi fi-rr-print text-sm"></i>
                       <span>Print {labelPrinterData.printMode === 'all' ? `${labelPrinterData.totalBoxes} Carton Labels` : 'Carton Label'}</span>
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/* LIVE DATABASE CONFIGURATION & DIAGNOSTICS MODAL */}
+          {isDbConfigModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+                {/* Header */}
+                <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-500/30 text-indigo-300 flex items-center justify-center">
+                      <i className="fi fi-rr-database text-base"></i>
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm">Live MySQL Database Configuration</h3>
+                      <p className="text-[11px] text-slate-400">cPanel / Hostinger / VPS / Cloud Credentials</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDbConfigModalOpen(false)}
+                    className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer"
+                  >✕</button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-4 text-xs">
+                  {dbConfigNotice && (
+                    <div className={`p-3 rounded-xl border text-xs font-semibold ${dbConfigNotice.isSuccess ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
+                      {dbConfigNotice.text}
+                    </div>
+                  )}
+
+                  {!dbConfigNotice && !dbConnectionStatus.connected && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-semibold text-xs">
+                      Connection Error: {dbConnectionStatus.message}
+                    </div>
+                  )}
+
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5 text-slate-600 text-[11px]">
+                    <p className="font-bold text-slate-800">Live Hosting Setup Instructions:</p>
+                    <p>1. In your cPanel / Hostinger control panel, create a MySQL Database & User.</p>
+                    <p>2. Ensure you assign the User to the Database with <strong>ALL PRIVILEGES</strong>.</p>
+                    <p>3. Enter the exact Database Name, User, and Password below and click Test & Save.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-slate-700 font-bold mb-1">Database Host</label>
+                      <input
+                        type="text"
+                        value={dbConfigInput.db_host}
+                        onChange={(e) => setDbConfigInput(prev => ({ ...prev, db_host: e.target.value }))}
+                        placeholder="localhost"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-slate-700 font-bold mb-1">Port</label>
+                      <input
+                        type="text"
+                        value={dbConfigInput.db_port}
+                        onChange={(e) => setDbConfigInput(prev => ({ ...prev, db_port: e.target.value }))}
+                        placeholder="3306"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-slate-700 font-bold mb-1">Database Name <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        value={dbConfigInput.db_name}
+                        onChange={(e) => setDbConfigInput(prev => ({ ...prev, db_name: e.target.value }))}
+                        placeholder="e.g. cpaneluser_shipz_db"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-slate-700 font-bold mb-1">Database User <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        value={dbConfigInput.db_user}
+                        onChange={(e) => setDbConfigInput(prev => ({ ...prev, db_user: e.target.value }))}
+                        placeholder="e.g. cpaneluser_shipz"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-slate-700 font-bold mb-1">Database Password</label>
+                      <input
+                        type="password"
+                        value={dbConfigInput.db_pass}
+                        onChange={(e) => setDbConfigInput(prev => ({ ...prev, db_pass: e.target.value }))}
+                        placeholder="Database Password"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <span className="text-[10px] text-slate-400">
+                      Saves to server <code className="bg-slate-100 px-1 rounded">db_config.json</code>
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsDbConfigModalOpen(false)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={dbConfigSaving || !dbConfigInput.db_name || !dbConfigInput.db_user}
+                        onClick={handleSaveAndTestDbConfig}
+                        className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 disabled:opacity-50 text-white font-extrabold rounded-xl shadow-lg shadow-indigo-600/20 flex items-center space-x-2 transition-all cursor-pointer"
+                      >
+                        {dbConfigSaving ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            <span>Testing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <i className="fi fi-rr-check text-xs"></i>
+                            <span>Test & Save Database</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
