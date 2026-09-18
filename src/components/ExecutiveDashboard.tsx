@@ -14,6 +14,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   onNavigateEngine,
 }) => {
   const [showPnlModal, setShowPnlModal] = useState(false);
+  const [financialYear, setFinancialYear] = useState('2025-2026');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [copyToast, setCopyToast] = useState(false);
 
   const fxRate = currentCurrency === 'INR' ? 83.5 : currentCurrency === 'EUR' ? 0.92 : 1.0;
   const currSymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
@@ -41,6 +45,119 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 
   return (
     <div className="space-y-6 relative pb-12">
+      {/* TOP HEADER & CONTROL BAR */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative flex-1 min-w-[240px] max-w-md">
+          <input
+            type="text"
+            placeholder="Search across invoices, products, settings..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
+          />
+          <i className="fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"></i>
+        </div>
+
+        <div className="flex items-center space-x-3 text-xs">
+          <div className="flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700">
+            <span>FY:</span>
+            <select
+              value={financialYear}
+              onChange={(e) => setFinancialYear(e.target.value)}
+              className="bg-transparent font-bold text-indigo-600 focus:outline-none cursor-pointer"
+            >
+              <option value="2025-2026">2025-2026</option>
+              <option value="2024-2025">2024-2025</option>
+              <option value="2026-2027">2026-2027</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowPnlModal(true)}
+            title="Quick Documents & Reports"
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <i className="fi fi-rr-document text-sm"></i>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNavigateEngine('settings')}
+            title="Master Settings Portal"
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 font-bold transition-all flex items-center justify-center cursor-pointer"
+          >
+            <i className="fi fi-rr-settings text-sm"></i>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href);
+                setCopyToast(true);
+                setTimeout(() => setCopyToast(false), 2500);
+              }
+            }}
+            title="Share / Copy Link"
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 flex items-center justify-center transition-colors cursor-pointer relative"
+          >
+            <i className="fi fi-rr-link text-sm"></i>
+            {copyToast && (
+              <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap z-50">
+                Copied!
+              </span>
+            )}
+          </button>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotifs(!showNotifs)}
+              title="Notifications"
+              className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 relative flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <i className="fi fi-rr-bell text-sm"></i>
+              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center">
+                3
+              </span>
+            </button>
+
+            {showNotifs && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl p-4 z-50 shadow-2xl border border-slate-200">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h3 className="text-xs font-bold text-slate-800">System Notifications</h3>
+                  <span className="text-[10px] bg-rose-50 text-rose-600 font-extrabold px-2 py-0.5 rounded-full border border-rose-200">3 New</span>
+                </div>
+                <div className="space-y-2 mt-3 text-left">
+                  <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-xs font-bold text-slate-800">Container CFS Arrival</h4>
+                      <span className="text-[10px] text-slate-400">12m ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">MSKU-882190-4 reached Mundra SEZ CFS.</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-xs font-bold text-slate-800">eBRC Realization Completed</h4>
+                      <span className="text-[10px] text-slate-400">1h ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">₹2,64,027 credited for EXP/CI/2026/089.</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-xs font-bold text-slate-800">Loading Due Warning</h4>
+                      <span className="text-[10px] text-slate-400">3h ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">MEDU-901244-1 factory loading due in 3 days.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Top Header Banner */}
       <div className="glass-panel p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

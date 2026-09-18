@@ -298,7 +298,7 @@ export const QuotationsEngine: React.FC = () => {
             </select>
           </div>
 
-          <button title="Chat / Messages" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-all"><i className="fi fi-rr-comment text-sm"></i></button>
+          <button title="Quick Documents & Reports" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-all"><i className="fi fi-rr-document text-sm"></i></button>
           <button title="Settings" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-all"><i className="fi fi-rr-settings text-sm"></i></button>
           <button title="Share" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-all"><i className="fi fi-rr-link text-sm"></i></button>
           <button title="Notifications" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-all relative">
