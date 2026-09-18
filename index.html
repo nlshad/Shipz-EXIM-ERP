@@ -23,6 +23,10 @@
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+          },
           colors: {
             indigo: { 600: '#4F46E5', 700: '#4338CA' },
             slate: { 900: '#0F172A' }
@@ -48,6 +52,14 @@
   <link rel="stylesheet" href="./src/styles/glassmorphism.css">
 
   <style>
+    /* High-detail sans typography for numbers, numerical values, metrics, and data tables */
+    .font-mono, [class*="font-mono"], .tabular-nums, input[type="number"], .font-numeric {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-feature-settings: "tnum" 1, "cv05" 1, "cv11" 1, "calt" 1 !important;
+      font-variant-numeric: tabular-nums !important;
+      letter-spacing: -0.015em;
+    }
+
     @media print {
       html, body {
         background: #ffffff !important;
@@ -17017,7 +17029,7 @@
 
                       {/* 3. DESTINATION COUNTRY BANNER (HIGH CONTRAST SOLID BANNER) */}
                       <div className="bg-slate-950 text-white py-2 px-3 text-center my-1 rounded-xs">
-                        <div className="text-lg sm:text-xl font-black uppercase tracking-widest font-mono">
+                        <div className="text-lg sm:text-xl font-black uppercase tracking-widest font-sans">
                           {labelPrinterData.consigneeCountry || 'DESTINATION COUNTRY'}
                         </div>
                       </div>
@@ -17026,31 +17038,31 @@
                       <div className="grid grid-cols-12 gap-2 items-center my-1">
                         {/* BIG NUMERIC BADGE */}
                         <div className="col-span-5 border-3 border-slate-950 h-24 flex items-center justify-center bg-white rounded-xs">
-                          <span className="text-5xl font-black tracking-tighter text-slate-950 font-mono">
+                          <span className="text-5xl sm:text-6xl font-black tracking-tight text-slate-950 font-sans tabular-nums">
                             {labelPrinterData.singleBoxNo}
                           </span>
                         </div>
 
                         {/* BOX NO. X OF Y TEXT & WEIGHT */}
                         <div className="col-span-7 space-y-1.5 pl-1">
-                          <div className="bg-slate-950 text-white px-2 py-1 font-black text-sm uppercase font-mono tracking-wider text-center rounded-xs">
-                            BOX NO. <span className="text-amber-400 text-base">{labelPrinterData.singleBoxNo}</span> OF <span className="text-base">{labelPrinterData.totalBoxes}</span>
+                          <div className="bg-slate-950 text-white px-2 py-1.5 font-black text-sm uppercase font-sans tracking-wide text-center rounded-xs">
+                            BOX NO. <span className="text-amber-400 text-base font-extrabold tabular-nums">{labelPrinterData.singleBoxNo}</span> OF <span className="text-base font-extrabold tabular-nums">{labelPrinterData.totalBoxes}</span>
                           </div>
-                          <div className="text-[10px] font-extrabold text-slate-900 border border-slate-300 p-1.5 bg-slate-50 rounded-xs space-y-0.5 font-mono">
+                          <div className="text-[10px] font-extrabold text-slate-900 border border-slate-300 p-1.5 bg-slate-50 rounded-xs space-y-0.5 font-sans tabular-nums">
                             <div className="flex justify-between">
-                              <span>GROSS WT:</span>
-                              <span className="font-black">{labelPrinterData.grossWeightKg} KG</span>
+                              <span className="font-bold text-slate-600">GROSS WT:</span>
+                              <span className="font-black text-slate-950">{labelPrinterData.grossWeightKg} KG</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>NET WT:</span>
-                              <span className="font-black">{labelPrinterData.netWeightKg} KG</span>
+                              <span className="font-bold text-slate-600">NET WT:</span>
+                              <span className="font-black text-slate-950">{labelPrinterData.netWeightKg} KG</span>
                             </div>
                           </div>
                         </div>
                       </div>
 
                       {/* 5. HANDLING MARKS ICONS */}
-                      <div className="flex items-center justify-around border-y border-slate-300 py-1 text-[9px] font-black text-slate-900 uppercase">
+                      <div className="flex items-center justify-around border-y border-slate-300 py-1 text-[9px] font-black text-slate-900 uppercase font-sans">
                         <div className="flex items-center space-x-1">
                           <span className="text-xs">⬆️</span>
                           <span>THIS SIDE UP</span>
@@ -17074,7 +17086,7 @@
                               <div key={idx} className={`h-full bg-white`} style={{ width: `${w}px` }}></div>
                             ))}
                           </div>
-                          <div className="text-[8px] font-mono font-bold text-center tracking-widest text-slate-700 mt-0.5">
+                          <div className="text-[8.5px] font-sans font-bold text-center tracking-wider text-slate-700 mt-0.5 tabular-nums">
                             *{labelPrinterData.associatedPiNo}-BOX-{String(labelPrinterData.singleBoxNo).padStart(3, '0')}*
                           </div>
                         </div>
@@ -17091,7 +17103,7 @@
                       </div>
 
                       {/* 7. FOOTER EXPORTER DETAILS (MATCHING PHOTO) */}
-                      <div className="border-t-2 border-slate-950 pt-1 flex justify-between items-center text-[9px] font-black text-slate-900 font-mono">
+                      <div className="border-t-2 border-slate-950 pt-1 flex justify-between items-center text-[9px] font-black text-slate-900 font-sans tabular-nums">
                         <div className="flex items-center space-x-1">
                           <i className="fi fi-rr-phone-call text-[10px]"></i>
                           <span>{labelPrinterData.exporterPhone}</span>
@@ -17200,7 +17212,7 @@
 
                 {/* 3. DESTINATION COUNTRY BANNER */}
                 <div style={{ backgroundColor: 'black', color: 'white', padding: '6px', textAlign: 'center', margin: '3px 0' }}>
-                  <div style={{ fontSize: '16pt', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '16pt', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Inter', Arial, sans-serif" }}>
                     {labelPrinterData.consigneeCountry}
                   </div>
                 </div>
@@ -17208,16 +17220,16 @@
                 {/* 4. CARTON & BOX NUMBER GRID */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
                   <div style={{ width: '38%', height: '80px', border: '3px solid black', display: 'flex', alignItems: 'center', justifyCenter: 'center', textAlign: 'center' }}>
-                    <span style={{ fontSize: '42pt', fontWeight: '900', fontFamily: 'monospace', width: '100%' }}>
+                    <span style={{ fontSize: '46pt', fontWeight: '900', fontFamily: "'Inter', Arial, sans-serif", fontVariantNumeric: 'tabular-nums', letterSpacing: '-1.5px', width: '100%' }}>
                       {bNo}
                     </span>
                   </div>
 
                   <div style={{ width: '62%' }}>
-                    <div style={{ backgroundColor: 'black', color: 'white', padding: '4px 6px', textAlign: 'center', fontWeight: '900', fontSize: '11pt', fontFamily: 'monospace' }}>
+                    <div style={{ backgroundColor: 'black', color: 'white', padding: '4px 6px', textAlign: 'center', fontWeight: '900', fontSize: '11pt', fontFamily: "'Inter', Arial, sans-serif", letterSpacing: '0.5px' }}>
                       BOX NO. <span style={{ color: '#ffcc00' }}>{bNo}</span> OF {labelPrinterData.totalBoxes}
                     </div>
-                    <div style={{ fontSize: '8pt', fontWeight: '800', border: '1px solid #999', padding: '4px', marginTop: '4px', fontFamily: 'monospace' }}>
+                    <div style={{ fontSize: '8.5pt', fontWeight: '800', border: '1px solid #999', padding: '4px', marginTop: '4px', fontFamily: "'Inter', Arial, sans-serif", fontVariantNumeric: 'tabular-nums' }}>
                       <div>GW: {labelPrinterData.grossWeightKg} KG</div>
                       <div>NW: {labelPrinterData.netWeightKg} KG</div>
                     </div>
@@ -17225,7 +17237,7 @@
                 </div>
 
                 {/* 5. HANDLING MARKS */}
-                <div style={{ display: 'flex', justify: 'space-around', borderTop: '1px solid black', borderBottom: '1px solid black', padding: '3px 0', fontSize: '7pt', fontWeight: '900' }}>
+                <div style={{ display: 'flex', justify: 'space-around', borderTop: '1px solid black', borderBottom: '1px solid black', padding: '3px 0', fontSize: '7pt', fontWeight: '900', fontFamily: "'Inter', Arial, sans-serif" }}>
                   <span>⬆️ THIS SIDE UP</span>
                   <span>🍷 FRAGILE</span>
                   <span>☂️ KEEP DRY</span>
@@ -17239,17 +17251,17 @@
                         <div key={idx} style={{ height: '100%', backgroundColor: 'white', width: `${w}px` }}></div>
                       ))}
                     </div>
-                    <div style={{ fontSize: '7pt', fontFamily: 'monospace', fontWeight: '700', textAlign: 'center', marginTop: '2px' }}>
+                    <div style={{ fontSize: '7pt', fontFamily: "'Inter', Arial, sans-serif", fontWeight: '700', textAlign: 'center', marginTop: '2px', letterSpacing: '0.5px', fontVariantNumeric: 'tabular-nums' }}>
                       *{labelPrinterData.associatedPiNo}-BOX-{String(bNo).padStart(3, '0')}*
                     </div>
                   </div>
-                  <div style={{ width: '40px', height: '40px', border: '2px solid black', padding: '2px', textAlign: 'center', fontSize: '6pt', fontWeight: '900' }}>
+                  <div style={{ width: '40px', height: '40px', border: '2px solid black', padding: '2px', textAlign: 'center', fontSize: '6pt', fontWeight: '900', fontFamily: "'Inter', Arial, sans-serif" }}>
                     QR SCAN
                   </div>
                 </div>
 
                 {/* 7. FOOTER EXPORTER DETAILS */}
-                <div style={{ borderTop: '2px solid black', paddingTop: '3px', display: 'flex', justifyContent: 'space-between', fontSize: '8pt', fontWeight: '900', fontFamily: 'monospace' }}>
+                <div style={{ borderTop: '2px solid black', paddingTop: '3px', display: 'flex', justifyContent: 'space-between', fontSize: '8pt', fontWeight: '900', fontFamily: "'Inter', Arial, sans-serif", fontVariantNumeric: 'tabular-nums' }}>
                   <span>📞 {labelPrinterData.exporterPhone}</span>
                   <span>🌐 {labelPrinterData.exporterWebsite}</span>
                 </div>

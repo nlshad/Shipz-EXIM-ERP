@@ -20,6 +20,14 @@ body {
   overflow-x: hidden;
 }
 
+/* High-detail sans typography for numbers, numerical values, metrics, and data tables */
+.font-mono, [class*="font-mono"], .tabular-nums, input[type="number"], .font-numeric {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-feature-settings: "tnum" 1, "cv05" 1, "cv11" 1, "calt" 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.015em;
+}
+
 /* 3-Column Layout Utilities */
 .sidebar-navy {
   background-color: #0D111D;
