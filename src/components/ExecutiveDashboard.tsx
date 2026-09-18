@@ -208,66 +208,87 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         ))}
       </div>
 
-      {/* MIDDLE ROW: 2/3 Loading Due Table + 1/3 Operational Timeline */}
+      {/* MIDDLE ROW: Recent Activity & Operational Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 2/3 Width Loading Due Table */}
+        {/* Recent Activity Table & Audit Trail */}
         <div className="lg:col-span-8 glass-panel p-4 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                Urgent Container Loading & Stuffing Due
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Recent Activity & Audit Log
               </h3>
-              <p className="text-[11px] text-slate-400">Shipments with factory stuffing due within next 7 days</p>
+              <p className="text-[11px] text-slate-400">Live feed of trade transactions, document issues, and customs updates</p>
             </div>
 
             <button
-              onClick={() => onNavigateEngine('shipments')}
+              onClick={() => onNavigateEngine('quotations')}
               className="text-xs text-blue-400 hover:text-blue-300 font-semibold"
             >
-              Open Kanban Tracker →
+              View All Transactions →
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 bg-slate-900/60 text-slate-400 font-semibold text-[10px] uppercase tracking-wider">
-                  <th className="py-2.5 px-3">Container No</th>
-                  <th className="py-2.5 px-3">Buyer & Destination</th>
-                  <th className="py-2.5 px-3">Vessel</th>
-                  <th className="py-2.5 px-3">Loading Due</th>
-                  <th className="py-2.5 px-3 text-center">Status</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200">
-                {loadingDueShipments.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/40">
-                    <td className="py-3 px-3 font-mono font-bold text-white">{s.containerNumber}</td>
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-200">{s.buyerName}</div>
-                      <div className="text-[10px] text-slate-400">{s.destinationPort} ({s.destinationCountry})</div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-300">{s.vesselName}</td>
-                    <td className="py-3 px-3 font-mono text-amber-400 font-bold">{s.loadingDueDate}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        {s.stage}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => onNavigateEngine('documents')}
-                        className="px-2.5 py-1 rounded bg-blue-600/30 hover:bg-blue-600 text-blue-300 text-[10px] font-semibold border border-blue-500/30"
-                      >
-                        Generate Docs
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="divide-y divide-white/10 text-xs">
+            <div className="py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-500/30">
+                  <i className="fi fi-rr-file-invoice text-sm"></i>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-white">Proforma Invoice Confirmed</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      PI/06/25-26
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Confirmed for <strong className="text-slate-200">Global Trade Partners LLC</strong> ($34,500.00 USD) • Port of Discharge: Los Angeles
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 tabular-nums">10m ago</span>
+            </div>
+
+            <div className="py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 border border-amber-500/30">
+                  <i className="fi fi-rr-file-edit text-sm"></i>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-white">Official Quotation Generated</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      QT/2026/089
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Prepared for <strong className="text-slate-200">Alxis Ltd (Seychelles)</strong> • Total FOB Value: $18,400.00 USD
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 tabular-nums">45m ago</span>
+            </div>
+
+            <div className="py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/30">
+                  <i className="fi fi-rr-check-circle text-sm"></i>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-white">eBRC Payment Realization Completed</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      EXP/CI/2026/089
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    ₹2,64,027 credited via Authorized Dealer Bank (SWIFT: BARBINBBXXX)
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 tabular-nums">4h ago</span>
+            </div>
           </div>
         </div>
 
