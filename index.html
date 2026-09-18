@@ -924,6 +924,15 @@
         } catch (e) { }
       }, [recentActivities]);
 
+      // Automatic API URL resolver ensuring compatibility with root domain or /shipz/ subpath
+      const getApiUrl = (query = '') => {
+        let endpoint = 'api.php';
+        if (window.location.pathname.startsWith('/shipz') && !window.location.hostname.includes('localhost')) {
+          endpoint = '/api.php';
+        }
+        return query ? `${endpoint}?${query}` : endpoint;
+      };
+
       // Global Live Document Activity Recorder
       const recordActivity = (activity) => {
         let author = activity.userName || '';
@@ -946,7 +955,7 @@
         setRecentActivities(prev => [newEntry, ...(prev || []).filter(a => a.id !== newEntry.id)].slice(0, 50));
 
         // Immediately broadcast to central server so another PC / user sees it live
-        fetch('api.php', {
+        fetch(getApiUrl(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key: 'shipz_single_activity', data: newEntry })
@@ -1416,12 +1425,31 @@
         setDbConfigSaving(true);
         setDbConfigNotice(null);
         try {
-          const res = await fetch('api.php?action=save_db_config', {
+          const targetUrl = getApiUrl('action=save_db_config');
+          let res = await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dbConfigInput)
           });
-          const result = await res.json();
+          let rawText = await res.text();
+          let result;
+          try {
+            result = JSON.parse(rawText);
+          } catch (pe) {
+            // If relative /shipz/ gave HTML, fallback to root /api.php
+            try {
+              res = await fetch('/api.php?action=save_db_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dbConfigInput)
+              });
+              rawText = await res.text();
+              result = JSON.parse(rawText);
+            } catch (fe) {
+              throw new Error(`Server returned HTML instead of JSON. Please access the site directly at root domain or ensure api.php is in this directory.`);
+            }
+          }
+
           if (result.success) {
             setDbConfigNotice({ isSuccess: true, text: result.message || 'Connected successfully!' });
             setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
@@ -1434,7 +1462,7 @@
             setDbConfigNotice({ isSuccess: false, text: result.error || 'Connection failed. Please verify credentials.' });
           }
         } catch (e) {
-          setDbConfigNotice({ isSuccess: false, text: `Server error: ${e.message}` });
+          setDbConfigNotice({ isSuccess: false, text: `Connection error: ${e.message}` });
         } finally {
           setDbConfigSaving(false);
         }
@@ -1488,66 +1516,75 @@
           if (isPolling) return;
           isPolling = true;
           try {
-            const res = await fetch('api.php?action=get_all_live');
-            if (res.ok) {
-              const bundle = await res.json();
-              if (bundle && typeof bundle === 'object') {
-                if (bundle.status === 'db_error' || bundle.is_connected === false) {
-                  setDbConnectionStatus({
-                    connected: false,
-                    message: bundle.message || 'Database connection error',
-                    config: bundle.config || null
-                  });
-                  if (bundle.config) {
-                    setDbConfigInput(prev => ({
-                      ...prev,
-                      db_host: bundle.config.host || prev.db_host,
-                      db_name: bundle.config.database || prev.db_name,
-                      db_user: bundle.config.user || prev.db_user,
-                      db_port: bundle.config.port || prev.db_port
-                    }));
-                  }
-                  setIsNetworkLiveSyncing(false);
-                  return;
-                }
-
-                setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
-
-                // 1. Sync Quotations created by any user
-                if (Array.isArray(bundle.quotations) && bundle.quotations.length > 0) {
-                  setQuotations(prev => mergeArraysByIdOrNo(prev, bundle.quotations, 'id', 'quotationNo'));
-                }
-                // 2. Sync Proforma Invoices created by any user
-                if (Array.isArray(bundle.proformaInvoices) && bundle.proformaInvoices.length > 0) {
-                  setProformaInvoices(prev => mergeArraysByIdOrNo(prev, bundle.proformaInvoices, 'id', 'invNumber'));
-                }
-                // 3. Sync Commercial Invoices created by any user
-                if (Array.isArray(bundle.commercialInvoices) && bundle.commercialInvoices.length > 0) {
-                  setCommercialInvoices(prev => mergeArraysByIdOrNo(prev, bundle.commercialInvoices, 'id', 'invNumber'));
-                }
-                // 4. Sync Packing Lists created by any user
-                if (Array.isArray(bundle.packingLists) && bundle.packingLists.length > 0) {
-                  setPackingLists(prev => mergeArraysByIdOrNo(prev, bundle.packingLists, 'id', 'pklNo'));
-                }
-                // 5. Sync BL Records created by any user
-                if (Array.isArray(bundle.blRecords) && bundle.blRecords.length > 0) {
-                  setBlRecords(prev => mergeArraysByIdOrNo(prev, bundle.blRecords, 'id', 'rec_id'));
-                }
-                // 6. Sync System Users created by any user/admin on any PC
-                if (Array.isArray(bundle.systemUsers) && bundle.systemUsers.length > 0) {
-                  setSystemUsers(prev => mergeArraysByIdOrNo(prev, bundle.systemUsers, 'id', 'email'));
-                }
-                // 7. Sync Recent Activities from all users
-                if (Array.isArray(bundle.recentActivities) && bundle.recentActivities.length > 0) {
-                  setRecentActivities(prev => mergeActivities(prev, bundle.recentActivities));
-                }
-
-                if (bundle.serverTime) setLastSyncServerTime(bundle.serverTime);
-                setIsNetworkLiveSyncing(true);
+            const targetUrl = getApiUrl('action=get_all_live');
+            let res = await fetch(targetUrl);
+            let rawText = await res.text();
+            let bundle = null;
+            try {
+              bundle = JSON.parse(rawText);
+            } catch (err) {
+              try {
+                res = await fetch('/api.php?action=get_all_live');
+                rawText = await res.text();
+                bundle = JSON.parse(rawText);
+              } catch (e2) {
+                bundle = null;
               }
-            } else {
-              setDbConnectionStatus({ connected: false, message: `Server HTTP ${res.status}`, config: null });
-              setIsNetworkLiveSyncing(false);
+            }
+
+            if (bundle && typeof bundle === 'object') {
+              if (bundle.status === 'db_error' || bundle.is_connected === false) {
+                setDbConnectionStatus({
+                  connected: false,
+                  message: bundle.message || 'Database connection error',
+                  config: bundle.config || null
+                });
+                if (bundle.config) {
+                  setDbConfigInput(prev => ({
+                    ...prev,
+                    db_host: bundle.config.host || prev.db_host,
+                    db_name: bundle.config.database || prev.db_name,
+                    db_user: bundle.config.user || prev.db_user,
+                    db_port: bundle.config.port || prev.db_port
+                  }));
+                }
+                setIsNetworkLiveSyncing(false);
+                return;
+              }
+
+              setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
+
+              // 1. Sync Quotations created by any user
+              if (Array.isArray(bundle.quotations) && bundle.quotations.length > 0) {
+                setQuotations(prev => mergeArraysByIdOrNo(prev, bundle.quotations, 'id', 'quotationNo'));
+              }
+              // 2. Sync Proforma Invoices created by any user
+              if (Array.isArray(bundle.proformaInvoices) && bundle.proformaInvoices.length > 0) {
+                setProformaInvoices(prev => mergeArraysByIdOrNo(prev, bundle.proformaInvoices, 'id', 'invNumber'));
+              }
+              // 3. Sync Commercial Invoices created by any user
+              if (Array.isArray(bundle.commercialInvoices) && bundle.commercialInvoices.length > 0) {
+                setCommercialInvoices(prev => mergeArraysByIdOrNo(prev, bundle.commercialInvoices, 'id', 'invNumber'));
+              }
+              // 4. Sync Packing Lists created by any user
+              if (Array.isArray(bundle.packingLists) && bundle.packingLists.length > 0) {
+                setPackingLists(prev => mergeArraysByIdOrNo(prev, bundle.packingLists, 'id', 'pklNo'));
+              }
+              // 5. Sync BL Records created by any user
+              if (Array.isArray(bundle.blRecords) && bundle.blRecords.length > 0) {
+                setBlRecords(prev => mergeArraysByIdOrNo(prev, bundle.blRecords, 'id', 'rec_id'));
+              }
+              // 6. Sync System Users created by any user/admin on any PC
+              if (Array.isArray(bundle.systemUsers) && bundle.systemUsers.length > 0) {
+                setSystemUsers(prev => mergeArraysByIdOrNo(prev, bundle.systemUsers, 'id', 'email'));
+              }
+              // 7. Sync Recent Activities from all users
+              if (Array.isArray(bundle.recentActivities) && bundle.recentActivities.length > 0) {
+                setRecentActivities(prev => mergeActivities(prev, bundle.recentActivities));
+              }
+
+              if (bundle.serverTime) setLastSyncServerTime(bundle.serverTime);
+              setIsNetworkLiveSyncing(true);
             }
           } catch (e) {
             setDbConnectionStatus({ connected: false, message: e.message || 'Network error', config: null });
@@ -1576,7 +1613,7 @@
       // Real-time Push: Push local changes immediately to central MySQL database
       React.useEffect(() => {
         if (quotations && quotations.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_quotations', data: quotations })
@@ -1586,7 +1623,7 @@
 
       React.useEffect(() => {
         if (proformaInvoices && proformaInvoices.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_proforma_invoices', data: proformaInvoices })
@@ -1596,7 +1633,7 @@
 
       React.useEffect(() => {
         if (commercialInvoices && commercialInvoices.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_commercial_invoices', data: commercialInvoices })
@@ -1606,7 +1643,7 @@
 
       React.useEffect(() => {
         if (packingLists && packingLists.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_packing_lists', data: packingLists })
@@ -1616,7 +1653,7 @@
 
       React.useEffect(() => {
         if (blRecords && blRecords.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_bl_records', data: blRecords })
@@ -1626,7 +1663,7 @@
 
       React.useEffect(() => {
         if (systemUsers && systemUsers.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_system_users_v2', data: systemUsers })
@@ -1636,7 +1673,7 @@
 
       React.useEffect(() => {
         if (recentActivities && recentActivities.length > 0) {
-          fetch('api.php', {
+          fetch(getApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'shipz_recent_activities', data: recentActivities })

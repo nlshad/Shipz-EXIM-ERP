@@ -1,5 +1,10 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # If api.php is requested under /shipz/, route directly to api.php
+  RewriteRule ^shipz/api\.php$ api.php [L,QSA]
+  RewriteRule ^shipz/(api\.php.*)$ $1 [L,QSA]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
