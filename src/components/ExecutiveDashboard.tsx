@@ -19,6 +19,61 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   const [showNotifs, setShowNotifs] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
 
+  const [recentActivities] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_recent_activities');
+      if (saved) return JSON.parse(saved);
+    } catch (e) { }
+    return [
+      {
+        id: 'act-1',
+        title: 'Proforma Invoice Confirmed',
+        badge: 'PI/06/25-26',
+        badgeColor: 'emerald',
+        description: 'Confirmed for Global Trade Partners LLC ($34,500.00 USD) • Port of Discharge: Los Angeles',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        actionText: 'View PI →',
+        targetEngine: 'proforma'
+      },
+      {
+        id: 'act-2',
+        title: 'Official Quotation Generated',
+        badge: 'QT/2026/089',
+        badgeColor: 'amber',
+        description: 'Prepared for Alxis Ltd (Seychelles) • Total FOB Value: $18,400.00 USD',
+        timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        actionText: 'View QT →',
+        targetEngine: 'quotations'
+      },
+      {
+        id: 'act-3',
+        title: 'eBRC Payment Realization Completed',
+        badge: 'EXP/CI/2026/089',
+        badgeColor: 'emerald',
+        description: '₹2,64,027 credited via Authorized Dealer Bank (SWIFT: BARBINBBXXX)',
+        timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        actionText: 'View CI →',
+        targetEngine: 'invoices'
+      }
+    ];
+  });
+
+  const formatRelativeTime = (isoString: string) => {
+    if (!isoString) return 'Just now';
+    const time = new Date(isoString).getTime();
+    if (isNaN(time)) return 'Just now';
+    const diffMs = Date.now() - time;
+    const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+    if (diffSec < 45) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   const fxRate = currentCurrency === 'INR' ? 83.5 : currentCurrency === 'EUR' ? 0.92 : 1.0;
   const currSymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
 
@@ -230,65 +285,47 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
           </div>
 
           <div className="divide-y divide-white/10 text-xs">
-            <div className="py-3 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-500/30">
-                  <i className="fi fi-rr-file-invoice text-sm"></i>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-white">Proforma Invoice Confirmed</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      PI/06/25-26
-                    </span>
+            {recentActivities && recentActivities.length > 0 ? (
+              recentActivities.slice(0, 5).map((act) => (
+                <div key={act.id} className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded-lg transition-all">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-500/30">
+                      <i className={`${act.iconClass || 'fi fi-rr-file-invoice'} text-sm`}></i>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-white">{act.title}</span>
+                        {act.badge && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            {act.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {act.description}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Confirmed for <strong className="text-slate-200">Global Trade Partners LLC</strong> ($34,500.00 USD) • Port of Discharge: Los Angeles
-                  </p>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 tabular-nums">10m ago</span>
-            </div>
-
-            <div className="py-3 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 border border-amber-500/30">
-                  <i className="fi fi-rr-file-edit text-sm"></i>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-white">Official Quotation Generated</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                      QT/2026/089
+                  <div className="text-right flex flex-col items-end space-y-1 shrink-0 ml-2">
+                    <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                      {formatRelativeTime(act.timestamp)}
                     </span>
+                    {act.actionText && (
+                      <button
+                        onClick={() => onNavigateEngine(act.targetEngine || 'quotations')}
+                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
+                      >
+                        {act.actionText}
+                      </button>
+                    )}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Prepared for <strong className="text-slate-200">Alxis Ltd (Seychelles)</strong> • Total FOB Value: $18,400.00 USD
-                  </p>
                 </div>
+              ))
+            ) : (
+              <div className="py-6 text-center text-slate-400 text-xs">
+                No recent activity logged yet.
               </div>
-              <span className="text-[10px] font-bold text-slate-400 tabular-nums">45m ago</span>
-            </div>
-
-            <div className="py-3 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/30">
-                  <i className="fi fi-rr-check-circle text-sm"></i>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-white">eBRC Payment Realization Completed</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      EXP/CI/2026/089
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    ₹2,64,027 credited via Authorized Dealer Bank (SWIFT: BARBINBBXXX)
-                  </p>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 tabular-nums">4h ago</span>
-            </div>
+            )}
           </div>
         </div>
 

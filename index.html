@@ -829,6 +829,78 @@
       );
     }
 
+    const INITIAL_RECENT_ACTIVITIES = [
+      {
+        id: 'act-init-1',
+        type: 'pi',
+        title: 'Proforma Invoice Confirmed',
+        badge: 'PI/06/25-26',
+        badgeColor: 'indigo',
+        iconClass: 'fi fi-rr-file-invoice',
+        iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+        description: 'Confirmed for Global Trade Partners LLC ($34,500.00 USD) • Port of Discharge: Los Angeles',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        actionText: 'View PI →',
+        targetEngine: 'proforma',
+        docId: 'pi-01'
+      },
+      {
+        id: 'act-init-2',
+        type: 'qt',
+        title: 'Official Quotation Generated',
+        badge: 'QT/2026/089',
+        badgeColor: 'amber',
+        iconClass: 'fi fi-rr-file-edit',
+        iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+        description: 'Sent to Alxis Ltd (Seychelles) • Total FOB Value: $18,400.00 USD',
+        timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        actionText: 'View QT →',
+        targetEngine: 'quotations',
+        docId: 'qt-01'
+      },
+      {
+        id: 'act-init-3',
+        type: 'label',
+        title: '100x150mm Carton Labels Printed',
+        badge: 'Box 1 to 10',
+        badgeColor: 'rose',
+        iconClass: 'fi fi-rr-box',
+        iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+        description: 'Thermal stickers generated for consignment to Seychelles (Gross Weight: 25.0 KG/box)',
+        timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        actionText: 'Print Labels →',
+        targetEngine: 'labelPrinter'
+      },
+      {
+        id: 'act-init-4',
+        type: 'ci',
+        title: 'eBRC Payment Realization Completed',
+        badge: 'EXP/CI/2026/089',
+        badgeColor: 'emerald',
+        iconClass: 'fi fi-rr-check-circle',
+        iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        description: '₹2,64,027 credited via Authorized Dealer Bank (SWIFT: BARBINBBXXX)',
+        timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        actionText: 'View CI →',
+        targetEngine: 'invoices',
+        docId: 'ci-01'
+      },
+      {
+        id: 'act-init-5',
+        type: 'settings',
+        title: 'Bank Parameters Saved',
+        badge: 'AD Code: 0210045',
+        badgeColor: 'slate',
+        iconClass: 'fi fi-rr-settings',
+        iconBg: 'bg-slate-100 text-slate-700 border-slate-200',
+        description: 'Updated AD Code, IFSC, and SWIFT parameters in Bank Settings Directory',
+        timestamp: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        actionText: 'Settings →',
+        targetEngine: 'settings',
+        settingsTab: 'bankDetails'
+      }
+    ];
+
     function App() {
       const [activeEngine, setActiveEngine] = useState('dashboard');
       const [quotations, setQuotations] = useState(() => loadSavedState('shipz_quotations', INITIAL_QUOTATIONS));
@@ -836,6 +908,126 @@
       const [commercialInvoices, setCommercialInvoices] = useState(() => loadSavedState('shipz_commercial_invoices', INITIAL_COMMERCIAL_INVOICES));
       const [blRecords, setBlRecords] = useState(() => loadSavedState('shipz_bl_records', INITIAL_BL_DRAFTS));
       const [packingLists, setPackingLists] = useState(() => loadSavedState('shipz_packing_lists', INITIAL_PACKING_LISTS));
+      const [recentActivities, setRecentActivities] = useState(() => loadSavedState('shipz_recent_activities', INITIAL_RECENT_ACTIVITIES));
+      const [, setActivityTicker] = useState(0);
+
+      // Auto-tick every 30s so relative times like "Just now" stay live without reload
+      React.useEffect(() => {
+        const interval = setInterval(() => setActivityTicker(prev => prev + 1), 30000);
+        return () => clearInterval(interval);
+      }, []);
+
+      // Persist recent activities locally
+      React.useEffect(() => {
+        try {
+          localStorage.setItem('shipz_recent_activities', JSON.stringify(recentActivities));
+        } catch (e) { }
+      }, [recentActivities]);
+
+      // Global Live Document Activity Recorder
+      const recordActivity = (activity) => {
+        const newEntry = {
+          id: `act-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          timestamp: new Date().toISOString(),
+          ...activity
+        };
+        setRecentActivities(prev => [newEntry, ...(prev || []).filter(a => a.id !== newEntry.id)].slice(0, 50));
+      };
+
+      const formatRelativeTime = (isoString) => {
+        if (!isoString) return 'Just now';
+        const time = new Date(isoString).getTime();
+        if (isNaN(time)) return 'Just now';
+        const diffMs = Date.now() - time;
+        const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+        if (diffSec < 45) return 'Just now';
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHours = Math.floor(diffMin / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+
+      const getBadgeClass = (color) => {
+        switch (color) {
+          case 'emerald':
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+          case 'amber':
+            return 'bg-amber-50 text-amber-700 border-amber-200';
+          case 'indigo':
+            return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+          case 'rose':
+            return 'bg-rose-50 text-rose-700 border-rose-200';
+          case 'blue':
+            return 'bg-blue-50 text-blue-700 border-blue-200';
+          case 'purple':
+            return 'bg-purple-50 text-purple-700 border-purple-200';
+          default:
+            return 'bg-slate-100 text-slate-700 border-slate-300';
+        }
+      };
+
+      const getActionButtonClass = (color) => {
+        switch (color) {
+          case 'emerald':
+            return 'text-emerald-700 hover:text-emerald-900';
+          case 'amber':
+            return 'text-amber-700 hover:text-amber-900';
+          case 'indigo':
+            return 'text-indigo-600 hover:text-indigo-800';
+          case 'rose':
+            return 'text-rose-700 hover:text-rose-900';
+          case 'blue':
+            return 'text-blue-600 hover:text-blue-800';
+          case 'purple':
+            return 'text-purple-700 hover:text-purple-900';
+          default:
+            return 'text-slate-700 hover:text-slate-900';
+        }
+      };
+
+      const handleActivityNavigate = (act) => {
+        if (!act) return;
+        if (act.targetEngine === 'quotations') {
+          setActiveEngine('quotations');
+          if (act.docId) {
+            const found = (quotations || []).find(q => q.id === act.docId || q.quotationNo === act.badge);
+            if (found) setSelectedQuotationView(found);
+          }
+        } else if (act.targetEngine === 'proforma') {
+          setActiveEngine('proforma');
+          if (act.docId) {
+            const found = (proformaInvoices || []).find(p => p.id === act.docId || p.invNumber === act.badge);
+            if (found) {
+              setSelectedPiId(found.id);
+              setSelectedPiView(found);
+            }
+          }
+        } else if (act.targetEngine === 'invoices') {
+          setActiveEngine('invoices');
+          if (act.docId) {
+            const found = (commercialInvoices || []).find(c => c.id === act.docId || c.invNumber === act.badge);
+            if (found) {
+              setSelectedPiId(found.id);
+              setSelectedPiView(found);
+            }
+          }
+        } else if (act.targetEngine === 'packingList') {
+          setActiveEngine('packingList');
+        } else if (act.targetEngine === 'labelPrinter') {
+          handleOpenLabelPrinter();
+        } else if (act.targetEngine === 'preShipment') {
+          setActiveEngine('preShipment');
+        } else if (act.targetEngine === 'settings') {
+          setActiveEngine('settings');
+          if (act.settingsTab) {
+            setActiveSettingsSubMenu(act.settingsTab);
+          }
+        }
+      };
+
       const [selectedPiId, setSelectedPiId] = useState('pi-01');
       const [piViewMode, setPiViewMode] = useState('grid'); // 'grid' or 'split'
 
@@ -1463,6 +1655,21 @@
           setSystemUsers(prev => [userToSave, ...prev]);
         }
 
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'user',
+          title: userDrawerMode === 'edit' ? 'User Account Updated' : 'New User Provisioned',
+          badge: userToSave.role_name || 'Staff',
+          badgeColor: 'indigo',
+          iconClass: 'fi fi-rr-user-check',
+          iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+          description: `${fullName} (${userToSave.email}) registered with ${userToSave.role_name} access`,
+          actionText: 'View Users →',
+          targetEngine: 'settings',
+          settingsTab: 'usersPermissions',
+          docId: recordId
+        });
+
         if (userToSave.is_salesperson) {
           syncUserToSalespersonsMaster(fullName, true);
         }
@@ -1485,6 +1692,18 @@
         if (u && confirm(`Are you sure you want to permanently delete user account "${u.first_name} ${u.last_name}" (${u.email})?`)) {
           setSystemUsers(prev => prev.filter(x => x.id !== userId));
           setUserActionMenuId(null);
+          recordActivity({
+            type: 'user',
+            title: 'User Account Removed',
+            badge: 'Deleted',
+            badgeColor: 'rose',
+            iconClass: 'fi fi-rr-user-delete',
+            iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+            description: `User account for ${u.first_name} ${u.last_name} (${u.email}) was removed`,
+            actionText: 'View Users →',
+            targetEngine: 'settings',
+            settingsTab: 'usersPermissions'
+          });
           setToastNotice(`User account for ${u.first_name} ${u.last_name} deleted successfully!`);
           setTimeout(() => setToastNotice(null), 3500);
         }
@@ -1761,6 +1980,61 @@
           setMasterBankDetails(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
         } else if (subMenuId === 'expanseTypes') {
           setMasterExpenseTypes(prev => masterDrawerMode === 'edit' ? prev.map(r => r.id === recordId ? newRecord : r) : [newRecord, ...prev]);
+        }
+
+        // Record live master update to recent activities
+        if (subMenuId === 'companyAddress') {
+          recordActivity({
+            type: 'settings',
+            title: masterDrawerMode === 'edit' ? 'Subsidiary Address Updated' : 'Subsidiary Company Added',
+            badge: newRecord.docPrefix || newRecord.city || 'Address',
+            badgeColor: 'slate',
+            iconClass: 'fi fi-rr-building',
+            iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+            description: `${newRecord.companyName || newRecord.label || 'Unit'} (${newRecord.city || 'Office'})`,
+            actionText: 'Settings →',
+            targetEngine: 'settings',
+            settingsTab: 'companyAddress'
+          });
+        } else if (subMenuId === 'products') {
+          recordActivity({
+            type: 'product',
+            title: masterDrawerMode === 'edit' ? 'Product Master Updated' : 'Product Registered',
+            badge: (masterFormData.hsn || 'HSN'),
+            badgeColor: 'emerald',
+            iconClass: 'fi fi-rr-box',
+            iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+            description: `${masterFormData.name} • HSN ${masterFormData.hsn} (${masterFormData.unit || 'Box'})`,
+            actionText: 'Products →',
+            targetEngine: 'settings',
+            settingsTab: 'products'
+          });
+        } else if (subMenuId === 'customers') {
+          recordActivity({
+            type: 'customer',
+            title: masterDrawerMode === 'edit' ? 'Customer Profile Updated' : 'New Customer Registered',
+            badge: masterFormData.country || 'Global',
+            badgeColor: 'blue',
+            iconClass: 'fi fi-rr-user',
+            iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+            description: `${masterFormData.name} • ${masterFormData.country || 'International Consignee'}`,
+            actionText: 'Customers →',
+            targetEngine: 'settings',
+            settingsTab: 'customers'
+          });
+        } else if (subMenuId === 'bankDetails') {
+          recordActivity({
+            type: 'settings',
+            title: masterDrawerMode === 'edit' ? 'Bank Parameters Updated' : 'Bank Account Configured',
+            badge: `SWIFT: ${newRecord.swiftCode || 'AD'}`,
+            badgeColor: 'slate',
+            iconClass: 'fi fi-rr-bank',
+            iconBg: 'bg-slate-100 text-slate-700 border-slate-200',
+            description: `${newRecord.beneficiaryBank || newRecord.bankName || 'Bank'} (A/C: ${newRecord.accountNumber || ''})`,
+            actionText: 'Settings →',
+            targetEngine: 'settings',
+            settingsTab: 'bankDetails'
+          });
         }
 
         setIsMasterDrawerOpen(false);
@@ -2704,6 +2978,21 @@
           labelSize: '100x150mm'
         });
         setIsLabelPrinterOpen(true);
+      };
+
+      const handleExecutePrintLabels = () => {
+        recordActivity({
+          type: 'label',
+          title: '100x150mm Carton Labels Printed',
+          badge: labelPrinterData.printMode === 'all' ? `Box 1 to ${labelPrinterData.totalBoxes}` : `Box ${labelPrinterData.singleBoxNo}`,
+          badgeColor: 'rose',
+          iconClass: 'fi fi-rr-box',
+          iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+          description: `Thermal stickers generated for ${labelPrinterData.consigneeName || 'Consignee'} (${labelPrinterData.consigneeCountry || 'Dest'}) • Gross: ${labelPrinterData.grossWeightKg || '25.0'} KG/box`,
+          actionText: 'Print Labels →',
+          targetEngine: 'labelPrinter'
+        });
+        window.print();
       };
 
       // Quick-Add Modal State (Preserving Form State Integrity)
@@ -3802,6 +4091,20 @@
         // Update source PI status
         setProformaInvoices((prev) => (prev || []).map((p) => p.id === pi.id ? { ...p, status: 'Converted to Commercial Invoice' } : p));
 
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'ci',
+          title: 'Commercial Invoice Finalized',
+          badge: newCiNumber,
+          badgeColor: 'emerald',
+          iconClass: 'fi fi-rr-check-circle',
+          iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+          description: `Converted from Proforma ${pi.invNumber} for ${pi.consignee || 'Customer'} (${pi.amount || '$0.00'})`,
+          actionText: 'View CI →',
+          targetEngine: 'invoices',
+          docId: newCommercialInvoice.id
+        });
+
         alert(`Successfully converted ${pi.invNumber} to Commercial Invoice (${newCiNumber})!\n\nDirecting you to the Invoices engine...`);
         setActiveEngine('invoices');
       };
@@ -3810,6 +4113,17 @@
         if (confirm('Are you sure you want to delete this Commercial Invoice record?')) {
           setCommercialInvoices((prev) => (prev || []).filter((ci) => ci.id !== id));
           setOpenActionMenuId(null);
+          recordActivity({
+            type: 'ci',
+            title: 'Commercial Invoice Deleted',
+            badge: 'Deleted',
+            badgeColor: 'rose',
+            iconClass: 'fi fi-rr-trash',
+            iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+            description: `Commercial Invoice record was removed`,
+            actionText: 'Invoices →',
+            targetEngine: 'invoices'
+          });
         }
       };
 
@@ -4456,6 +4770,21 @@
         };
 
         setPackingLists(prev => [newPklRecord, ...(prev || [])]);
+
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'pkl',
+          title: 'Packing List Saved',
+          badge: newPklRecord.pklNo,
+          badgeColor: 'purple',
+          iconClass: 'fi fi-rr-box-alt',
+          iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+          description: `${containers.length} Container${containers.length > 1 ? 's' : ''} (${containerNoSummary}) for ${newPklRecord.buyerName || 'Consignee'}`,
+          actionText: 'View PKL →',
+          targetEngine: 'packingList',
+          docId: newPklRecord.id
+        });
+
         setIsCreatePklModalOpen(false);
         setToastNotice(`Packing List ${newPklRecord.pklNo} (${containers.length} Container${containers.length > 1 ? 's' : ''}) saved successfully as ${status}!`);
         setTimeout(() => setToastNotice(null), 3500);
@@ -4653,6 +4982,19 @@
           setQtFormData((prev) => ({ ...prev, bank: bankLabel }));
           setPiFormData((prev) => ({ ...prev, bank: bankLabel }));
         }
+
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'master',
+          title: `Quick Master: ${activeQuickAdd}`,
+          badge: val1.length > 15 ? val1.slice(0, 15) + '...' : val1,
+          badgeColor: 'indigo',
+          iconClass: 'fi fi-rr-plus-circle',
+          iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+          description: `Quick-added ${activeQuickAdd}: ${val1} into active master configuration`,
+          actionText: 'Settings →',
+          targetEngine: 'settings'
+        });
 
         setActiveQuickAdd(null);
         setQuickAddFields({ field1: '', field2: '', field3: '' });
@@ -4874,6 +5216,21 @@
         };
 
         setQuotations((prev) => [draftQt, ...prev]);
+
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'qt',
+          title: 'Draft Quotation Created',
+          badge: draftQt.quotationNo,
+          badgeColor: 'amber',
+          iconClass: 'fi fi-rr-file-edit',
+          iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+          description: `Draft created for ${draftQt.consignee || 'Customer'} (${draftQt.amount}) • Port: ${draftQt.port || 'Main Port'}`,
+          actionText: 'View QT →',
+          targetEngine: 'quotations',
+          docId: draftQt.id
+        });
+
         setToastNotice(`Draft Quotation ${draftQt.quotationNo} saved successfully! Form remains active.`);
         setTimeout(() => setToastNotice(null), 4000);
       };
@@ -4936,9 +5293,35 @@
         if (editingQtId) {
           setQuotations((prev) => prev.map((q) => (q.id === editingQtId ? finalQt : q)));
           setEditingQtId(null);
+          // Live Record to Recent Activity
+          recordActivity({
+            type: 'qt',
+            title: 'Quotation Updated',
+            badge: finalQt.quotationNo,
+            badgeColor: 'amber',
+            iconClass: 'fi fi-rr-file-edit',
+            iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+            description: `Revised quotation for ${finalQt.consignee} (${finalQt.amount}) • Port: ${finalQt.port}`,
+            actionText: 'View QT →',
+            targetEngine: 'quotations',
+            docId: finalQt.id
+          });
           setToastNotice(`Quotation ${finalQt.quotationNo} updated successfully!`);
         } else {
           setQuotations((prev) => [finalQt, ...prev]);
+          // Live Record to Recent Activity
+          recordActivity({
+            type: 'qt',
+            title: 'Official Quotation Generated',
+            badge: finalQt.quotationNo,
+            badgeColor: 'amber',
+            iconClass: 'fi fi-rr-file-edit',
+            iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+            description: `Generated for ${finalQt.consignee} (${finalQt.amount}) • Port: ${finalQt.port}`,
+            actionText: 'View QT →',
+            targetEngine: 'quotations',
+            docId: finalQt.id
+          });
           setToastNotice(`Quotation ${finalQt.quotationNo} committed and approved successfully!`);
         }
         setIsCreateQtModalOpen(false);
@@ -5189,6 +5572,19 @@
         };
         setQuotations((prev) => [dupQt, ...prev]);
         setOpenActionMenuId(null);
+        // Live Record to Recent Activity
+        recordActivity({
+          type: 'qt',
+          title: 'Quotation Cloned',
+          badge: nextNo,
+          badgeColor: 'amber',
+          iconClass: 'fi fi-rr-copy',
+          iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+          description: `Duplicated from ${qt.quotationNo} for ${qt.consignee || 'Customer'} (${qt.amount || '$0.00'})`,
+          actionText: 'View QT →',
+          targetEngine: 'quotations',
+          docId: dupQt.id
+        });
         setToastNotice(`Quotation ${qt.quotationNo} duplicated as new file ${nextNo}!`);
         setTimeout(() => setToastNotice(null), 4000);
       };
@@ -5198,6 +5594,17 @@
         if (window.confirm(`Are you sure you want to delete / cancel Quotation ${target ? target.quotationNo : ''}?`)) {
           setQuotations((prev) => prev.filter((q) => q.id !== qtId));
           setOpenActionMenuId(null);
+          recordActivity({
+            type: 'qt',
+            title: 'Quotation Deleted',
+            badge: target ? target.quotationNo : 'Cancelled',
+            badgeColor: 'rose',
+            iconClass: 'fi fi-rr-trash',
+            iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+            description: `Quotation ${target ? target.quotationNo : ''} removed from ledger`,
+            actionText: 'Quotations →',
+            targetEngine: 'quotations'
+          });
           setToastNotice(`Quotation ${target ? target.quotationNo : ''} deleted successfully.`);
           setTimeout(() => setToastNotice(null), 3000);
         }
@@ -5375,16 +5782,64 @@
         if (editingPiId) {
           if (isCommercialTarget) {
             setCommercialInvoices((prev) => prev.map((c) => (c.id === editingPiId ? newPi : c)));
+            recordActivity({
+              type: 'ci',
+              title: 'Commercial Invoice Updated',
+              badge: newPi.invNumber,
+              badgeColor: 'emerald',
+              iconClass: 'fi fi-rr-file-invoice',
+              iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+              description: `Invoice updated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+              actionText: 'View CI →',
+              targetEngine: 'invoices',
+              docId: newPi.id
+            });
           } else {
             setProformaInvoices((prev) => prev.map((p) => (p.id === editingPiId ? newPi : p)));
+            recordActivity({
+              type: 'pi',
+              title: 'Proforma Invoice Updated',
+              badge: newPi.invNumber,
+              badgeColor: 'indigo',
+              iconClass: 'fi fi-rr-file-invoice',
+              iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+              description: `PI updated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+              actionText: 'View PI →',
+              targetEngine: 'proforma',
+              docId: newPi.id
+            });
           }
           setEditingPiId(null);
           setToastNotice(`Invoice ${newPi.invNumber} updated successfully!`);
         } else if (isCommercialTarget) {
           setCommercialInvoices((prev) => [newPi, ...prev]);
+          recordActivity({
+            type: 'ci',
+            title: 'Commercial Invoice Created',
+            badge: newPi.invNumber,
+            badgeColor: 'emerald',
+            iconClass: 'fi fi-rr-file-invoice',
+            iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+            description: `Generated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+            actionText: 'View CI →',
+            targetEngine: 'invoices',
+            docId: newPi.id
+          });
           setToastNotice(`Commercial Invoice ${newPi.invNumber} created successfully!`);
         } else {
           setProformaInvoices((prev) => [newPi, ...prev]);
+          recordActivity({
+            type: 'pi',
+            title: 'Proforma Invoice Confirmed',
+            badge: newPi.invNumber,
+            badgeColor: 'indigo',
+            iconClass: 'fi fi-rr-file-invoice',
+            iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+            description: `Confirmed for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+            actionText: 'View PI →',
+            targetEngine: 'proforma',
+            docId: newPi.id
+          });
           setToastNotice(`Proforma Invoice ${newPi.invNumber} created successfully!`);
         }
         setSelectedPiId(newPi.id);
@@ -5436,6 +5891,18 @@
       const handleSaveBlForm = (action) => {
         if (editingBlId) {
           setBlRecords((prev) => prev.map((r) => (r.id === editingBlId ? { ...r, ...blFormData } : r)));
+          recordActivity({
+            type: 'bl',
+            title: 'BL Draft Updated',
+            badge: blFormData.piNo || 'BL Draft',
+            badgeColor: 'blue',
+            iconClass: 'fi fi-rr-ship',
+            iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+            description: `Vessel: ${blFormData.vesselNo || 'TBD'} • Shipping Line: ${blFormData.shippingLine || 'Carrier'} • Booking: ${blFormData.bookingNo || 'Active'}`,
+            actionText: 'View BL →',
+            targetEngine: 'preShipment',
+            docId: editingBlId
+          });
           alert(`BL Draft for ${blFormData.piNo} updated!`);
         } else {
           const newRec = {
@@ -5445,6 +5912,18 @@
             sealNo: `SL-MDR-${Math.floor(1000 + Math.random() * 9000)}`,
           };
           setBlRecords([newRec, ...blRecords]);
+          recordActivity({
+            type: 'bl',
+            title: 'BL Draft Generated',
+            badge: newRec.piNo || 'BL Draft',
+            badgeColor: 'blue',
+            iconClass: 'fi fi-rr-ship',
+            iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+            description: `Container: ${newRec.containerNo} • Vessel: ${newRec.vesselNo || 'TBD'} • Line: ${newRec.shippingLine || 'Carrier'}`,
+            actionText: 'View BL →',
+            targetEngine: 'preShipment',
+            docId: newRec.id
+          });
           alert(`BL Draft for ${newRec.piNo} saved and PDF generated!`);
         }
 
@@ -6224,7 +6703,7 @@
 
                 {/* ZONE 2: RECENT ACTIVITY & QUICK ACTIONS */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* RECENT ACTIVITY (REPLACED CONTAINER LOADING SCHEDULE) */}
+                  {/* RECENT ACTIVITY (LIVE DYNAMIC AUDIT LOG) */}
                   <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div className="flex flex-wrap justify-between items-center pb-3 border-b border-slate-100 gap-2">
                       <div>
@@ -6236,8 +6715,11 @@
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>Live Audit</span>
                           </span>
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full tabular-nums">
+                            {recentActivities ? recentActivities.length : 0} Events
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">Real-time audit log of documents, quotations, container movements & approvals</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Real-time audit log of documents, quotations, invoices, packing lists & user changes</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
@@ -6251,151 +6733,50 @@
                     </div>
 
                     <div className="divide-y divide-slate-100 text-xs">
-                      {/* Activity 1: Proforma Invoice */}
-                      <div className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100">
-                            <i className="fi fi-rr-file-invoice text-sm"></i>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900">Proforma Invoice Confirmed</span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                PI/06/25-26
-                              </span>
+                      {recentActivities && recentActivities.length > 0 ? (
+                        recentActivities.slice(0, 7).map((act) => (
+                          <div key={act.id} className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all group">
+                            <div className="flex items-center space-x-3 min-w-0 pr-3">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${act.iconBg || 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+                                <i className={`${act.iconClass || 'fi fi-rr-document'} text-sm`}></i>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center space-x-2 flex-wrap">
+                                  <span className="font-bold text-slate-900">{act.title}</span>
+                                  {act.badge && (
+                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${getBadgeClass(act.badgeColor)}`}>
+                                      {act.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                                  {act.description}
+                                </p>
+                              </div>
                             </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              Confirmed for <strong className="text-slate-700">Global Trade Partners LLC</strong> ($34,500.00 USD) • Port of Discharge: Los Angeles
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end space-y-1">
-                          <span className="text-[10px] font-bold text-slate-400 tabular-nums">10m ago</span>
-                          <button
-                            type="button"
-                            onClick={() => { setActiveEngine('proforma'); setSelectedPiView(proformaInvoices[0]); }}
-                            className="text-[11px] font-extrabold text-indigo-600 hover:text-indigo-800"
-                          >
-                            View PI →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Activity 2: Quotation Prepared */}
-                      <div className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0 border border-amber-100">
-                            <i className="fi fi-rr-file-edit text-sm"></i>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900">Official Quotation Generated</span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                QT/2026/089
+                            <div className="text-right flex flex-col items-end space-y-1 shrink-0 ml-2">
+                              <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                                {formatRelativeTime(act.timestamp)}
                               </span>
+                              {act.actionText && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleActivityNavigate(act)}
+                                  className={`text-[11px] font-extrabold transition-colors cursor-pointer hover:underline ${getActionButtonClass(act.badgeColor)}`}
+                                >
+                                  {act.actionText}
+                                </button>
+                              )}
                             </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              Sent to <strong className="text-slate-700">Alxis Ltd (Seychelles)</strong> • Total FOB Value: $18,400.00 USD
-                            </p>
                           </div>
+                        ))
+                      ) : (
+                        <div className="py-8 text-center text-slate-400">
+                          <i className="fi fi-rr-time-past text-3xl text-slate-300 block mb-2"></i>
+                          <p className="font-medium text-xs">No recent activity logged yet.</p>
+                          <p className="text-[11px] text-slate-400">Create a quotation, invoice, or user to see live updates here.</p>
                         </div>
-                        <div className="text-right flex flex-col items-end space-y-1">
-                          <span className="text-[10px] font-bold text-slate-400 tabular-nums">45m ago</span>
-                          <button
-                            type="button"
-                            onClick={() => { setActiveEngine('quotations'); setSelectedQuotationView(quotations[0]); }}
-                            className="text-[11px] font-extrabold text-amber-700 hover:text-amber-900"
-                          >
-                            View QT →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Activity 3: Carton Thermal Labels */}
-                      <div className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs shrink-0 border border-rose-100">
-                            <i className="fi fi-rr-box text-sm"></i>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900">100x150mm Carton Labels Printed</span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                Box 1 to 10
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              Thermal stickers generated for consignment to <strong className="text-slate-700">Seychelles</strong> (Gross Weight: 25.0 KG/box)
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end space-y-1">
-                          <span className="text-[10px] font-bold text-slate-400 tabular-nums">2h ago</span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenLabelPrinter()}
-                            className="text-[11px] font-extrabold text-rose-700 hover:text-rose-900"
-                          >
-                            Print Labels →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Activity 4: eBRC Payment */}
-                      <div className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-100">
-                            <i className="fi fi-rr-check-circle text-sm"></i>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900">eBRC Payment Realization Completed</span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                EXP/CI/2026/089
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              ₹2,64,027 credited via Authorized Dealer Bank (SWIFT: BARBINBBXXX)
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end space-y-1">
-                          <span className="text-[10px] font-bold text-slate-400 tabular-nums">4h ago</span>
-                          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">
-                            Verified
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Activity 5: Bank Settings */}
-                      <div className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-all">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200">
-                            <i className="fi fi-rr-settings text-sm"></i>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900">Bank Parameters Saved</span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
-                                AD Code: 0210045
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              Updated AD Code, IFSC, and SWIFT parameters in Bank Settings Directory
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end space-y-1">
-                          <span className="text-[10px] font-bold text-slate-400 tabular-nums">1d ago</span>
-                          <button
-                            type="button"
-                            onClick={() => setActiveEngine('settings')}
-                            className="text-[11px] font-extrabold text-slate-700 hover:text-slate-900"
-                          >
-                            Settings →
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
@@ -16931,7 +17312,7 @@
                   <div className="flex items-center space-x-3">
                     <button
                       type="button"
-                      onClick={() => window.print()}
+                      onClick={handleExecutePrintLabels}
                       className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center space-x-2 transition-all cursor-pointer"
                     >
                       <i className="fi fi-rr-print text-sm"></i>
@@ -17227,7 +17608,7 @@
                     </button>
                     <button
                       type="button"
-                      onClick={() => window.print()}
+                      onClick={handleExecutePrintLabels}
                       className="px-6 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-all cursor-pointer"
                     >
                       <i className="fi fi-rr-print text-sm"></i>
