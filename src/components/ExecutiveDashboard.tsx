@@ -18,6 +18,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifs, setShowNotifs] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
+  const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false);
+  const [activityFilter, setActivityFilter] = useState('ALL');
+  const [activitySearch, setActivitySearch] = useState('');
 
   const [recentActivities] = useState<any[]>(() => {
     try {
@@ -225,310 +228,448 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
           <p className="text-xs text-slate-400">
             Real-time trade metrics, contractual profit & loss reports, and container stuffing due alerts.
           </p>
-              <button
-          onClick={() => setShowPnlModal(true)}
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 flex items-center gap-2"
-        >
-          <i className="fi fi-rr-chart-pie text-xs"></i>
-          <span>View Contractual P&L Breakdown</span>
-        </button>
-      </div>
+          <button
+            onClick={() => setShowPnlModal(true)}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 flex items-center gap-2"
+          >
+            <i className="fi fi-rr-chart-pie text-xs"></i>
+            <span>View Contractual P&L Breakdown</span>
+          </button>
+        </div>
 
-      {/* TOP ROW: Metric Cards with Sparklines */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((m, idx) => (
-          <div key={idx} className="glass-panel p-4 space-y-3 glass-card-hover">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{m.title}</span>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.isPos ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                {m.change}
+        {/* TOP ROW: Metric Cards with Sparklines */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map((m, idx) => (
+            <div key={idx} className="glass-panel p-4 space-y-3 glass-card-hover">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{m.title}</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.isPos ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {m.change}
+                </span>
+              </div>
+              <div className="text-2xl font-extrabold text-white font-mono">{m.value}</div>
+
+              {/* SVG Sparkline Graph */}
+              <div className="h-8 w-full">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 100 30">
+                  <polyline
+                    fill="none"
+                    stroke="#10B981"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={m.spark.map((val, i) => `${(i / (m.spark.length - 1)) * 100},${30 - (val / 100) * 30}`).join(' ')}
+                  />
+                </svg>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MIDDLE ROW: Recent Activity & Operational Timeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Recent Activity Table & Audit Trail */}
+          <div className="lg:col-span-8 glass-panel p-4 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Recent Activity & Audit Log
+                </h3>
+                <p className="text-[11px] text-slate-400">Live feed of trade transactions, document issues, and customs updates</p>
+              </div>
+
+              <button
+                onClick={() => setShowAllActivitiesModal(true)}
+                className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1.5"
+              >
+                <i className="fi fi-rr-time-past text-xs"></i>
+                <span>View All Activity Logs ({recentActivities ? recentActivities.length : 0}) →</span>
+              </button>
+            </div>
+
+            <div className="divide-y divide-white/10 text-xs">
+              {recentActivities && recentActivities.length > 0 ? (
+                recentActivities.slice(0, 5).map((act) => (
+                  <div key={act.id} className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded-lg transition-all">
+                    <div className="flex items-center space-x-3 min-w-0 pr-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border ${act.iconBg || 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
+                        <i className={`${act.iconClass || 'fi fi-rr-file-invoice'} text-sm`}></i>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-white truncate">{act.title}</span>
+                          {act.badge && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                              {act.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                          {act.description}
+                          {act.userName && <span className="ml-1 text-[10px] text-slate-500 font-semibold">• By {act.userName}</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end space-y-1 shrink-0 ml-2">
+                      <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                        {formatRelativeTime(act.timestamp)}
+                      </span>
+                      {act.actionText && (
+                        <button
+                          onClick={() => onNavigateEngine(act.targetEngine || 'quotations')}
+                          className="text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          {act.actionText}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-slate-400">No recent activity logged yet.</div>
+              )}
+            </div>
+          </div>
+
+          {/* 1/3 Width Operational Activity Timeline */}
+          <div className="lg:col-span-4 glass-panel p-4 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <i className="fi fi-rr-time-fast text-emerald-400 text-xs"></i>
+                Live Operational Activity
+              </h3>
+              <span className="text-[10px] text-emerald-400 font-mono">Real-Time</span>
+            </div>
+
+            <div className="space-y-4 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10 pl-6">
+              {OPERATIONAL_ACTIVITIES.map((act) => (
+                <div key={act.id} className="relative space-y-1">
+                  <div className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-slate-900"></div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="font-bold text-white">{act.title}</span>
+                    <span className="text-slate-400">{act.timestamp}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">{act.description}</p>
+                  <div className="text-[9px] text-slate-400 font-mono">By: {act.user}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3: ZONE 4 CUSTOMS INCENTIVE & FOREX MATRIX + ZONE 5 QUICK COMMAND LAUNCHER */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* 2/3 Width Zone 4: Customs Incentive Realization & Forex Exposure Matrix */}
+          <div className="lg:col-span-8 glass-panel p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                  Customs Incentive Realization & Forex Exposure Matrix
+                </h3>
+                <p className="text-[11px] text-slate-400">RoDTEP / Duty Drawback refund claims & live currency exchange rates</p>
+              </div>
+              <span className="text-[10px] text-indigo-400 font-mono font-bold bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30">
+                Live Currency Sync
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-white font-mono">{m.value}</div>
 
-            {/* SVG Sparkline Graph */}
-            <div className="h-8 w-full">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 100 30">
-                <polyline
-                  fill="none"
-                  stroke="#10B981"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={m.spark.map((val, i) => `${(i / (m.spark.length - 1)) * 100},${30 - (val / 100) * 30}`).join(' ')}
-                />
-              </svg>
-            </div>
-          </div>
-        ))}
-      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* RoDTEP / DBK Incentive Realization Card */}
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">RoDTEP & DBK Claims Status</span>
+                  <span className="text-emerald-400 font-mono font-bold">88.4% Realized</span>
+                </div>
+                <div className="flex justify-between items-baseline font-mono">
+                  <span className="text-xs text-slate-400">Claimed: <strong className="text-white">{formatMoney(48500)}</strong></span>
+                  <span className="text-sm font-extrabold text-emerald-400">{formatMoney(42874)}</span>
+                </div>
+                {/* Progress bar */}
+                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full w-[88.4%]"></div>
+                </div>
+                <div className="flex justify-between text-[9.5px] text-slate-400 font-mono pt-1">
+                  <span>Pending Refund: {formatMoney(5626)}</span>
+                  <span className="text-amber-400 font-bold">2 Shipping Bills Due</span>
+                </div>
+              </div>
 
-      {/* MIDDLE ROW: Recent Activity & Operational Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Recent Activity Table & Audit Trail */}
-        <div className="lg:col-span-8 glass-panel p-4 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-            <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Recent Activity & Audit Log
-              </h3>
-              <p className="text-[11px] text-slate-400">Live feed of trade transactions, document issues, and customs updates</p>
-            </div>
-
-            <button
-              onClick={() => onNavigateEngine('quotations')}
-              className="text-xs text-blue-400 hover:text-blue-300 font-semibold"
-            >
-              View All Transactions →
-            </button>
-          </div>
-
-          <div className="divide-y divide-white/10 text-xs">
-            {recentActivities && recentActivities.length > 0 ? (
-              recentActivities.slice(0, 5).map((act) => (
-                <div key={act.id} className="py-3 flex items-center justify-between hover:bg-white/5 px-2 rounded-lg transition-all">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-500/30">
-                      <i className={`${act.iconClass || 'fi fi-rr-file-invoice'} text-sm`}></i>
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-white">{act.title}</span>
-                        {act.badge && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            {act.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {act.description}
-                      </p>
-                    </div>
+              {/* Live Forex Exchange Rates Ticker */}
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">Forex Exchange Ticker (Base: INR)</span>
+                  <span className="text-sky-400 font-mono text-[10px]">Auto-Synced</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                    <span className="text-slate-400 font-bold">USD/INR</span>
+                    <span className="text-white font-extrabold">₹85.00</span>
                   </div>
-                  <div className="text-right flex flex-col items-end space-y-1 shrink-0 ml-2">
-                    <span className="text-[10px] font-bold text-slate-400 tabular-nums">
-                      {formatRelativeTime(act.timestamp)}
-                    </span>
-                    {act.actionText && (
-                      <button
-                        onClick={() => onNavigateEngine(act.targetEngine || 'quotations')}
-                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
-                      >
-                        {act.actionText}
-                      </button>
-                    )}
+                  <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                    <span className="text-slate-400 font-bold">EUR/INR</span>
+                    <span className="text-white font-extrabold">₹92.50</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                    <span className="text-slate-400 font-bold">GBP/INR</span>
+                    <span className="text-white font-extrabold">₹108.20</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
+                    <span className="text-slate-400 font-bold">AED/INR</span>
+                    <span className="text-white font-extrabold">₹23.14</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-6 text-center text-slate-400 text-xs">
-                No recent activity logged yet.
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* 1/3 Width Operational Activity Timeline */}
-        <div className="lg:col-span-4 glass-panel p-4 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <i className="fi fi-rr-time-fast text-emerald-400 text-xs"></i>
-              Live Operational Activity
-            </h3>
-            <span className="text-[10px] text-emerald-400 font-mono">Real-Time</span>
+            </div>
           </div>
 
-          <div className="space-y-4 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10 pl-6">
-            {OPERATIONAL_ACTIVITIES.map((act) => (
-              <div key={act.id} className="relative space-y-1">
-                <div className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-slate-900"></div>
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="font-bold text-white">{act.title}</span>
-                  <span className="text-slate-400">{act.timestamp}</span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">{act.description}</p>
-                <div className="text-[9px] text-slate-400 font-mono">By: {act.user}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ROW 3: ZONE 4 CUSTOMS INCENTIVE & FOREX MATRIX + ZONE 5 QUICK COMMAND LAUNCHER */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 2/3 Width Zone 4: Customs Incentive Realization & Forex Exposure Matrix */}
-        <div className="lg:col-span-8 glass-panel p-4 space-y-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <div>
+          {/* 1/3 Width Zone 5: Quick Command Launcher Grid */}
+          <div className="lg:col-span-4 glass-panel p-4 space-y-3">
+            <div className="pb-2 border-b border-white/10 flex justify-between items-center">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                Customs Incentive Realization & Forex Exposure Matrix
+                <i className="fi fi-rr-bolt text-amber-400 text-xs"></i>
+                Quick Command Center
               </h3>
-              <p className="text-[11px] text-slate-400">RoDTEP / Duty Drawback refund claims & live currency exchange rates</p>
-            </div>
-            <span className="text-[10px] text-indigo-400 font-mono font-bold bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30">
-              Live Currency Sync
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* RoDTEP / DBK Incentive Realization Card */}
-            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">RoDTEP & DBK Claims Status</span>
-                <span className="text-emerald-400 font-mono font-bold">88.4% Realized</span>
-              </div>
-              <div className="flex justify-between items-baseline font-mono">
-                <span className="text-xs text-slate-400">Claimed: <strong className="text-white">{formatMoney(48500)}</strong></span>
-                <span className="text-sm font-extrabold text-emerald-400">{formatMoney(42874)}</span>
-              </div>
-              {/* Progress bar */}
-              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full w-[88.4%]"></div>
-              </div>
-              <div className="flex justify-between text-[9.5px] text-slate-400 font-mono pt-1">
-                <span>Pending Refund: {formatMoney(5626)}</span>
-                <span className="text-amber-400 font-bold">2 Shipping Bills Due</span>
-              </div>
+              <span className="text-[10px] text-slate-400">EXIM Shortcuts</span>
             </div>
 
-            {/* Live Forex Exchange Rates Ticker */}
-            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/10 space-y-2">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9.5px]">Forex Exchange Ticker (Base: INR)</span>
-                <span className="text-sky-400 font-mono text-[10px]">Auto-Synced</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
-                  <span className="text-slate-400 font-bold">USD/INR</span>
-                  <span className="text-white font-extrabold">₹85.00</span>
-                </div>
-                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
-                  <span className="text-slate-400 font-bold">EUR/INR</span>
-                  <span className="text-white font-extrabold">₹92.50</span>
-                </div>
-                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
-                  <span className="text-slate-400 font-bold">GBP/INR</span>
-                  <span className="text-white font-extrabold">₹108.20</span>
-                </div>
-                <div className="bg-slate-800/80 p-1.5 rounded border border-slate-700/60 flex justify-between items-center">
-                  <span className="text-slate-400 font-bold">AED/INR</span>
-                  <span className="text-white font-extrabold">₹23.14</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 1/3 Width Zone 5: Quick Command Launcher Grid */}
-        <div className="lg:col-span-4 glass-panel p-4 space-y-3">
-          <div className="pb-2 border-b border-white/10 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <i className="fi fi-rr-bolt text-amber-400 text-xs"></i>
-              Quick Command Center
-            </h3>
-            <span className="text-[10px] text-slate-400">EXIM Shortcuts</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-            <button
-              onClick={() => onNavigateEngine('quotations')}
-              className="p-3 rounded-xl bg-gradient-to-br from-indigo-600/80 to-blue-700/80 hover:from-indigo-600 hover:to-blue-600 text-white border border-indigo-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                <i className="fi fi-rr-file-edit text-white text-xs"></i>
-              </div>
-              <span className="text-[11px] leading-tight">+ Create Quotation</span>
-            </button>
-
-            <button
-              onClick={() => onNavigateEngine('documents')}
-              className="p-3 rounded-xl bg-gradient-to-br from-emerald-600/80 to-teal-700/80 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                <i className="fi fi-rr-document text-white text-xs"></i>
-              </div>
-              <span className="text-[11px] leading-tight">+ Create PI Document</span>
-            </button>
-
-            <button
-              onClick={() => onNavigateEngine('documents')}
-              className="p-3 rounded-xl bg-gradient-to-br from-amber-600/80 to-orange-700/80 hover:from-amber-600 hover:to-orange-700 text-white border border-amber-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                <i className="fi fi-rr-box-alt text-white text-xs"></i>
-              </div>
-              <span className="text-[11px] leading-tight">+ Packing List</span>
-            </button>
-
-            <button
-              onClick={() => onNavigateEngine('settings')}
-              className="p-3 rounded-xl bg-gradient-to-br from-slate-700/80 to-slate-800/80 hover:from-slate-700 hover:to-slate-800 text-white border border-slate-500/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                <i className="fi fi-rr-settings text-white text-xs"></i>
-              </div>
-              <span className="text-[11px] leading-tight">Master Directory</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* CONTRACTUAL PROFIT & LOSS REPORT MODAL */}
-      {showPnlModal && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-panel p-6 max-w-3xl w-full space-y-4 border border-blue-500/30">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <i className="fi fi-rr-chart-histogram text-emerald-400 text-base"></i>
-                Contractual Net Profitability & Incentive Realization Report
-              </h3>
-              <button onClick={() => setShowPnlModal(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-white/10 bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="py-2.5 px-3">Contract / Invoice No</th>
-                    <th className="py-2.5 px-3">Buyer Name</th>
-                    <th className="py-2.5 px-3 text-right">FOB Rev</th>
-                    <th className="py-2.5 px-3 text-right">Prod Cost</th>
-                    <th className="py-2.5 px-3 text-right">Freight Cost</th>
-                    <th className="py-2.5 px-3 text-right">Incentive Rec</th>
-                    <th className="py-2.5 px-3 text-right">Net Profit</th>
-                    <th className="py-2.5 px-3 text-right">Margin %</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
-                  {CONTRACT_PROFITABILITY_DATA.map((pnl, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-3 font-mono font-bold text-white">{pnl.contractNo}</td>
-                      <td className="py-3 px-3 font-medium text-slate-300">{pnl.buyerName}</td>
-                      <td className="py-3 px-3 text-right font-mono">{formatMoney(pnl.fobRevenueUsd)}</td>
-                      <td className="py-3 px-3 text-right font-mono text-red-300">{formatMoney(pnl.productionCostUsd)}</td>
-                      <td className="py-3 px-3 text-right font-mono text-amber-300">{formatMoney(pnl.logisticsFreightUsd)}</td>
-                      <td className="py-3 px-3 text-right font-mono text-emerald-400">+{formatMoney(pnl.incentivesRealisedUsd)}</td>
-                      <td className="py-3 px-3 text-right font-mono font-extrabold text-white">{formatMoney(pnl.netProfitUsd)}</td>
-                      <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">{pnl.marginPercentage}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="pt-2 flex justify-end">
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
               <button
-                onClick={() => setShowPnlModal(false)}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold text-xs"
+                onClick={() => onNavigateEngine('quotations')}
+                className="p-3 rounded-xl bg-gradient-to-br from-indigo-600/80 to-blue-700/80 hover:from-indigo-600 hover:to-blue-600 text-white border border-indigo-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
               >
-                Close Report
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                  <i className="fi fi-rr-file-edit text-white text-xs"></i>
+                </div>
+                <span className="text-[11px] leading-tight">+ Create Quotation</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateEngine('documents')}
+                className="p-3 rounded-xl bg-gradient-to-br from-emerald-600/80 to-teal-700/80 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                  <i className="fi fi-rr-document text-white text-xs"></i>
+                </div>
+                <span className="text-[11px] leading-tight">+ Create PI Document</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateEngine('documents')}
+                className="p-3 rounded-xl bg-gradient-to-br from-amber-600/80 to-orange-700/80 hover:from-amber-600 hover:to-orange-700 text-white border border-amber-400/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                  <i className="fi fi-rr-box-alt text-white text-xs"></i>
+                </div>
+                <span className="text-[11px] leading-tight">+ Packing List</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateEngine('settings')}
+                className="p-3 rounded-xl bg-gradient-to-br from-slate-700/80 to-slate-800/80 hover:from-slate-700 hover:to-slate-800 text-white border border-slate-500/30 flex flex-col justify-between items-start space-y-2 transition-all shadow-md group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                  <i className="fi fi-rr-settings text-white text-xs"></i>
+                </div>
+                <span className="text-[11px] leading-tight">Master Directory</span>
               </button>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* CONTRACTUAL PROFIT & LOSS REPORT MODAL */}
+        {showPnlModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="glass-panel p-6 max-w-3xl w-full space-y-4 border border-blue-500/30">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <i className="fi fi-rr-chart-histogram text-emerald-400 text-base"></i>
+                  Contractual Net Profitability & Incentive Realization Report
+                </h3>
+                <button onClick={() => setShowPnlModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Contract / Invoice No</th>
+                      <th className="py-2.5 px-3">Buyer Name</th>
+                      <th className="py-2.5 px-3 text-right">FOB Rev</th>
+                      <th className="py-2.5 px-3 text-right">Prod Cost</th>
+                      <th className="py-2.5 px-3 text-right">Freight Cost</th>
+                      <th className="py-2.5 px-3 text-right">Incentive Rec</th>
+                      <th className="py-2.5 px-3 text-right">Net Profit</th>
+                      <th className="py-2.5 px-3 text-right">Margin %</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {CONTRACT_PROFITABILITY_DATA.map((pnl, idx) => (
+                      <tr key={idx} className="hover:bg-slate-800/40">
+                        <td className="py-3 px-3 font-mono font-bold text-white">{pnl.contractNo}</td>
+                        <td className="py-3 px-3 font-medium text-slate-300">{pnl.buyerName}</td>
+                        <td className="py-3 px-3 text-right font-mono">{formatMoney(pnl.fobRevenueUsd)}</td>
+                        <td className="py-3 px-3 text-right font-mono text-red-300">{formatMoney(pnl.productionCostUsd)}</td>
+                        <td className="py-3 px-3 text-right font-mono text-amber-300">{formatMoney(pnl.logisticsFreightUsd)}</td>
+                        <td className="py-3 px-3 text-right font-mono text-emerald-400">+{formatMoney(pnl.incentivesRealisedUsd)}</td>
+                        <td className="py-3 px-3 text-right font-mono font-extrabold text-white">{formatMoney(pnl.netProfitUsd)}</td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">{pnl.marginPercentage}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setShowPnlModal(false)}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold text-xs"
+                >
+                  Close Report
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ALL DOCUMENT ACTIVITY LOG & AUDIT TRAIL MODAL */}
+        {showAllActivitiesModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="glass-panel p-6 max-w-4xl w-full space-y-4 border border-blue-500/30 max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base border border-emerald-500/30">
+                    <i className="fi fi-rr-time-past"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>All Document Activity Log & Audit Trail</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Live Audit
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">Chronological history of all document creation, edits, confirmations, and exports</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAllActivitiesModal(false)}
+                  className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer"
+                >✕</button>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 text-xs overflow-x-auto">
+                  {[
+                    { key: 'ALL', label: `All (${recentActivities.length})` },
+                    { key: 'qt', label: 'Quotations' },
+                    { key: 'pi', label: 'Proforma (PI)' },
+                    { key: 'ci', label: 'Commercial (CI)' },
+                    { key: 'pkl', label: 'Packing Lists' },
+                    { key: 'label', label: 'Carton Labels' },
+                    { key: 'user', label: 'Users' }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActivityFilter(tab.key)}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap ${activityFilter === tab.key ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative min-w-[220px]">
+                  <input
+                    type="text"
+                    placeholder="Search activities, docs, users..."
+                    value={activitySearch}
+                    onChange={(e) => setActivitySearch(e.target.value)}
+                    className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  />
+                  {activitySearch && (
+                    <button onClick={() => setActivitySearch('')} className="absolute right-2.5 top-1.5 text-slate-400 hover:text-white text-xs">✕</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Activity Table / Scroll Area */}
+              <div className="overflow-y-auto flex-1 divide-y divide-white/10 pr-1">
+                {recentActivities
+                  .filter(a => {
+                    if (activityFilter !== 'ALL' && a.type !== activityFilter) return false;
+                    if (!activitySearch) return true;
+                    const q = activitySearch.toLowerCase();
+                    return (
+                      (a.title && a.title.toLowerCase().includes(q)) ||
+                      (a.badge && a.badge.toLowerCase().includes(q)) ||
+                      (a.description && a.description.toLowerCase().includes(q)) ||
+                      (a.userName && a.userName.toLowerCase().includes(q))
+                    );
+                  })
+                  .map(act => (
+                    <div key={act.id} className="py-3 flex items-start justify-between hover:bg-white/5 px-3 rounded-xl transition-all">
+                      <div className="flex items-start space-x-3 min-w-0 pr-4">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 border ${act.iconBg || 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
+                          <i className={`${act.iconClass || 'fi fi-rr-file-invoice'} text-sm`}></i>
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2 flex-wrap gap-1">
+                            <span className="font-bold text-white text-xs">{act.title}</span>
+                            {act.badge && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                {act.badge}
+                              </span>
+                            )}
+                            {act.userName && (
+                              <span className="text-[10px] text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                                👤 {act.userName}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-300 mt-1 leading-relaxed">{act.description}</p>
+                          <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                            {act.timestamp ? new Date(act.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 flex flex-col items-end space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                          {formatRelativeTime(act.timestamp)}
+                        </span>
+                        {act.actionText && (
+                          <button
+                            onClick={() => {
+                              setShowAllActivitiesModal(false);
+                              onNavigateEngine(act.targetEngine || 'quotations');
+                            }}
+                            className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            {act.actionText}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs shrink-0">
+                <span className="text-slate-400 text-[11px]">
+                  Showing filtered activity logs from local & live MySQL audit trail
+                </span>
+                <button
+                  onClick={() => setShowAllActivitiesModal(false)}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
+                >
+                  Close Audit Log
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      );
 };

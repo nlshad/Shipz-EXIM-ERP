@@ -1421,6 +1421,11 @@
       const [dbConfigSaving, setDbConfigSaving] = useState(false);
       const [dbConfigNotice, setDbConfigNotice] = useState(null);
 
+      // All Document Activity Log Modal States
+      const [isAllActivityModalOpen, setIsAllActivityModalOpen] = useState(false);
+      const [activitySearchQuery, setActivitySearchQuery] = useState('');
+      const [activityFilterType, setActivityFilterType] = useState('ALL');
+
       const handleSaveAndTestDbConfig = async () => {
         setDbConfigSaving(true);
         setDbConfigNotice(null);
@@ -7027,10 +7032,11 @@
                       <div className="flex items-center space-x-2">
                         <button
                           type="button"
-                          onClick={() => setActiveEngine('quotations')}
-                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                          onClick={() => setIsAllActivityModalOpen(true)}
+                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm"
                         >
-                          View Transactions →
+                          <i className="fi fi-rr-time-past text-xs"></i>
+                          <span>View All Activity Logs ({recentActivities ? recentActivities.length : 0}) →</span>
                         </button>
                       </div>
                     </div>
@@ -18057,6 +18063,202 @@
                         )}
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ALL DOCUMENT ACTIVITY LOG & AUDIT TRAIL MODAL */}
+          {isAllActivityModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
+                {/* Modal Header */}
+                <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center border border-indigo-500/30">
+                      <i className="fi fi-rr-time-past text-lg"></i>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-black text-base">All Document Activity Log & Audit Trail</h3>
+                        <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span>Live Multi-User Network Synced</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Chronological audit trail of all Quotations, Proforma Invoices, Commercial Invoices, Packing Lists, Labels & Users
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAllActivityModalOpen(false)}
+                    className="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer"
+                  >✕</button>
+                </div>
+
+                {/* Filter & Search Bar */}
+                <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shrink-0">
+                  {/* Category Filter Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 text-xs">
+                    {[
+                      { key: 'ALL', label: `All Events (${recentActivities ? recentActivities.length : 0})` },
+                      { key: 'qt', label: `Quotations (${recentActivities ? recentActivities.filter(a => a.type === 'qt').length : 0})` },
+                      { key: 'pi', label: `Proforma (PI) (${recentActivities ? recentActivities.filter(a => a.type === 'pi').length : 0})` },
+                      { key: 'ci', label: `Commercial (CI) (${recentActivities ? recentActivities.filter(a => a.type === 'ci').length : 0})` },
+                      { key: 'pkl', label: `Packing Lists (${recentActivities ? recentActivities.filter(a => a.type === 'pkl').length : 0})` },
+                      { key: 'label', label: `Carton Labels (${recentActivities ? recentActivities.filter(a => a.type === 'label').length : 0})` },
+                      { key: 'user', label: `Users (${recentActivities ? recentActivities.filter(a => a.type === 'user').length : 0})` }
+                    ].map(tab => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActivityFilterType(tab.key)}
+                        className={`px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${activityFilterType === tab.key ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Search input */}
+                  <div className="relative min-w-[240px]">
+                    <i className="fi fi-rr-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input
+                      type="text"
+                      placeholder="Search document no, buyer, user..."
+                      value={activitySearchQuery}
+                      onChange={(e) => setActivitySearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-medium"
+                    />
+                    {activitySearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setActivitySearchQuery('')}
+                        className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs"
+                      >✕</button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Activity List Content Area */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-4 space-y-1">
+                  {recentActivities && recentActivities.length > 0 ? (
+                    recentActivities
+                      .filter(a => {
+                        if (activityFilterType !== 'ALL' && a.type !== activityFilterType) return false;
+                        if (!activitySearchQuery) return true;
+                        const q = activitySearchQuery.toLowerCase();
+                        return (
+                          (a.title && a.title.toLowerCase().includes(q)) ||
+                          (a.badge && a.badge.toLowerCase().includes(q)) ||
+                          (a.description && a.description.toLowerCase().includes(q)) ||
+                          (a.userName && a.userName.toLowerCase().includes(q))
+                        );
+                      })
+                      .map((act) => (
+                        <div key={act.id} className="py-3.5 px-3 flex items-start justify-between hover:bg-slate-50/80 rounded-2xl transition-all group">
+                          <div className="flex items-start space-x-3.5 min-w-0 pr-4">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 border ${act.iconBg || 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+                              <i className={`${act.iconClass || 'fi fi-rr-document'} text-base`}></i>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center space-x-2 flex-wrap gap-1">
+                                <span className="font-extrabold text-slate-900 text-xs">{act.title}</span>
+                                {act.badge && (
+                                  <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${getBadgeClass(act.badgeColor)}`}>
+                                    {act.badge}
+                                  </span>
+                                )}
+                                {act.userName && (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-semibold border border-slate-200">
+                                    <i className="fi fi-rr-user text-[9px]"></i>
+                                    <span>{act.userName}</span>
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                {act.description}
+                              </p>
+                              <div className="flex items-center space-x-3 mt-1.5 text-[10px] text-slate-400 font-medium">
+                                <span className="flex items-center space-x-1">
+                                  <i className="fi fi-rr-calendar text-[9px]"></i>
+                                  <span>{act.timestamp ? new Date(act.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently'}</span>
+                                </span>
+                                <span>•</span>
+                                <span className="tabular-nums font-bold text-slate-500">{formatRelativeTime(act.timestamp)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0 flex flex-col items-end space-y-1.5 ml-2">
+                            {act.actionText && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsAllActivityModalOpen(false);
+                                  handleActivityNavigate(act);
+                                }}
+                                className={`text-xs font-black px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${getActionButtonClass(act.badgeColor)} hover:shadow-sm`}
+                              >
+                                {act.actionText}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="py-16 text-center text-slate-400">
+                      <i className="fi fi-rr-time-past text-4xl text-slate-300 block mb-2"></i>
+                      <p className="font-bold text-sm">No activity logs recorded yet.</p>
+                      <p className="text-xs text-slate-400">Any Quotation, Invoice, Packing List, or User created will appear here.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+                  <div className="text-slate-500 font-medium">
+                    Showing real-time audit log synchronized with central MySQL database.
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Export CSV
+                        if (!recentActivities || recentActivities.length === 0) return alert('No activities to export.');
+                        const headers = ['ID', 'Type', 'Title', 'Badge', 'Description', 'User', 'Timestamp'];
+                        const rows = recentActivities.map(a => [
+                          a.id,
+                          a.type || '',
+                          `"${(a.title || '').replace(/"/g, '""')}"`,
+                          `"${(a.badge || '').replace(/"/g, '""')}"`,
+                          `"${(a.description || '').replace(/"/g, '""')}"`,
+                          `"${(a.userName || '').replace(/"/g, '""')}"`,
+                          a.timestamp || ''
+                        ]);
+                        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                        const encodedUri = encodeURI(csvContent);
+                        const link = document.createElement('a');
+                        link.setAttribute('href', encodedUri);
+                        link.setAttribute('download', `Shipz_Activity_Log_${new Date().toISOString().split('T')[0]}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-200 transition-all cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <i className="fi fi-rr-download text-xs"></i>
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAllActivityModalOpen(false)}
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      Close Log
+                    </button>
                   </div>
                 </div>
               </div>
