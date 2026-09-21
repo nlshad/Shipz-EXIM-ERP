@@ -52,6 +52,128 @@ export const QuotationsEngine: React.FC = () => {
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   const [selectedQuotationView, setSelectedQuotationView] = useState<QuotationRecord | null>(null);
   const [shareModalQt, setShareModalQt] = useState<QuotationRecord | null>(null);
+  const [docAuditNoteInput, setDocAuditNoteInput] = useState('');
+  const [recentActivities, setRecentActivities] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('shipz_recent_activities');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const formatRelativeTime = (isoString?: string) => {
+    if (!isoString) return 'Just now';
+    const time = new Date(isoString).getTime();
+    if (isNaN(time)) return 'Just now';
+    const diffSec = Math.max(0, Math.floor((Date.now() - time) / 1000));
+    if (diffSec < 45) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatAuditDateTime = (dateVal?: string) => {
+    if (!dateVal) return 'N/A';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return String(dateVal);
+      return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (e) {
+      return String(dateVal);
+    }
+  };
+
+  const getDocumentActivities = (doc: any) => {
+    if (!doc) return [];
+    const docNo = doc.quotationNo || '';
+    const docId = doc.id || '';
+    const matched = recentActivities.filter(a => {
+      if (!a) return false;
+      if (docId && a.docId === docId) return true;
+      if (docNo) {
+        if (a.badge === docNo) return true;
+        if (a.title && a.title.includes(docNo)) return true;
+        if (a.description && a.description.includes(docNo)) return true;
+      }
+      return false;
+    });
+
+    const activities = [...matched];
+    const hasCreated = activities.some(a => (a.title || '').toLowerCase().includes('create') || (a.title || '').toLowerCase().includes('generate'));
+    const createdDate = doc.createdAt || doc.date || '2026-08-04';
+    const createdBy = doc.createdBy || doc.salesperson || 'System Admin';
+
+    if (!hasCreated) {
+      activities.push({
+        id: `synth-create-${docId || docNo}`,
+        timestamp: String(createdDate).includes('T') ? createdDate : `${createdDate}T10:00:00.000Z`,
+        userName: createdBy,
+        title: 'Quotation Generated',
+        description: `Initial document ${docNo} created for ${doc.consignee || 'Customer'}.`,
+        badge: docNo,
+        badgeColor: 'emerald',
+        iconClass: 'fi fi-rr-plus-circle',
+        iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        isSynthesized: true
+      });
+    }
+
+    const updatedDate = doc.updatedAt;
+    const updatedBy = doc.lastEditedBy;
+    if (updatedDate && updatedDate !== createdDate && !activities.some(a => (a.title || '').toLowerCase().includes('update') || (a.title || '').toLowerCase().includes('revise'))) {
+      activities.push({
+        id: `synth-update-${docId || docNo}`,
+        timestamp: String(updatedDate).includes('T') ? updatedDate : `${updatedDate}T14:30:00.000Z`,
+        userName: updatedBy || createdBy,
+        title: 'Quotation Revised & Saved',
+        description: `Quotation parameters and line items updated by ${updatedBy || createdBy}.`,
+        badge: docNo,
+        badgeColor: 'amber',
+        iconClass: 'fi fi-rr-edit',
+        iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+        isSynthesized: true
+      });
+    }
+
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
+  const handleAddDocumentAuditNote = (docNo: string, docId: string) => {
+    if (!docAuditNoteInput.trim()) return;
+    const newEntry = {
+      id: `act-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      timestamp: new Date().toISOString(),
+      userName: 'Admin User',
+      type: 'qt',
+      title: 'Internal Audit Remark Logged',
+      badge: docNo,
+      badgeColor: 'purple',
+      iconClass: 'fi fi-rr-comment-alt',
+      iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+      description: docAuditNoteInput.trim(),
+      actionText: 'View Details',
+      targetEngine: 'quotations',
+      docId: docId
+    };
+    const updated = [newEntry, ...recentActivities].slice(0, 50);
+    setRecentActivities(updated);
+    try { localStorage.setItem('shipz_recent_activities', JSON.stringify(updated)); } catch (e) {}
+    setDocAuditNoteInput('');
+    setToastNotice(`Audit note recorded on ${docNo}!`);
+    setTimeout(() => setToastNotice(null), 3000);
+  };
 
   // Initial Quotations List
   const [quotations, setQuotations] = useState<QuotationRecord[]>(() => {
@@ -599,6 +721,11 @@ export const QuotationsEngine: React.FC = () => {
           window.print();
         };
 
+        const createdUser = (selectedQuotationView as any).createdBy || (selectedQuotationView as any).salesperson || 'System Admin';
+        const createdDate = (selectedQuotationView as any).createdAt || selectedQuotationView.date || '2026-08-04';
+        const editedUser = (selectedQuotationView as any).lastEditedBy || (selectedQuotationView as any).createdBy || (selectedQuotationView as any).salesperson || 'System Admin';
+        const editedDate = (selectedQuotationView as any).updatedAt || (selectedQuotationView as any).createdAt || selectedQuotationView.date || '2026-08-04';
+
         return (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -615,9 +742,16 @@ export const QuotationsEngine: React.FC = () => {
                         {selectedQuotationView.status || 'Accepted'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Full quotation parameters, consignee details, shipping terms & line items breakdown
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                        <i className="fi fi-rr-plus-circle text-xs"></i>
+                        <span>Created: {createdUser} ({formatRelativeTime(createdDate)})</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                        <i className="fi fi-rr-edit text-xs"></i>
+                        <span>Last Edited: {editedUser} ({formatRelativeTime(editedDate)})</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -630,6 +764,39 @@ export const QuotationsEngine: React.FC = () => {
 
               {/* MODAL BODY (SCROLLABLE FULL FIELD DETAILS) */}
               <div className="p-6 space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
+
+                {/* CREATED & EDITED LOGO OVERVIEW BADGES */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                  {/* Created Badge */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/90 transition-all hover:bg-emerald-50">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                      <i className="fi fi-rr-plus-circle"></i>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Created By</span>
+                        <span className="text-[10px] font-bold text-emerald-700 font-mono">{formatRelativeTime(createdDate)}</span>
+                      </div>
+                      <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{createdUser}</div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(createdDate)}</div>
+                    </div>
+                  </div>
+
+                  {/* Last Edited Badge */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 transition-all hover:bg-amber-50">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                      <i className="fi fi-rr-edit"></i>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded">Last Edited By</span>
+                        <span className="text-[10px] font-bold text-amber-700 font-mono">{formatRelativeTime(editedDate)}</span>
+                      </div>
+                      <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{editedUser}</div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(editedDate)}</div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* KEY METRICS SUMMARY CARDS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -859,6 +1026,86 @@ export const QuotationsEngine: React.FC = () => {
                     </table>
                   </div>
                 </div>
+
+                {/* SECTION 6: INDIVIDUAL DOCUMENT ACTIVITY & AUDIT TRAIL */}
+                {(() => {
+                  const docActivities = getDocumentActivities(selectedQuotationView);
+                  return (
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                          <span className="flex items-center gap-1.5">
+                            <i className="fi fi-rr-time-past text-indigo-600 text-sm"></i>
+                            <span>6. Document Activity & Audit Log</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                            {docActivities.length} Events
+                          </span>
+                        </h4>
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Complete lifecycle audit history for Quotation {selectedQuotationView.quotationNo}
+                        </span>
+                      </div>
+
+                      {/* Activity Timeline */}
+                      <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                        {docActivities.map((act: any, aIdx: number) => (
+                          <div key={act.id || aIdx} className="relative group">
+                            <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                              act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                              act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                              act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                              act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                              'bg-slate-700 text-white'
+                            }`}>
+                              <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                            </div>
+                            <div className="bg-slate-50 hover:bg-white transition-all p-3.5 rounded-xl border border-slate-200/80 hover:border-slate-300 shadow-2xs">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs">{act.title}</span>
+                                  <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-200/80 text-slate-700 font-mono">
+                                    {act.userName || 'System'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px]">
+                                  <span className="font-mono text-slate-400 text-[10px]">{formatAuditDateTime(act.timestamp)}</span>
+                                  <span className="px-2 py-0.5 bg-slate-200/70 rounded text-slate-700 font-bold text-[10px]">
+                                    {formatRelativeTime(act.timestamp)}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-1.5">{act.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Quick Interactive Note Logger */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={docAuditNoteInput}
+                            onChange={(e) => setDocAuditNoteInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddDocumentAuditNote(selectedQuotationView.quotationNo, selectedQuotationView.id); }}
+                            placeholder={`Add internal audit remark or status note for ${selectedQuotationView.quotationNo}...`}
+                            className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddDocumentAuditNote(selectedQuotationView.quotationNo, selectedQuotationView.id)}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                        >
+                          <i className="fi fi-rr-comment-alt text-xs"></i>
+                          <span>Log Remark</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
               </div>
 

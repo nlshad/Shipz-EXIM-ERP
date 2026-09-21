@@ -1056,6 +1056,109 @@
         }
       };
 
+      const formatAuditDateTime = (dateVal) => {
+        if (!dateVal) return 'N/A';
+        try {
+          const d = new Date(dateVal);
+          if (isNaN(d.getTime())) return String(dateVal);
+          return d.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+        } catch (e) {
+          return String(dateVal);
+        }
+      };
+
+      const getDocumentActivities = (doc, docType = 'qt') => {
+        if (!doc) return [];
+        const docNo = doc.quotationNo || doc.invNumber || doc.pklNo || '';
+        const docId = doc.id || '';
+
+        const matched = (recentActivities || []).filter(a => {
+          if (!a) return false;
+          if (docId && a.docId === docId) return true;
+          if (docNo) {
+            if (a.badge === docNo) return true;
+            if (a.title && a.title.includes(docNo)) return true;
+            if (a.description && a.description.includes(docNo)) return true;
+          }
+          return false;
+        });
+
+        const activities = [...matched];
+        const hasCreated = activities.some(a => (a.title || '').toLowerCase().includes('create') || (a.title || '').toLowerCase().includes('generate'));
+        const createdDate = doc.createdAt || doc.date || '2026-08-04';
+        const createdBy = doc.createdBy || doc.salesperson || 'System Admin';
+
+        if (!hasCreated) {
+          activities.push({
+            id: `synth-create-${docId || docNo}`,
+            timestamp: String(createdDate).includes('T') ? createdDate : `${createdDate}T10:00:00.000Z`,
+            userName: createdBy,
+            title: docType === 'qt' ? 'Quotation Generated' : docType === 'pi' ? 'Proforma Invoice Created' : docType === 'ci' ? 'Commercial Invoice Finalized' : 'Packing List Created',
+            description: `Initial document ${docNo} created for ${doc.consignee || doc.buyerName || 'Consignee'}.`,
+            badge: docNo,
+            badgeColor: 'emerald',
+            iconClass: 'fi fi-rr-plus-circle',
+            iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+            isSynthesized: true
+          });
+        }
+
+        const updatedDate = doc.updatedAt;
+        const updatedBy = doc.lastEditedBy;
+        if (updatedDate && updatedDate !== createdDate && !activities.some(a => (a.title || '').toLowerCase().includes('update') || (a.title || '').toLowerCase().includes('revise'))) {
+          activities.push({
+            id: `synth-update-${docId || docNo}`,
+            timestamp: String(updatedDate).includes('T') ? updatedDate : `${updatedDate}T14:30:00.000Z`,
+            userName: updatedBy || createdBy,
+            title: docType === 'qt' ? 'Quotation Revised & Saved' : docType === 'pi' ? 'Proforma Invoice Revised' : docType === 'ci' ? 'Commercial Invoice Revised' : 'Packing List Revised',
+            description: `Document parameters and line items updated by ${updatedBy || createdBy}.`,
+            badge: docNo,
+            badgeColor: 'amber',
+            iconClass: 'fi fi-rr-edit',
+            iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+            isSynthesized: true
+          });
+        }
+
+        return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      };
+
+      const handleAddDocumentAuditNote = (docNo, docId, docType) => {
+        if (!docAuditNoteInput || !docAuditNoteInput.trim()) return;
+        const noteText = docAuditNoteInput.trim();
+        let author = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) author = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        recordActivity({
+          type: docType,
+          title: 'Internal Audit Remark Logged',
+          badge: docNo,
+          badgeColor: 'purple',
+          iconClass: 'fi fi-rr-comment-alt',
+          iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+          description: noteText,
+          actionText: 'View Details',
+          userName: author,
+          targetEngine: docType === 'qt' ? 'quotations' : docType === 'pi' ? 'proforma' : docType === 'ci' ? 'invoices' : 'packingList',
+          docId: docId
+        });
+        setDocAuditNoteInput('');
+        setToastNotice(`Audit note recorded on ${docNo}!`);
+        setTimeout(() => setToastNotice(null), 3000);
+      };
+
       const [selectedPiId, setSelectedPiId] = useState('pi-01');
       const [piViewMode, setPiViewMode] = useState('grid'); // 'grid' or 'split'
 
@@ -1077,6 +1180,8 @@
       const [selectedQuotationPdf, setSelectedQuotationPdf] = useState(null);
       const [selectedPiPdf, setSelectedPiPdf] = useState(null);
       const [selectedPklPdf, setSelectedPklPdf] = useState(null);
+      const [pklAuditDrawerOpen, setPklAuditDrawerOpen] = useState(false);
+      const [docAuditNoteInput, setDocAuditNoteInput] = useState('');
       const [piPdfTemplateMode, setPiPdfTemplateMode] = useState('template1');
       const [selectedPiView, setSelectedPiView] = useState(null);
       const [shareModalQt, setShareModalQt] = useState(null);
@@ -4333,6 +4438,15 @@
         const nextCiSeq = (commercialInvoices || []).length + 1;
         const newCiNumber = `INV/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(nextCiSeq).padStart(3, '0')}`;
 
+        let activeAuthor = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) activeAuthor = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        const nowIso = new Date().toISOString();
         const newCommercialInvoice = {
           ...pi,
           id: `ci-${Date.now()}`,
@@ -4340,15 +4454,33 @@
           piReferenceNo: pi.invNumber,
           invoiceType: 'Commercial Invoice',
           status: 'Finalized',
-          createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+          createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+          createdAt: nowIso,
+          createdBy: activeAuthor,
+          updatedAt: nowIso,
+          lastEditedBy: activeAuthor
         };
 
         setCommercialInvoices((prev) => [newCommercialInvoice, ...(prev || [])]);
 
         // Update source PI status
-        setProformaInvoices((prev) => (prev || []).map((p) => p.id === pi.id ? { ...p, status: 'Converted to Commercial Invoice' } : p));
+        setProformaInvoices((prev) => (prev || []).map((p) => p.id === pi.id ? { ...p, status: 'Converted to Commercial Invoice', updatedAt: nowIso, lastEditedBy: activeAuthor } : p));
 
-        // Live Record to Recent Activity
+        // Live Record to Recent Activity for Source PI
+        recordActivity({
+          type: 'pi',
+          title: 'PI Converted to Commercial Invoice',
+          badge: pi.invNumber,
+          badgeColor: 'indigo',
+          iconClass: 'fi fi-rr-refresh',
+          iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+          description: `Converted to Commercial Invoice ${newCiNumber} by ${activeAuthor}`,
+          actionText: 'View PI →',
+          targetEngine: 'proforma',
+          docId: pi.id
+        });
+
+        // Live Record to Recent Activity for New CI
         recordActivity({
           type: 'ci',
           title: 'Commercial Invoice Finalized',
@@ -5015,6 +5147,15 @@
         const containerNoSummary = containers.map(c => c.containerNo).filter(Boolean).join(', ') || pklFormData.containerNo || 'MSKU-8820194';
         const sealNoSummary = containers.map(c => c.sealNo).filter(Boolean).join(', ') || pklFormData.sealNo || 'SL-MDR-9921';
 
+        let activeAuthor = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) activeAuthor = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        const nowIso = new Date().toISOString();
         const newPklRecord = {
           ...pklFormData,
           id: `pkl-${Date.now()}`,
@@ -5023,7 +5164,11 @@
           sealNo: sealNoSummary,
           containers: containers,
           items: allFlatItems,
-          date: pklFormData.date || new Date().toISOString().split('T')[0]
+          date: pklFormData.date || nowIso.split('T')[0],
+          createdAt: pklFormData.createdAt || pklFormData.date || nowIso,
+          createdBy: pklFormData.createdBy || activeAuthor,
+          updatedAt: nowIso,
+          lastEditedBy: activeAuthor
         };
 
         setPackingLists(prev => [newPklRecord, ...(prev || [])]);
@@ -5508,6 +5653,21 @@
         }
 
         const totalAmountSum = qtFormData.lineItems.reduce((acc, item) => acc + (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0), 0);
+        let activeAuthor = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) activeAuthor = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        const existingQt = editingQtId ? ((quotations || []).find(q => q.id === editingQtId) || {}) : {};
+        const nowIso = new Date().toISOString();
+        const createdAtVal = existingQt.createdAt || existingQt.date || nowIso;
+        const createdByVal = existingQt.createdBy || existingQt.salesperson || activeAuthor;
+        const updatedAtVal = nowIso;
+        const lastEditedByVal = activeAuthor;
+
         const finalQt = {
           id: editingQtId || `qt-${Date.now()}`,
           quotationNo: qtFormData.quotationNo,
@@ -5544,6 +5704,10 @@
           salesperson: qtFormData.salesperson || '',
           salesmanPhone: qtFormData.salesmanPhone || resolveSalespersonContact(qtFormData.salesperson).phone || '',
           salesmanEmail: qtFormData.salesmanEmail || resolveSalespersonContact(qtFormData.salesperson).email || '',
+          createdAt: createdAtVal,
+          createdBy: createdByVal,
+          updatedAt: updatedAtVal,
+          lastEditedBy: lastEditedByVal,
           lineItems: qtFormData.lineItems
         };
 
@@ -5977,6 +6141,21 @@
 
         const isCommercialTarget = activeEngine === 'invoices' || (editingPiId && commercialInvoices.some(c => c.id === editingPiId));
 
+        let activeAuthor = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) activeAuthor = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        const existingPi = editingPiId ? ((isCommercialTarget ? commercialInvoices : proformaInvoices).find(p => p.id === editingPiId) || {}) : {};
+        const nowIso = new Date().toISOString();
+        const createdAtVal = existingPi.createdAt || existingPi.date || nowIso;
+        const createdByVal = existingPi.createdBy || existingPi.salesperson || activeAuthor;
+        const updatedAtVal = nowIso;
+        const lastEditedByVal = activeAuthor;
+
         const newPi = {
           id: editingPiId || (isCommercialTarget ? `ci-${Date.now()}` : `pi-${Date.now()}`),
           invNumber: piFormData.piNo || (isCommercialTarget ? `CI/${commercialInvoices.length + 1}/25-26` : `PI/${proformaInvoices.length + 1}/25-26`),
@@ -6022,6 +6201,10 @@
           salesmanPhone: piFormData.salesmanPhone || spContact.phone || '',
           salesmanEmail: piFormData.salesmanEmail || spContact.email || '',
           bank: piFormData.bank || '',
+          createdAt: createdAtVal,
+          createdBy: createdByVal,
+          updatedAt: updatedAtVal,
+          lastEditedBy: lastEditedByVal,
           cbm: '45.2 m³',
           fillPercent: 85,
           lineItems: lineItems,
@@ -11271,60 +11454,233 @@
           </div>
 
           {/* PROFORMA INVOICE OVERVIEW PANEL (view_details) */}
-          {selectedPiView && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      {(selectedPiView.invoiceType === 'Commercial Invoice' || (selectedPiView.invNumber || '').toUpperCase().startsWith('INV/') || (selectedPiView.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices') ? 'Commercial Invoice Overview' : 'Proforma Invoice Overview'} - {selectedPiView.invNumber}
-                    </h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${selectedPiView.statusColor}`}>{selectedPiView.status}</span>
-                  </div>
-                  <button onClick={() => setSelectedPiView(null)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
-                </div>
+          {/* PROFORMA / COMMERCIAL INVOICE OVERVIEW PANEL (view_details) */}
+          {selectedPiView && (() => {
+            const isCi = selectedPiView.invoiceType === 'Commercial Invoice' || (selectedPiView.invNumber || '').toUpperCase().startsWith('INV/') || (selectedPiView.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices';
+            const docType = isCi ? 'ci' : 'pi';
+            const docActivities = getDocumentActivities(selectedPiView, docType);
+            const createdUser = selectedPiView.createdBy || selectedPiView.salesperson || 'System Admin';
+            const createdDate = selectedPiView.createdAt || selectedPiView.date || '2026-08-04';
+            const editedUser = selectedPiView.lastEditedBy || selectedPiView.createdBy || selectedPiView.salesperson || 'System Admin';
+            const editedDate = selectedPiView.updatedAt || selectedPiView.createdAt || selectedPiView.date || '2026-08-04';
 
-                <div className="p-6 space-y-6 text-xs text-slate-700 max-h-[70vh] overflow-y-auto">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <div>
-                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Consignee</span>
-                      <span className="font-bold text-slate-900 text-sm">{selectedPiView.consignee}</span>
-                      {selectedPiView.consigneeAddress && <span className="text-[11px] text-slate-600 block mt-0.5">{selectedPiView.consigneeAddress}</span>}
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-400 block text-[10px] uppercase">Notify Party / Buyer</span>
-                      <span className="font-bold text-slate-900 text-xs">{selectedPiView.notifyParty || 'Same as Consignee'}</span>
-                      {selectedPiView.notifyPartyAddress && <span className="text-[11px] text-slate-600 block mt-0.5">{selectedPiView.notifyPartyAddress}</span>}
-                      {selectedPiView.notifyPartyPhone && <span className="text-[11px] text-indigo-700 font-mono block mt-0.5 font-semibold">📞 {selectedPiView.notifyPartyPhone}</span>}
-                    </div>
-                    <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Country & Port</span><span className="font-bold text-slate-900">{selectedPiView.country} ({selectedPiView.port})</span></div>
-                    <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Total Value (FX)</span><span className="font-bold text-indigo-600 text-sm">${(selectedPiView.amountFx || 0).toLocaleString('en-US')} USD</span></div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-slate-900 border-b pb-1">Products Breakdown</h4>
-                    <div className="space-y-1.5">
-                      {selectedPiView.products.map((p, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono">
-                          <span className="font-semibold text-slate-800">{p.description}</span>
-                          <span className="text-slate-600">{p.qty} {p.unit} @ ${p.rate} = <strong className="text-slate-900">${p.total}</strong></span>
+            return (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]">
+                  {/* MODAL HEADER */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0">
+                    <div className="flex items-center space-x-3">
+                      <span className={`w-9 h-9 rounded-xl font-black flex items-center justify-center text-xs shadow-md ${isCi ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'}`}>
+                        {isCi ? 'CI' : 'PI'}
+                      </span>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-lg font-black tracking-tight text-white">
+                            {isCi ? 'Commercial Invoice Overview' : 'Proforma Invoice Overview'} - {selectedPiView.invNumber}
+                          </h3>
+                          <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${selectedPiView.statusColor || 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
+                            {selectedPiView.status || (isCi ? 'Finalized' : 'Accepted')}
+                          </span>
                         </div>
-                      ))}
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                            <i className="fi fi-rr-plus-circle text-xs"></i>
+                            <span>Created: {createdUser} ({formatRelativeTime(createdDate)})</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                            <i className="fi fi-rr-edit text-xs"></i>
+                            <span>Edited: {editedUser} ({formatRelativeTime(editedDate)})</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSelectedPiView(null)}
+                      className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* MODAL BODY */}
+                  <div className="p-6 space-y-5 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
+                    {/* CREATED & EDITED LOGO OVERVIEW BADGES */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                      {/* Created Badge */}
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/90 transition-all hover:bg-emerald-50">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                          <i className="fi fi-rr-plus-circle"></i>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Created By</span>
+                            <span className="text-[10px] font-bold text-emerald-700 font-mono">{formatRelativeTime(createdDate)}</span>
+                          </div>
+                          <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{createdUser}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(createdDate)}</div>
+                        </div>
+                      </div>
+
+                      {/* Last Edited Badge */}
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 transition-all hover:bg-amber-50">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                          <i className="fi fi-rr-edit"></i>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded">Last Edited By</span>
+                            <span className="text-[10px] font-bold text-amber-700 font-mono">{formatRelativeTime(editedDate)}</span>
+                          </div>
+                          <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{editedUser}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(editedDate)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* KEY SUMMARY METRICS */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                      <div>
+                        <span className="font-bold text-slate-400 block text-[10px] uppercase">Consignee</span>
+                        <span className="font-bold text-slate-900 text-sm">{selectedPiView.consignee}</span>
+                        {selectedPiView.consigneeAddress && <span className="text-[11px] text-slate-600 block mt-0.5">{selectedPiView.consigneeAddress}</span>}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-400 block text-[10px] uppercase">Notify Party / Buyer</span>
+                        <span className="font-bold text-slate-900 text-xs">{selectedPiView.notifyParty || 'Same as Consignee'}</span>
+                        {selectedPiView.notifyPartyAddress && <span className="text-[11px] text-slate-600 block mt-0.5">{selectedPiView.notifyPartyAddress}</span>}
+                        {selectedPiView.notifyPartyPhone && <span className="text-[11px] text-indigo-700 font-mono block mt-0.5 font-semibold">📞 {selectedPiView.notifyPartyPhone}</span>}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-400 block text-[10px] uppercase">Country & Port</span>
+                        <span className="font-bold text-slate-900">{selectedPiView.country} ({selectedPiView.port})</span>
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-400 block text-[10px] uppercase">Total Value (FX)</span>
+                        <span className="font-bold text-indigo-600 text-sm">${(selectedPiView.amountFx || 0).toLocaleString('en-US')} USD</span>
+                      </div>
+                    </div>
+
+                    {/* PRODUCTS BREAKDOWN */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                      <h4 className="font-bold text-slate-900 border-b pb-1.5 flex items-center justify-between">
+                        <span>Products Breakdown ({selectedPiView.products?.length || 0} Items)</span>
+                        <span className="text-slate-400 font-mono text-[10px]">Payment: {selectedPiView.paymentTerms || 'N/A'}</span>
+                      </h4>
+                      <div className="space-y-1.5">
+                        {(selectedPiView.products || []).map((p, idx) => (
+                          <div key={idx} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono">
+                            <span className="font-semibold text-slate-800">{p.description}</span>
+                            <span className="text-slate-600">{p.qty} {p.unit} @ ${p.rate} = <strong className="text-slate-900">${p.total}</strong></span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* INDIVIDUAL DOCUMENT ACTIVITY & AUDIT TRAIL */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                          <span className="flex items-center gap-1.5">
+                            <i className="fi fi-rr-time-past text-indigo-600 text-sm"></i>
+                            <span>Document Activity & Audit Log</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                            {docActivities.length} Events
+                          </span>
+                        </h4>
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Lifecycle audit history for {selectedPiView.invNumber}
+                        </span>
+                      </div>
+
+                      {/* Timeline */}
+                      <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                        {docActivities.map((act, aIdx) => (
+                          <div key={act.id || aIdx} className="relative group">
+                            <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                              act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                              act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                              act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                              act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                              'bg-slate-700 text-white'
+                            }`}>
+                              <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                            </div>
+                            <div className="bg-slate-50 hover:bg-white transition-all p-3.5 rounded-xl border border-slate-200/80 hover:border-slate-300 shadow-2xs">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs">{act.title}</span>
+                                  <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-200/80 text-slate-700 font-mono">
+                                    {act.userName || 'System'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px]">
+                                  <span className="font-mono text-slate-400 text-[10px]">{formatAuditDateTime(act.timestamp)}</span>
+                                  <span className="px-2 py-0.5 bg-slate-200/70 rounded text-slate-700 font-bold text-[10px]">
+                                    {formatRelativeTime(act.timestamp)}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-1.5">{act.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Note Logger */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={docAuditNoteInput}
+                            onChange={(e) => setDocAuditNoteInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddDocumentAuditNote(selectedPiView.invNumber, selectedPiView.id, docType); }}
+                            placeholder={`Add internal audit remark or status note for ${selectedPiView.invNumber}...`}
+                            className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddDocumentAuditNote(selectedPiView.invNumber, selectedPiView.id, docType)}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                        >
+                          <i className="fi fi-rr-comment-alt text-xs"></i>
+                          <span>Log Remark</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-                  <button onClick={() => handleConvertToCommercialInvoice(selectedPiView)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm">🔄 Convert to Commercial Invoice</button>
-                  <div className="flex space-x-2">
-                    <button onClick={() => handleOpenPiPdf(selectedPiView)} className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center space-x-1"><i className="fi fi-rr-download text-xs"></i><span>Download PDF</span></button>
-                    <button onClick={() => handleDownloadPiPdfFile(selectedPiView)} className="px-4 py-2 border border-slate-300 hover:bg-slate-100 font-bold text-xs rounded-lg">Print PDF</button>
-                    <button onClick={() => setSelectedPiView(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg">Close</button>
+                  {/* FOOTER ACTIONS */}
+                  <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200 shrink-0">
+                    {!isCi ? (
+                      <button onClick={() => handleConvertToCommercialInvoice(selectedPiView)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm cursor-pointer">
+                        🔄 Convert to Commercial Invoice
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                        <i className="fi fi-rr-check-circle"></i>
+                        <span>Commercial Invoice Finalized</span>
+                      </span>
+                    )}
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleOpenPiPdf(selectedPiView)} className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center space-x-1 cursor-pointer">
+                        <i className="fi fi-rr-download text-xs"></i>
+                        <span>Download PDF</span>
+                      </button>
+                      <button onClick={() => handleDownloadPiPdfFile(selectedPiView)} className="px-4 py-2 border border-slate-300 hover:bg-slate-100 font-bold text-xs rounded-lg cursor-pointer">
+                        Print PDF
+                      </button>
+                      <button onClick={() => setSelectedPiView(null)} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg cursor-pointer">
+                        Close
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* PROFORMA INVOICE EMAIL SHARE MODAL (send_email) */}
           {shareModalPi && (
@@ -11352,6 +11708,10 @@
           {/* QUOTATION OVERVIEW / FULL DETAILS DRAWER MODAL */}
           {selectedQuotationView && (() => {
             const items = parseLineItemsForPdf(selectedQuotationView);
+            const createdUser = selectedQuotationView.createdBy || selectedQuotationView.salesperson || 'System Admin';
+            const createdDate = selectedQuotationView.createdAt || selectedQuotationView.date || '2026-08-04';
+            const editedUser = selectedQuotationView.lastEditedBy || selectedQuotationView.createdBy || selectedQuotationView.salesperson || 'System Admin';
+            const editedDate = selectedQuotationView.updatedAt || selectedQuotationView.createdAt || selectedQuotationView.date || '2026-08-04';
 
             return (
               <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
@@ -11369,9 +11729,16 @@
                             {selectedQuotationView.status || 'Accepted'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 font-medium">
-                          Full quotation parameters, consignee details, shipping terms & line items breakdown
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                            <i className="fi fi-rr-plus-circle text-xs"></i>
+                            <span>Created: {createdUser} ({formatRelativeTime(createdDate)})</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                            <i className="fi fi-rr-edit text-xs"></i>
+                            <span>Last Edited: {editedUser} ({formatRelativeTime(editedDate)})</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <button
@@ -11384,6 +11751,39 @@
 
                   {/* MODAL BODY (SCROLLABLE FULL FIELD DETAILS) */}
                   <div className="p-6 space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
+
+                    {/* CREATED & EDITED LOGO OVERVIEW BADGES */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                      {/* Created Badge */}
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/90 transition-all hover:bg-emerald-50">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                          <i className="fi fi-rr-plus-circle"></i>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Created By</span>
+                            <span className="text-[10px] font-bold text-emerald-700 font-mono">{formatRelativeTime(createdDate)}</span>
+                          </div>
+                          <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{createdUser}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(createdDate)}</div>
+                        </div>
+                      </div>
+
+                      {/* Last Edited Badge */}
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 transition-all hover:bg-amber-50">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                          <i className="fi fi-rr-edit"></i>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded">Last Edited By</span>
+                            <span className="text-[10px] font-bold text-amber-700 font-mono">{formatRelativeTime(editedDate)}</span>
+                          </div>
+                          <div className="font-extrabold text-slate-900 text-xs mt-0.5 truncate">{editedUser}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{formatAuditDateTime(editedDate)}</div>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* KEY METRICS SUMMARY CARDS */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -11619,6 +12019,86 @@
                         </table>
                       </div>
                     </div>
+
+                    {/* SECTION 6: INDIVIDUAL DOCUMENT ACTIVITY & AUDIT TRAIL */}
+                    {(() => {
+                      const docActivities = getDocumentActivities(selectedQuotationView, 'qt');
+                      return (
+                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-2">
+                              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                              <span className="flex items-center gap-1.5">
+                                <i className="fi fi-rr-time-past text-indigo-600 text-sm"></i>
+                                <span>6. Document Activity & Audit Log</span>
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+                                {docActivities.length} Events
+                              </span>
+                            </h4>
+                            <span className="text-[11px] text-slate-400 font-medium">
+                              Complete lifecycle audit history for Quotation {selectedQuotationView.quotationNo}
+                            </span>
+                          </div>
+
+                          {/* Activity Timeline */}
+                          <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                            {docActivities.map((act, aIdx) => (
+                              <div key={act.id || aIdx} className="relative group">
+                                <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                                  act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                                  act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                                  act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                                  act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                                  'bg-slate-700 text-white'
+                                }`}>
+                                  <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                                </div>
+                                <div className="bg-slate-50 hover:bg-white transition-all p-3.5 rounded-xl border border-slate-200/80 hover:border-slate-300 shadow-2xs">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-slate-900 text-xs">{act.title}</span>
+                                      <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-200/80 text-slate-700 font-mono">
+                                        {act.userName || 'System'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[11px]">
+                                      <span className="font-mono text-slate-400 text-[10px]">{formatAuditDateTime(act.timestamp)}</span>
+                                      <span className="px-2 py-0.5 bg-slate-200/70 rounded text-slate-700 font-bold text-[10px]">
+                                        {formatRelativeTime(act.timestamp)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 mt-1.5">{act.description}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Quick Interactive Note Logger */}
+                          <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <input
+                                type="text"
+                                value={docAuditNoteInput}
+                                onChange={(e) => setDocAuditNoteInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddDocumentAuditNote(selectedQuotationView.quotationNo, selectedQuotationView.id, 'qt'); }}
+                                placeholder={`Add internal audit remark or status note for ${selectedQuotationView.quotationNo}...`}
+                                className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAddDocumentAuditNote(selectedQuotationView.quotationNo, selectedQuotationView.id, 'qt')}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                            >
+                              <i className="fi fi-rr-comment-alt text-xs"></i>
+                              <span>Log Remark</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                   </div>
 
@@ -13852,6 +14332,12 @@
                 ? 'STATE BANK OF INDIA'
                 : selectedBank.bankName;
 
+            const pklCreatedUser = pkl.createdBy || 'System Admin';
+            const pklCreatedDate = pkl.createdAt || pkl.date || '2026-08-04';
+            const pklEditedUser = pkl.lastEditedBy || pkl.createdBy || 'System Admin';
+            const pklEditedDate = pkl.updatedAt || pkl.createdAt || pkl.date || '2026-08-04';
+            const pklActivities = getDocumentActivities(pkl, 'pkl');
+
             return (
               <div id="pkl-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
                 <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
@@ -13864,21 +14350,104 @@
                           <span>Export Packing List</span>
                           <span className="text-[10px] bg-slate-800 text-emerald-300 px-2 py-0.5 rounded-md border border-slate-700 font-mono font-bold">{pkl.pklNo}</span>
                         </h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                            <i className="fi fi-rr-plus-circle text-[9px]"></i>
+                            <span>Created: {pklCreatedUser} ({formatRelativeTime(pklCreatedDate)})</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-medium">
+                            <i className="fi fi-rr-edit text-[9px]"></i>
+                            <span>Edited: {pklEditedUser} ({formatRelativeTime(pklEditedDate)})</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setPklAuditDrawerOpen(!pklAuditDrawerOpen)}
+                        className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${pklAuditDrawerOpen ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}`}
+                      >
+                        <i className="fi fi-rr-time-past text-xs"></i>
+                        <span>Audit Log ({pklActivities.length})</span>
+                      </button>
                       <button type="button" onClick={() => window.print()} className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-extrabold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer">
                         <span>📥 Download PDF</span>
                       </button>
                       <button type="button" onClick={() => window.print()} className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer">
                         <span>🖨️ Print</span>
                       </button>
-                      <button type="button" onClick={() => setSelectedPklPdf(null)} className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1">
+                      <button type="button" onClick={() => { setSelectedPklPdf(null); setPklAuditDrawerOpen(false); }} className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1">
                         ✕
                       </button>
                     </div>
                   </div>
+
+                  {/* PKL AUDIT TRAIL ACCORDION / DRAWER */}
+                  {pklAuditDrawerOpen && (
+                    <div className="no-print bg-slate-50 border-b border-slate-200 p-4 space-y-3 max-h-72 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/90 text-xs">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            <i className="fi fi-rr-plus-circle"></i>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black uppercase text-emerald-800 block">Created By</span>
+                            <span className="font-bold text-slate-900">{pklCreatedUser}</span>
+                            <span className="text-[10px] text-slate-500 ml-1.5 font-mono">({formatAuditDateTime(pklCreatedDate)})</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            <i className="fi fi-rr-edit"></i>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black uppercase text-amber-800 block">Last Edited By</span>
+                            <span className="font-bold text-slate-900">{pklEditedUser}</span>
+                            <span className="text-[10px] text-slate-500 ml-1.5 font-mono">({formatAuditDateTime(pklEditedDate)})</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Timeline */}
+                      <div className="space-y-2 relative before:absolute before:left-3 before:top-1 before:bottom-1 before:w-0.5 before:bg-slate-200 pl-7 text-xs">
+                        {pklActivities.map((act, aIdx) => (
+                          <div key={act.id || aIdx} className="relative">
+                            <div className="absolute -left-7 top-0.5 w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[9px] shadow-xs">
+                              <i className={act.iconClass || 'fi fi-rr-box-alt'}></i>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-slate-900">{act.title}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">{formatRelativeTime(act.timestamp)}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-0.5">{act.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Note Logger */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={docAuditNoteInput}
+                          onChange={(e) => setDocAuditNoteInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddDocumentAuditNote(pkl.pklNo, pkl.id, 'pkl'); }}
+                          placeholder={`Add internal note for Packing List ${pkl.pklNo}...`}
+                          className="flex-1 text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddDocumentAuditNote(pkl.pklNo, pkl.id, 'pkl')}
+                          className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg cursor-pointer shrink-0"
+                        >
+                          Log Note
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* PRINT / PREVIEW CANVAS (MATCHES COMMERCIAL INVOICE EXACTLY) */}
                   <div className="p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
