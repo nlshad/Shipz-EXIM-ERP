@@ -1074,6 +1074,262 @@
         }
       };
 
+      // Helper to parse human-readable changes diff from text strings
+      const parseChangesFromDescription = (desc) => {
+        if (!desc || !desc.includes('→')) return [];
+        const parts = desc.split('•').map(s => s.trim()).filter(Boolean);
+        const parsed = [];
+        parts.forEach(p => {
+          if (p.includes('→') && p.includes(':')) {
+            const colonIdx = p.indexOf(':');
+            const field = p.slice(0, colonIdx).trim();
+            const rest = p.slice(colonIdx + 1).trim();
+            const arrowParts = rest.split('→').map(x => x.trim());
+            if (arrowParts.length >= 2) {
+              parsed.push({
+                field: field,
+                from: arrowParts[0] || 'None',
+                to: arrowParts[1] || 'None'
+              });
+            }
+          }
+        });
+        return parsed;
+      };
+
+      // Helper to calculate exact field-level diffs when editing any document
+      const computeDocumentChanges = (oldDoc, newDoc, docType = 'pi') => {
+        if (!oldDoc || Object.keys(oldDoc).length === 0) {
+          return {
+            summary: `Initial document created for ${newDoc.consignee || newDoc.buyerName || 'Customer'}`,
+            changes: []
+          };
+        }
+
+        const changes = [];
+
+        const addDiff = (label, oldVal, newVal, formatter) => {
+          const rawOld = (oldVal === undefined || oldVal === null) ? '' : String(oldVal).trim();
+          const rawNew = (newVal === undefined || newVal === null) ? '' : String(newVal).trim();
+          if (rawOld !== rawNew && (rawOld !== '' || rawNew !== '')) {
+            const fromDisplay = formatter ? formatter(oldVal) : (rawOld || 'None');
+            const toDisplay = formatter ? formatter(newVal) : (rawNew || 'None');
+            if (fromDisplay !== toDisplay) {
+              changes.push({
+                field: label,
+                from: fromDisplay,
+                to: toDisplay
+              });
+            }
+          }
+        };
+
+        const formatMoney = (val, cur = 'USD') => {
+          if (val === undefined || val === null || val === '') return 'None';
+          const num = parseFloat(String(val).replace(/[^0-9.-]+/g, ''));
+          if (isNaN(num)) return String(val);
+          return `${cur || 'USD'} ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+
+        // 1. Total Amount
+        const cur = newDoc.currencyFx || newDoc.currency || oldDoc.currencyFx || oldDoc.currency || 'USD';
+        const oldAmt = oldDoc.amountFx ?? oldDoc.amount;
+        const newAmt = newDoc.amountFx ?? newDoc.amount;
+        if (oldAmt !== undefined || newAmt !== undefined) {
+          addDiff('Total Amount', oldAmt, newAmt, (v) => formatMoney(v, cur));
+        }
+
+        // 2. Consignee / Buyer
+        addDiff('Consignee', oldDoc.consignee || oldDoc.buyerName, newDoc.consignee || newDoc.buyerName);
+
+        // 3. Port of Discharge / Destination Port
+        const oldPort = oldDoc.port || oldDoc.finalDestinationPort || oldDoc.pod || oldDoc.portOfDischarge;
+        const newPort = newDoc.port || newDoc.finalDestinationPort || newDoc.pod || newDoc.portOfDischarge;
+        addDiff('Port of Discharge', oldPort, newPort);
+
+        // 4. Country
+        addDiff('Country', oldDoc.country, newDoc.country);
+
+        // 5. Payment Terms
+        addDiff('Payment Terms', oldDoc.paymentTerms, newDoc.paymentTerms);
+
+        // 6. Shipment Terms (Incoterms)
+        addDiff('Shipment Terms', oldDoc.shipmentTerms, newDoc.shipmentTerms);
+
+        // 7. Shipment Period
+        addDiff('Shipment Period', oldDoc.shipmentPeriod, newDoc.shipmentPeriod);
+
+        // 8. Total Packages
+        const oldPkgs = oldDoc.totalPackages || oldDoc.noOfPkgs;
+        const newPkgs = newDoc.totalPackages || newDoc.noOfPkgs;
+        addDiff('Total Packages', oldPkgs, newPkgs);
+
+        // 9. Buyer Order No
+        addDiff('Buyer Order No', oldDoc.buyerOrderNo, newDoc.buyerOrderNo);
+
+        // 10. Order Date
+        addDiff('Order Date', oldDoc.orderDate, newDoc.orderDate);
+
+        // 11. Port of Loading
+        const oldPol = oldDoc.placeOfLoading || oldDoc.pol;
+        const newPol = newDoc.placeOfLoading || newDoc.pol;
+        addDiff('Port of Loading', oldPol, newPol);
+
+        // 12. Bank
+        addDiff('Bank', oldDoc.bank, newDoc.bank);
+
+        // 13. Salesperson
+        addDiff('Salesperson', oldDoc.salesperson, newDoc.salesperson);
+
+        // 14. Status
+        addDiff('Status', oldDoc.status, newDoc.status);
+
+        // 15. Notify Party
+        addDiff('Notify Party', oldDoc.notifyParty, newDoc.notifyParty);
+
+        // 16. Vessel / Flight
+        const oldVessel = oldDoc.vesselFlightNo || oldDoc.vesselNo;
+        const newVessel = newDoc.vesselFlightNo || newDoc.vesselNo;
+        addDiff('Vessel / Flight', oldVessel, newVessel);
+
+        // Line items diff
+        const oldItems = oldDoc.lineItems || oldDoc.products || [];
+        const newItems = newDoc.lineItems || newDoc.products || [];
+        if (Array.isArray(oldItems) && Array.isArray(newItems)) {
+          if (oldItems.length !== newItems.length) {
+            changes.push({
+              field: 'Line Items Count',
+              from: `${oldItems.length} item${oldItems.length === 1 ? '' : 's'}`,
+              to: `${newItems.length} item${newItems.length === 1 ? '' : 's'}`
+            });
+          } else {
+            const oldSum = oldItems.reduce((s, i) => s + (parseFloat(i.quantity || i.qty || 0) * parseFloat(i.price || i.rate || 0)), 0);
+            const newSum = newItems.reduce((s, i) => s + (parseFloat(i.quantity || i.qty || 0) * parseFloat(i.price || i.rate || 0)), 0);
+            if (Math.abs(oldSum - newSum) > 0.001) {
+              changes.push({
+                field: 'Line Items Value',
+                from: formatMoney(oldSum, cur),
+                to: formatMoney(newSum, cur)
+              });
+            }
+          }
+        }
+
+        // Additional PKL fields
+        if (docType === 'pkl') {
+          addDiff('Gross Weight', oldDoc.totalGrossWeight, newDoc.totalGrossWeight);
+          addDiff('Net Weight', oldDoc.totalNetWeight, newDoc.totalNetWeight);
+          addDiff('Container No', oldDoc.containerNo, newDoc.containerNo);
+          addDiff('Seal No', oldDoc.sealNo, newDoc.sealNo);
+        }
+
+        // Additional BL fields
+        if (docType === 'bl') {
+          addDiff('Shipping Line', oldDoc.shippingLine, newDoc.shippingLine);
+          addDiff('Booking No', oldDoc.bookingNo, newDoc.bookingNo);
+        }
+
+        let summary = '';
+        if (changes.length > 0) {
+          summary = changes.map(c => `${c.field}: ${c.from} → ${c.to}`).join(' • ');
+        } else {
+          summary = 'Document parameters verified & re-saved';
+        }
+
+        return { summary, changes };
+      };
+
+      // Modern, styled activity bottom-line renderer showing precise field changes or clean descriptions
+      const renderActivityBottomLane = (act, isDark = false) => {
+        if (!act) return null;
+
+        let changeList = (act.changes && Array.isArray(act.changes) && act.changes.length > 0) ? act.changes : [];
+        if (changeList.length === 0 && act.description && act.description.includes('→')) {
+          changeList = parseChangesFromDescription(act.description);
+        }
+
+        let cleanDesc = (act.description || '')
+          .replace(/\s*\(undefined\)/gi, '')
+          .replace(/Port:\s*Discharge Port/gi, '')
+          .trim();
+        if (cleanDesc.endsWith('•')) cleanDesc = cleanDesc.slice(0, -1).trim();
+
+        if (changeList.length > 0) {
+          return (
+            <div className="mt-1.5 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shrink-0 ${
+                  isDark ? 'text-indigo-400' : 'text-slate-500'
+                }`}>
+                  <i className="fi fi-rr-edit-alt text-[9px] text-indigo-500"></i>
+                  <span>Changes Made:</span>
+                </span>
+                {changeList.map((c, cIdx) => (
+                  <span
+                    key={cIdx}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] border shadow-2xs font-medium transition-all ${
+                      isDark
+                        ? 'bg-slate-800/95 border-slate-700 text-slate-200'
+                        : 'bg-white border-slate-200/90 text-slate-800'
+                    }`}
+                  >
+                    <strong className={isDark ? 'text-indigo-400 font-bold' : 'text-indigo-700 font-bold'}>
+                      {c.field}:
+                    </strong>
+                    <span className="text-slate-400 font-mono text-[10px] line-through decoration-slate-300">
+                      {c.from || 'None'}
+                    </span>
+                    <i className="fi fi-rr-arrow-right text-[8px] text-slate-400"></i>
+                    <span className={`font-bold font-mono text-[10.5px] px-1.5 py-0.5 rounded ${
+                      isDark
+                        ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                    }`}>
+                      {c.to || 'Updated'}
+                    </span>
+                  </span>
+                ))}
+              </div>
+              {cleanDesc && !cleanDesc.includes('→') && !cleanDesc.toLowerCase().includes('changes made') && (
+                <p className={`text-[11px] leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {cleanDesc}
+                </p>
+              )}
+            </div>
+          );
+        }
+
+        const isUpdate = (act.title || '').toLowerCase().includes('update') || (act.title || '').toLowerCase().includes('revise');
+        if (isUpdate) {
+          return (
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                isDark ? 'bg-amber-950/60 text-amber-300 border border-amber-800/50' : 'bg-amber-50 text-amber-700 border border-amber-200/70'
+              }`}>
+                <i className="fi fi-rr-pencil text-[9px]"></i>
+                <span>Document Revision</span>
+              </span>
+              <span className={`text-[11px] leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                {cleanDesc || 'Document parameters and specifications updated.'}
+              </span>
+            </div>
+          );
+        }
+
+        if (cleanDesc) {
+          return (
+            <p className={`text-[11px] mt-1 leading-relaxed flex items-center gap-1.5 ${
+              isDark ? 'text-slate-300' : 'text-slate-600'
+            }`}>
+              <i className={`fi fi-rr-info text-[10px] shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}></i>
+              <span>{cleanDesc}</span>
+            </p>
+          );
+        }
+
+        return null;
+      };
+
       const getDocumentActivities = (doc, docType = 'qt') => {
         if (!doc) return [];
         const docNo = doc.quotationNo || doc.invNumber || doc.pklNo || doc.piNo || doc.invoiceNo || '';
@@ -1090,7 +1346,23 @@
           return false;
         });
 
-        const activities = [...matched];
+        const activities = matched.map(a => {
+          let cleanDesc = (a.description || '').trim();
+          cleanDesc = cleanDesc.replace(/\s*\(undefined\)/gi, '');
+          if (doc.port && cleanDesc.includes('Port: Discharge Port')) {
+            cleanDesc = cleanDesc.replace(/Port:\s*Discharge Port/gi, `Port: ${doc.port}`);
+          }
+          let changes = a.changes;
+          if ((!changes || changes.length === 0) && cleanDesc.includes('→')) {
+            changes = parseChangesFromDescription(cleanDesc);
+          }
+          return {
+            ...a,
+            description: cleanDesc,
+            changes: changes || a.changes
+          };
+        });
+
         const hasCreated = activities.some(a => (a.title || '').toLowerCase().includes('create') || (a.title || '').toLowerCase().includes('generate'));
         const createdDate = doc.createdAt || doc.date || '2026-08-04';
         const createdBy = doc.createdBy || doc.salesperson || 'System Admin';
@@ -1123,7 +1395,10 @@
             badgeColor: 'amber',
             iconClass: 'fi fi-rr-edit',
             iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
-            isSynthesized: true
+            isSynthesized: true,
+            changes: [
+              { field: 'Parameters', from: 'Previous Version', to: 'Latest Document Settings' }
+            ]
           });
         }
 
@@ -5254,17 +5529,24 @@
           lastEditedBy: activeAuthor
         };
 
-        setPackingLists(prev => [newPklRecord, ...(prev || [])]);
+        const existingPkl = (packingLists || []).find(p => (pklFormData.id && p.id === pklFormData.id) || p.pklNo === newPklRecord.pklNo);
+        const pklDiff = existingPkl ? computeDocumentChanges(existingPkl, newPklRecord, 'pkl') : null;
+        if (existingPkl) {
+          setPackingLists(prev => (prev || []).map(p => (p.id === existingPkl.id || p.pklNo === newPklRecord.pklNo) ? newPklRecord : p));
+        } else {
+          setPackingLists(prev => [newPklRecord, ...(prev || [])]);
+        }
 
         // Live Record to Recent Activity
         recordActivity({
           type: 'pkl',
-          title: 'Packing List Saved',
+          title: existingPkl ? 'Packing List Updated' : 'Packing List Saved',
           badge: newPklRecord.pklNo,
           badgeColor: 'purple',
           iconClass: 'fi fi-rr-box-alt',
           iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
-          description: `${containers.length} Container${containers.length > 1 ? 's' : ''} (${containerNoSummary}) for ${newPklRecord.buyerName || 'Consignee'}`,
+          description: pklDiff && pklDiff.changes.length > 0 ? pklDiff.summary : `${containers.length} Container${containers.length > 1 ? 's' : ''} (${containerNoSummary}) for ${newPklRecord.buyerName || newPklRecord.consignee || 'Consignee'}`,
+          changes: pklDiff ? pklDiff.changes : [],
           actionText: 'View PKL →',
           targetEngine: 'packingList',
           docId: newPklRecord.id
@@ -5795,6 +6077,7 @@
         };
 
         if (editingQtId) {
+          const qtDiff = computeDocumentChanges(existingQt, finalQt, 'qt');
           setQuotations((prev) => prev.map((q) => (q.id === editingQtId ? finalQt : q)));
           setEditingQtId(null);
           // Live Record to Recent Activity
@@ -5805,7 +6088,8 @@
             badgeColor: 'amber',
             iconClass: 'fi fi-rr-file-edit',
             iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
-            description: `Revised quotation for ${finalQt.consignee} (${finalQt.amount}) • Port: ${finalQt.port}`,
+            description: qtDiff.summary,
+            changes: qtDiff.changes,
             actionText: 'View QT →',
             targetEngine: 'quotations',
             docId: finalQt.id
@@ -6303,6 +6587,7 @@
         };
 
         if (editingPiId) {
+          const piDiff = computeDocumentChanges(existingPi, newPi, isCommercialTarget ? 'ci' : 'pi');
           if (isCommercialTarget) {
             setCommercialInvoices((prev) => prev.map((c) => (c.id === editingPiId ? newPi : c)));
             recordActivity({
@@ -6312,7 +6597,8 @@
               badgeColor: 'emerald',
               iconClass: 'fi fi-rr-file-invoice',
               iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-              description: `Invoice updated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+              description: piDiff.summary,
+              changes: piDiff.changes,
               actionText: 'View CI →',
               targetEngine: 'invoices',
               docId: newPi.id
@@ -6326,7 +6612,8 @@
               badgeColor: 'indigo',
               iconClass: 'fi fi-rr-file-invoice',
               iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-              description: `PI updated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+              description: piDiff.summary,
+              changes: piDiff.changes,
               actionText: 'View PI →',
               targetEngine: 'proforma',
               docId: newPi.id
@@ -6336,6 +6623,7 @@
           setToastNotice(`Invoice ${newPi.invNumber} updated successfully!`);
         } else if (isCommercialTarget) {
           setCommercialInvoices((prev) => [newPi, ...prev]);
+          const amtFormatted = `${newPi.currencyFx || 'USD'} ${(newPi.amountFx || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
           recordActivity({
             type: 'ci',
             title: 'Commercial Invoice Created',
@@ -6343,7 +6631,7 @@
             badgeColor: 'emerald',
             iconClass: 'fi fi-rr-file-invoice',
             iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-            description: `Generated for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+            description: `Generated for ${newPi.consignee || 'Customer'} (${amtFormatted}) • Port: ${newPi.port || 'Main Port'}`,
             actionText: 'View CI →',
             targetEngine: 'invoices',
             docId: newPi.id
@@ -6351,6 +6639,7 @@
           setToastNotice(`Commercial Invoice ${newPi.invNumber} created successfully!`);
         } else {
           setProformaInvoices((prev) => [newPi, ...prev]);
+          const amtFormatted = `${newPi.currencyFx || 'USD'} ${(newPi.amountFx || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
           recordActivity({
             type: 'pi',
             title: 'Proforma Invoice Confirmed',
@@ -6358,7 +6647,7 @@
             badgeColor: 'indigo',
             iconClass: 'fi fi-rr-file-invoice',
             iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-            description: `Confirmed for ${newPi.consignee || 'Customer'} (${newPi.amount}) • Port: ${newPi.portOfDischarge || 'Discharge Port'}`,
+            description: `Confirmed for ${newPi.consignee || 'Customer'} (${amtFormatted}) • Port: ${newPi.port || 'Main Port'}`,
             actionText: 'View PI →',
             targetEngine: 'proforma',
             docId: newPi.id
@@ -6413,7 +6702,10 @@
 
       const handleSaveBlForm = (action) => {
         if (editingBlId) {
-          setBlRecords((prev) => prev.map((r) => (r.id === editingBlId ? { ...r, ...blFormData } : r)));
+          const existingBl = (blRecords || []).find((r) => r.id === editingBlId) || {};
+          const updatedBl = { ...existingBl, ...blFormData };
+          const blDiff = computeDocumentChanges(existingBl, updatedBl, 'bl');
+          setBlRecords((prev) => prev.map((r) => (r.id === editingBlId ? updatedBl : r)));
           recordActivity({
             type: 'bl',
             title: 'BL Draft Updated',
@@ -6421,7 +6713,8 @@
             badgeColor: 'blue',
             iconClass: 'fi fi-rr-ship',
             iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
-            description: `Vessel: ${blFormData.vesselNo || 'TBD'} • Shipping Line: ${blFormData.shippingLine || 'Carrier'} • Booking: ${blFormData.bookingNo || 'Active'}`,
+            description: blDiff.summary,
+            changes: blDiff.changes,
             actionText: 'View BL →',
             targetEngine: 'preShipment',
             docId: editingBlId
@@ -10021,9 +10314,7 @@
                                                       </span>
                                                     </div>
                                                   </div>
-                                                  {act.description && (
-                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
-                                                  )}
+                                                  {renderActivityBottomLane(act)}
                                                 </div>
                                               </div>
                                             ))}
@@ -10498,9 +10789,7 @@
                                                         </span>
                                                       </div>
                                                     </div>
-                                                    {act.description && (
-                                                      <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
-                                                    )}
+                                                    {renderActivityBottomLane(act)}
                                                   </div>
                                                 </div>
                                               ))}
@@ -10815,9 +11104,7 @@
                                                       </span>
                                                     </div>
                                                   </div>
-                                                  {act.description && (
-                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
-                                                  )}
+                                                  {renderActivityBottomLane(act)}
                                                 </div>
                                               </div>
                                             ))}
@@ -11092,9 +11379,7 @@
                                                       </span>
                                                     </div>
                                                   </div>
-                                                  {act.description && (
-                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
-                                                  )}
+                                                  {renderActivityBottomLane(act)}
                                                 </div>
                                               </div>
                                             ))}
@@ -12315,7 +12600,7 @@
                                   </span>
                                 </div>
                               </div>
-                              <p className="text-[11px] text-slate-600 mt-1.5">{act.description}</p>
+                              {renderActivityBottomLane(act)}
                             </div>
                           </div>
                         ))}
@@ -12762,7 +13047,7 @@
                                       </span>
                                     </div>
                                   </div>
-                                  <p className="text-[11px] text-slate-600 mt-1.5">{act.description}</p>
+                                  {renderActivityBottomLane(act)}
                                 </div>
                               </div>
                             ))}
@@ -15115,7 +15400,7 @@
                                 <span className="font-bold text-slate-900">{act.title}</span>
                                 <span className="text-[10px] text-slate-400 font-mono">{formatRelativeTime(act.timestamp)}</span>
                               </div>
-                              <p className="text-[11px] text-slate-600 mt-0.5">{act.description}</p>
+                              {renderActivityBottomLane(act)}
                             </div>
                           </div>
                         ))}
@@ -19441,9 +19726,7 @@
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                                {act.description}
-                              </p>
+                              {renderActivityBottomLane(act)}
                               <div className="flex items-center space-x-3 mt-1.5 text-[10px] text-slate-400 font-medium">
                                 <span className="flex items-center space-x-1">
                                   <i className="fi fi-rr-calendar text-[9px]"></i>
