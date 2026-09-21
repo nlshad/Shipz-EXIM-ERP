@@ -4310,6 +4310,7 @@
             (q.products || '').toLowerCase().includes(query) ||
             (q.country || '').toLowerCase().includes(query) ||
             (q.port || '').toLowerCase().includes(query) ||
+            (q.createdBy || '').toLowerCase().includes(query) ||
             (q.status || '').toLowerCase().includes(query)
           );
           return matchesStatus && matchesQuery;
@@ -4339,6 +4340,7 @@
             (pi.consignee || '').toLowerCase().includes(query) ||
             (pi.country || '').toLowerCase().includes(query) ||
             (pi.port || '').toLowerCase().includes(query) ||
+            (pi.createdBy || '').toLowerCase().includes(query) ||
             (pi.status || '').toLowerCase().includes(query)
           );
           return matchesStatus && matchesQuery;
@@ -4398,6 +4400,7 @@
             (p.pklNo || '').toLowerCase().includes(q) ||
             (p.piInvoiceNo || '').toLowerCase().includes(q) ||
             (p.consignee || '').toLowerCase().includes(q) ||
+            (p.createdBy || '').toLowerCase().includes(q) ||
             (p.totalPackages || '').toLowerCase().includes(q)
           );
           return matchesStatus && matchesQuery;
@@ -9729,7 +9732,7 @@
                           <th onClick={() => handleSort('products')} className="py-3 px-4 cursor-pointer select-none">Products {sortField === 'products' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                           <th onClick={() => handleSort('country')} className="py-3 px-3 cursor-pointer select-none">Country {sortField === 'country' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                           <th onClick={() => handleSort('port')} className="py-3 px-3 cursor-pointer select-none">Port {sortField === 'port' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
-                          <th onClick={() => handleSort('status')} className="py-3 px-3 cursor-pointer select-none">Status {sortField === 'status' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
+                          <th onClick={() => handleSort('createdBy')} className="py-3 px-3 cursor-pointer select-none">Created By {sortField === 'createdBy' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                           <th onClick={() => handleSort('amount')} className="py-3 px-3 cursor-pointer select-none">Amount {sortField === 'amount' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                           <th onClick={() => handleSort('balanceDue')} className="py-3 px-3 cursor-pointer select-none">Balance Due {sortField === 'balanceDue' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
                           <th onClick={() => handleSort('convRate')} className="py-3 px-3 text-center cursor-pointer select-none">Conv. Rate {sortField === 'convRate' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}</th>
@@ -9800,7 +9803,15 @@
                                 <td className="py-3 px-3 font-medium">{qt.country}</td>
                                 <td className="py-3 px-3 font-medium">{qt.port}</td>
                                 <td className="py-3 px-3">
-                                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-md text-[10px] inline-flex items-center space-x-1"><span>{qt.status}</span><span>∨</span></span>
+                                  <div className="flex flex-col min-w-[110px]">
+                                    <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                                      <i className="fi fi-rr-user text-[10px] text-indigo-500"></i>
+                                      <span>{qt.createdBy || qt.salesperson || 'Admin User'}</span>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      {formatRelativeTime(qt.createdAt || qt.date)}
+                                    </span>
+                                  </div>
                                 </td>
                                 <td className="py-3 px-3 font-mono font-bold text-slate-800">{qt.amount}</td>
                                 <td className="py-3 px-3 font-mono font-bold text-emerald-600">{qt.balanceDue}</td>
@@ -10023,7 +10034,7 @@
                             <th className="py-3 px-4">Line Items Summary</th>
                             <th className="py-3 px-3">Country</th>
                             <th className="py-3 px-3">Port</th>
-                            <th className="py-3 px-3">Status</th>
+                            <th className="py-3 px-3">Created By</th>
                             <th className="py-3 px-3">Amount (FX)</th>
                             <th className="py-3 px-3">Balance Due (FX)</th>
                             <th className="py-3 px-3 text-center">Conv. Rate</th>
@@ -10111,9 +10122,17 @@
                                   {/* 8. destination_port */}
                                   <td className="py-3 px-3 font-medium">{pi.port}</td>
 
-                                  {/* 9. pi_status */}
+                                  {/* 9. created_by */}
                                   <td className="py-3 px-3">
-                                    <span className={`px-2.5 py-1 font-bold rounded-md text-[10px] ${pi.statusColor}`}>{pi.status}</span>
+                                    <div className="flex flex-col min-w-[110px]">
+                                      <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                                        <i className="fi fi-rr-user text-[10px] text-indigo-500"></i>
+                                        <span>{pi.createdBy || pi.salesperson || 'Admin User'}</span>
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                        {formatRelativeTime(pi.createdAt || pi.date)}
+                                      </span>
+                                    </div>
                                   </td>
 
                                   {/* 10. total_amount_fx */}
@@ -10397,7 +10416,7 @@
                           <th className="py-3 px-3">Net Weight</th>
                           <th className="py-3 px-3">Gross Weight</th>
                           <th className="py-3 px-3">CBM (m³)</th>
-                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3">Created By</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
@@ -10433,7 +10452,15 @@
                               <td className="py-3 px-3 font-mono font-bold text-slate-800">{p.grossWeight}</td>
                               <td className="py-3 px-3 font-mono font-bold text-indigo-600">{p.cbm}</td>
                               <td className="py-3 px-3">
-                                <span className={`px-2.5 py-1 font-bold rounded-md text-[10px] ${p.status === 'Finalized' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{p.status}</span>
+                                <div className="flex flex-col min-w-[110px]">
+                                  <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                                    <i className="fi fi-rr-user text-[10px] text-purple-500"></i>
+                                    <span>{p.createdBy || 'Admin User'}</span>
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    {formatRelativeTime(p.createdAt || p.date)}
+                                  </span>
+                                </div>
                               </td>
                             </tr>
                           );

@@ -342,7 +342,7 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
                   <th className="py-3 px-4">Consignee & Buyer</th>
                   <th className="py-3 px-4">Port of Discharge</th>
                   <th className="py-3 px-4">Amount</th>
-                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Created By</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -358,9 +358,15 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
                       <td className="py-3 px-4">{pi.portOfDischarge}</td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">${pi.totalAmount.toLocaleString()}</td>
                       <td className="py-3 px-4 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                          {pi.status}
-                        </span>
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                            <i className="fi fi-rr-user text-[10px] text-indigo-500"></i>
+                            <span>{(pi as any).createdBy || (pi as any).salesperson || 'Admin User'}</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            {(pi as any).createdAt || pi.date || 'Just now'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
@@ -386,9 +392,15 @@ export const DocumentAutomationEngine: React.FC<DocumentAutomationEngineProps> =
                       <td className="py-3 px-4">{inv.port}</td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">${inv.amount.toLocaleString()}</td>
                       <td className="py-3 px-4 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
-                          {inv.status}
-                        </span>
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                            <i className="fi fi-rr-user text-[10px] text-indigo-500"></i>
+                            <span>Admin User</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            Just now
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button

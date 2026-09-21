@@ -509,8 +509,8 @@ export const QuotationsEngine: React.FC = () => {
                 <th onClick={() => handleSort('port')} className="py-3 px-3 cursor-pointer select-none hover:text-slate-900">
                   Port {sortField === 'port' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}
                 </th>
-                <th onClick={() => handleSort('status')} className="py-3 px-3 cursor-pointer select-none hover:text-slate-900">
-                  Status {sortField === 'status' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}
+                <th onClick={() => handleSort('createdBy')} className="py-3 px-3 cursor-pointer select-none hover:text-slate-900">
+                  Created By {sortField === 'createdBy' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}
                 </th>
                 <th onClick={() => handleSort('amount')} className="py-3 px-3 cursor-pointer select-none hover:text-slate-900">
                   Amount {sortField === 'amount' ? (sortDirection === 'asc' ? '↑' : '↓') : '↑↓'}
@@ -622,10 +622,15 @@ export const QuotationsEngine: React.FC = () => {
                     <td className="py-3 px-3 font-medium">{qt.country}</td>
                     <td className="py-3 px-3 font-medium">{qt.port}</td>
                     <td className="py-3 px-3">
-                      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-md text-[10px] inline-flex items-center space-x-1">
-                        <span>{qt.status}</span>
-                        <span>∨</span>
-                      </span>
+                      <div className="flex flex-col min-w-[110px]">
+                        <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                          <i className="fi fi-rr-user text-[10px] text-indigo-500"></i>
+                          <span>{(qt as any).createdBy || qt.salesperson || 'Admin User'}</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {(qt as any).createdAt || qt.date || 'Just now'}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-3 font-mono font-bold text-slate-800">{qt.amount}</td>
                     <td className="py-3 px-3 font-mono font-bold text-emerald-600">{qt.balanceDue}</td>
