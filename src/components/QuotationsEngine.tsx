@@ -42,10 +42,68 @@ export const QuotationsEngine: React.FC = () => {
 
   // Table State
   const [tableSearch, setTableSearch] = useState('');
+  const [dateFilterStart, setDateFilterStart] = useState('');
+  const [dateFilterEnd, setDateFilterEnd] = useState('');
+  const [dateFilterPreset, setDateFilterPreset] = useState('ALL');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [sortField, setSortField] = useState<keyof QuotationRecord>('quotationNo');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  const handleDatePresetChange = (preset: string) => {
+    setDateFilterPreset(preset);
+    const today = new Date();
+    const fmt = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    if (preset === 'ALL') {
+      setDateFilterStart('');
+      setDateFilterEnd('');
+    } else if (preset === 'TODAY') {
+      const t = fmt(today);
+      setDateFilterStart(t);
+      setDateFilterEnd(t);
+    } else if (preset === 'YESTERDAY') {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const yStr = fmt(y);
+      setDateFilterStart(yStr);
+      setDateFilterEnd(yStr);
+    } else if (preset === 'LAST_7_DAYS') {
+      const s = new Date();
+      s.setDate(s.getDate() - 7);
+      setDateFilterStart(fmt(s));
+      setDateFilterEnd(fmt(today));
+    } else if (preset === 'THIS_MONTH') {
+      const s = new Date(today.getFullYear(), today.getMonth(), 1);
+      setDateFilterStart(fmt(s));
+      setDateFilterEnd(fmt(today));
+    } else if (preset === 'LAST_30_DAYS') {
+      const s = new Date();
+      s.setDate(s.getDate() - 30);
+      setDateFilterStart(fmt(s));
+      setDateFilterEnd(fmt(today));
+    } else if (preset === 'THIS_YEAR') {
+      const s = new Date(today.getFullYear(), 0, 1);
+      setDateFilterStart(fmt(s));
+      setDateFilterEnd(fmt(today));
+    }
+  };
+
+  const checkDateInRange = (q: QuotationRecord) => {
+    if (!dateFilterStart && !dateFilterEnd) return true;
+    let dStr = q.date || '';
+    if (!dStr) return true;
+    dStr = dStr.trim();
+    if (dStr.includes('T')) dStr = dStr.split('T')[0];
+    if (dStr.length > 10) dStr = dStr.substring(0, 10);
+    if (dateFilterStart && dStr < dateFilterStart) return false;
+    if (dateFilterEnd && dStr > dateFilterEnd) return false;
+    return true;
+  };
 
   // Modals & Action States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -295,13 +353,15 @@ export const QuotationsEngine: React.FC = () => {
   const sortedAndFiltered = [...quotations]
     .filter((q) => {
       const query = tableSearch.toLowerCase();
-      return (
+      const matchesDate = checkDateInRange(q);
+      const matchesQuery = (
         q.quotationNo.toLowerCase().includes(query) ||
         q.consignee.toLowerCase().includes(query) ||
         q.products.toLowerCase().includes(query) ||
         q.country.toLowerCase().includes(query) ||
         q.port.toLowerCase().includes(query)
       );
+      return matchesDate && matchesQuery;
     })
     .sort((a, b) => {
       const valA = a[sortField];
@@ -461,7 +521,55 @@ export const QuotationsEngine: React.FC = () => {
             <span>Entries</span>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className={`flex items-center gap-1.5 ${dateFilterStart || dateFilterEnd ? 'bg-emerald-50/50 border-emerald-300' : 'bg-white border-slate-300'} border rounded-md px-2 py-1 text-xs shadow-2xs transition-all`}>
+              <span className="font-bold text-slate-600 text-xs shrink-0 flex items-center gap-1">
+                <span>📅</span>
+                <span>Date:</span>
+              </span>
+              <select
+                value={dateFilterPreset}
+                onChange={(e) => handleDatePresetChange(e.target.value)}
+                className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="ALL">All Dates</option>
+                <option value="TODAY">Today</option>
+                <option value="YESTERDAY">Yesterday</option>
+                <option value="LAST_7_DAYS">Last 7 Days</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_30_DAYS">Last 30 Days</option>
+                <option value="THIS_YEAR">This Year</option>
+                <option value="CUSTOM">Custom Range</option>
+              </select>
+              <div className="flex items-center gap-1 border-l border-slate-200 pl-1.5">
+                <input
+                  type="date"
+                  value={dateFilterStart}
+                  onChange={(e) => { setDateFilterStart(e.target.value); setDateFilterPreset('CUSTOM'); }}
+                  title="From Date (Calendar Picker)"
+                  className="bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 rounded px-1.5 py-0.5 text-[11px] text-slate-700 font-mono focus:outline-none cursor-pointer"
+                />
+                <span className="text-slate-400 text-[10px] font-bold">to</span>
+                <input
+                  type="date"
+                  value={dateFilterEnd}
+                  onChange={(e) => { setDateFilterEnd(e.target.value); setDateFilterPreset('CUSTOM'); }}
+                  title="To Date (Calendar Picker)"
+                  className="bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 rounded px-1.5 py-0.5 text-[11px] text-slate-700 font-mono focus:outline-none cursor-pointer"
+                />
+                {(dateFilterStart || dateFilterEnd) && (
+                  <button
+                    type="button"
+                    onClick={() => { setDateFilterStart(''); setDateFilterEnd(''); setDateFilterPreset('ALL'); }}
+                    title="Clear Date Filter"
+                    className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors text-[10px] font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
               <span>Search:</span>
               <input
