@@ -638,16 +638,114 @@ export const QuotationsEngine: React.FC = () => {
                   </tr>
 
                   {expandedRows[qt.id] && (
-                    <tr className="bg-slate-50/90 border-b border-slate-200">
-                      <td colSpan={12} className="p-4 text-xs space-y-2">
-                        <div className="font-bold text-indigo-900 flex items-center space-x-2">
-                          <span>📌 Detailed Metadata for {qt.quotationNo}:</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-4 bg-white p-3 rounded-xl border border-slate-200">
-                          <div><span className="text-[10px] text-slate-400 font-bold uppercase block">Company Address</span><span className="font-semibold">{qt.companyAddress}</span></div>
-                          <div><span className="text-[10px] text-slate-400 font-bold uppercase block">Vessel/Flight</span><span className="font-semibold">{qt.vesselFlightNo}</span></div>
-                          <div><span className="text-[10px] text-slate-400 font-bold uppercase block">Created Date</span><span className="font-semibold">{qt.date}</span></div>
-                          <div><span className="text-[10px] text-slate-400 font-bold uppercase block">Currency Code</span><span className="font-semibold">{qt.currency}</span></div>
+                    <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                      <td colSpan={12} className="p-4 sm:p-5">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+                          {/* DRAWER TOP BAR */}
+                          <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                <i className="fi fi-rr-time-past"></i>
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">{qt.quotationNo}</span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                    User Activities & Audit Trail
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    {qt.status || 'Active'}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 font-medium">User activity log, audit trail & document history</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs">
+                              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">
+                                  <i className="fi fi-rr-user-add"></i>
+                                </div>
+                                <div className="leading-tight">
+                                  <div className="text-[9px] uppercase font-bold text-slate-400">Created By</div>
+                                  <div className="font-bold text-slate-800 text-[11px]">
+                                    {(qt as any).createdBy || qt.salesperson || 'Admin User'} <span className="text-slate-400 font-normal">({(qt as any).createdAt || qt.date})</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {(qt as any).lastEditedBy && (
+                                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">
+                                    <i className="fi fi-rr-edit"></i>
+                                  </div>
+                                  <div className="leading-tight">
+                                    <div className="text-[9px] uppercase font-bold text-slate-400">Last Edited By</div>
+                                    <div className="font-bold text-slate-800 text-[11px]">
+                                      {(qt as any).lastEditedBy}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* QUICK METADATA CHIPS */}
+                          <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Company Address</span><span className="font-semibold text-slate-800 truncate block">{qt.companyAddress}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Vessel/Flight</span><span className="font-semibold text-slate-800">{qt.vesselFlightNo || 'N/A'}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Consignee</span><span className="font-semibold text-slate-800">{qt.consignee}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Currency Code</span><span className="font-semibold text-indigo-600 font-mono">{qt.currency}</span></div>
+                          </div>
+
+                          {/* USER ACTIVITIES TIMELINE */}
+                          <div className="p-5 space-y-4">
+                            <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                              <i className="fi fi-rr-list-check text-indigo-500"></i>
+                              <span>User Activities for {qt.quotationNo}</span>
+                            </h5>
+
+                            <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                              <div className="relative group">
+                                <div className="absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs bg-emerald-500 text-white">
+                                  <i className="fi fi-rr-plus-circle"></i>
+                                </div>
+                                <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-900 text-xs">Quotation Generated</span>
+                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                        <i className="fi fi-rr-user text-[9px]"></i>
+                                        <span>{(qt as any).createdBy || qt.salesperson || 'Admin User'}</span>
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-mono">{(qt as any).createdAt || qt.date}</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 mt-1">Initial document {qt.quotationNo} generated for {qt.consignee}.</p>
+                                </div>
+                              </div>
+
+                              {(qt as any).updatedAt && (
+                                <div className="relative group">
+                                  <div className="absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs bg-amber-500 text-white">
+                                    <i className="fi fi-rr-edit"></i>
+                                  </div>
+                                  <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-900 text-xs">Quotation Revised</span>
+                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                          <i className="fi fi-rr-user text-[9px]"></i>
+                                          <span>{(qt as any).lastEditedBy || 'Editor'}</span>
+                                        </span>
+                                      </div>
+                                      <span className="text-[10px] text-slate-400 font-mono">{(qt as any).updatedAt}</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 mt-1">Parameters and pricing saved by {(qt as any).lastEditedBy || 'Editor'}.</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>

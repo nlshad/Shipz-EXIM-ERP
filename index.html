@@ -1076,7 +1076,7 @@
 
       const getDocumentActivities = (doc, docType = 'qt') => {
         if (!doc) return [];
-        const docNo = doc.quotationNo || doc.invNumber || doc.pklNo || '';
+        const docNo = doc.quotationNo || doc.invNumber || doc.pklNo || doc.piNo || doc.invoiceNo || '';
         const docId = doc.id || '';
 
         const matched = (recentActivities || []).filter(a => {
@@ -1100,7 +1100,7 @@
             id: `synth-create-${docId || docNo}`,
             timestamp: String(createdDate).includes('T') ? createdDate : `${createdDate}T10:00:00.000Z`,
             userName: createdBy,
-            title: docType === 'qt' ? 'Quotation Generated' : docType === 'pi' ? 'Proforma Invoice Created' : docType === 'ci' ? 'Commercial Invoice Finalized' : 'Packing List Created',
+            title: docType === 'qt' ? 'Quotation Generated' : docType === 'pi' ? 'Proforma Invoice Created' : docType === 'ci' ? 'Commercial Invoice Finalized' : docType === 'pkl' ? 'Packing List Created' : 'BL Draft Initiated',
             description: `Initial document ${docNo} created for ${doc.consignee || doc.buyerName || 'Consignee'}.`,
             badge: docNo,
             badgeColor: 'emerald',
@@ -1117,7 +1117,7 @@
             id: `synth-update-${docId || docNo}`,
             timestamp: String(updatedDate).includes('T') ? updatedDate : `${updatedDate}T14:30:00.000Z`,
             userName: updatedBy || createdBy,
-            title: docType === 'qt' ? 'Quotation Revised & Saved' : docType === 'pi' ? 'Proforma Invoice Revised' : docType === 'ci' ? 'Commercial Invoice Revised' : 'Packing List Revised',
+            title: docType === 'qt' ? 'Quotation Revised & Saved' : docType === 'pi' ? 'Proforma Invoice Revised' : docType === 'ci' ? 'Commercial Invoice Revised' : docType === 'pkl' ? 'Packing List Revised' : 'BL Draft Updated',
             description: `Document parameters and line items updated by ${updatedBy || createdBy}.`,
             badge: docNo,
             badgeColor: 'amber',
@@ -1128,6 +1128,35 @@
         }
 
         return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      };
+
+      const handleAddInlineAuditNote = (docNo, docId, docType, key) => {
+        const noteText = (inlineAuditNotes[key] || '').trim();
+        if (!noteText) return;
+        let author = 'Admin User';
+        try {
+          const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
+          const savedUsers = JSON.parse(localStorage.getItem('shipz_system_users_v2') || '[]');
+          const matched = savedUsers.find(u => u.id === savedUid);
+          if (matched) author = `${matched.first_name || ''} ${matched.last_name || ''}`.trim() || matched.email;
+        } catch (e) { }
+
+        recordActivity({
+          type: docType,
+          title: 'User Activity Remark Added',
+          badge: docNo,
+          badgeColor: 'purple',
+          iconClass: 'fi fi-rr-comment-alt',
+          iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+          description: noteText,
+          actionText: 'View Details',
+          userName: author,
+          targetEngine: docType === 'qt' ? 'quotations' : docType === 'pi' ? 'proforma' : docType === 'ci' ? 'invoices' : docType === 'pkl' ? 'packingList' : 'blDraft',
+          docId: docId
+        });
+        setInlineAuditNotes(prev => ({ ...prev, [key]: '' }));
+        setToastNotice(`Activity note recorded on ${docNo}!`);
+        setTimeout(() => setToastNotice(null), 3000);
       };
 
       const handleAddDocumentAuditNote = (docNo, docId, docType) => {
@@ -1174,6 +1203,7 @@
       const [sortField, setSortField] = useState('');
       const [sortDirection, setSortDirection] = useState('desc');
       const [expandedRows, setExpandedRows] = useState({});
+      const [inlineAuditNotes, setInlineAuditNotes] = useState({});
       const [openActionMenuId, setOpenActionMenuId] = useState(null);
       const [openDocMenuId, setOpenDocMenuId] = useState(null);
       const [selectedQuotationView, setSelectedQuotationView] = useState(null);
@@ -4690,6 +4720,18 @@
       };
 
       const handleOpenQuotationPdf = (qt) => {
+        recordActivity({
+          type: 'qt',
+          title: 'Quotation PDF Generated & Downloaded',
+          badge: qt.quotationNo,
+          badgeColor: 'sky',
+          iconClass: 'fi fi-rr-download',
+          iconBg: 'bg-sky-50 text-sky-600 border-sky-100',
+          description: `PDF exported and downloaded for ${qt.quotationNo}.`,
+          actionText: 'Download Again',
+          targetEngine: 'quotations',
+          docId: qt.id
+        });
         setSelectedQuotationPdf(qt);
         setOpenActionMenuId(null);
         setOpenDocMenuId(null);
@@ -4732,6 +4774,19 @@
       };
 
       const handleOpenPiPdf = (pi) => {
+        const isCI = (pi && (pi.invoiceType === 'Commercial Invoice' || (pi.invNumber || '').toUpperCase().startsWith('INV/') || (pi.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices'));
+        recordActivity({
+          type: isCI ? 'ci' : 'pi',
+          title: isCI ? 'Commercial Invoice PDF Downloaded' : 'Proforma Invoice PDF Downloaded',
+          badge: pi.invNumber,
+          badgeColor: 'sky',
+          iconClass: 'fi fi-rr-download',
+          iconBg: 'bg-sky-50 text-sky-600 border-sky-100',
+          description: `PDF exported and saved for ${pi.invNumber}.`,
+          actionText: 'Download Again',
+          targetEngine: isCI ? 'invoices' : 'proforma',
+          docId: pi.id
+        });
         setSelectedPiPdf(pi);
         setOpenActionMenuId(null);
         setOpenDocMenuId(null);
@@ -4741,6 +4796,18 @@
       };
 
       const handleDirectPrintQuotation = (qt) => {
+        recordActivity({
+          type: 'qt',
+          title: 'Direct Print Sent',
+          badge: qt.quotationNo,
+          badgeColor: 'indigo',
+          iconClass: 'fi fi-rr-print',
+          iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+          description: `Direct physical print triggered for Quotation ${qt.quotationNo}.`,
+          actionText: 'Print Again',
+          targetEngine: 'quotations',
+          docId: qt.id
+        });
         setSelectedQuotationPdf(qt);
         setOpenActionMenuId(null);
         setOpenDocMenuId(null);
@@ -4750,6 +4817,19 @@
       };
 
       const handleDirectPrintPi = (pi) => {
+        const isCI = (pi && (pi.invoiceType === 'Commercial Invoice' || (pi.invNumber || '').toUpperCase().startsWith('INV/') || (pi.invNumber || '').toUpperCase().startsWith('CI/') || activeEngine === 'invoices'));
+        recordActivity({
+          type: isCI ? 'ci' : 'pi',
+          title: 'Direct Print Sent',
+          badge: pi.invNumber,
+          badgeColor: 'indigo',
+          iconClass: 'fi fi-rr-print',
+          iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+          description: `Direct physical print triggered for ${pi.invNumber}.`,
+          actionText: 'Print Again',
+          targetEngine: isCI ? 'invoices' : 'proforma',
+          docId: pi.id
+        });
         setSelectedPiPdf(pi);
         setOpenActionMenuId(null);
         setOpenDocMenuId(null);
@@ -9818,19 +9898,165 @@
                                 <td className="py-3 px-3 font-mono text-center font-bold text-slate-700">{qt.convRate}</td>
                               </tr>
 
-                              {/* EXPANDED ROW SUB-TABLE DRAWER */}
-                              {expandedRows[qt.id] && (
-                                <tr className="bg-slate-50/90 border-b border-slate-200">
-                                  <td colSpan={12} className="p-4">
-                                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-4 gap-4 text-xs">
-                                      <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Buyer Order No</span><span className="font-semibold text-slate-800">{qt.buyerOrderNo || 'PO-99201'}</span></div>
-                                      <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Order Date</span><span className="font-semibold text-slate-800">{qt.orderDate || '08/13/2025'}</span></div>
-                                      <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Company Unit</span><span className="font-semibold text-slate-800">{qt.companyAddress}</span></div>
-                                      <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Vessel / Flight</span><span className="font-semibold text-slate-800">{qt.vesselFlightNo}</span></div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
+                              {/* EXPANDED ROW SUB-TABLE DRAWER: ALL USER ACTIVITIES & AUDIT TIMELINE */}
+                              {(expandedRows[rowKey] || expandedRows[qt.id]) && (() => {
+                                const docActivities = getDocumentActivities(qt, 'qt');
+                                const createdUser = qt.createdBy || qt.salesperson || 'Admin User';
+                                const createdDate = qt.createdAt || qt.date || '2026-08-04';
+                                const editedUser = qt.lastEditedBy;
+                                const editedDate = qt.updatedAt;
+
+                                return (
+                                  <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                                    <td colSpan={12} className="p-4 sm:p-5">
+                                      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+                                        
+                                        {/* DRAWER TOP BAR: Document identity & User lifecycle */}
+                                        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                              <i className="fi fi-rr-time-past"></i>
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-extrabold text-slate-900 text-xs tracking-tight">{qt.quotationNo}</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                                  {docActivities.length} User {docActivities.length === 1 ? 'Activity' : 'Activities'}
+                                                </span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                  {qt.status || 'Active'}
+                                                </span>
+                                              </div>
+                                              <p className="text-[11px] text-slate-500 font-medium">User activity log, audit trail & document history</p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-3 text-xs">
+                                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">
+                                                <i className="fi fi-rr-user-add"></i>
+                                              </div>
+                                              <div className="leading-tight">
+                                                <div className="text-[9px] uppercase font-bold text-slate-400">Created By</div>
+                                                <div className="font-bold text-slate-800 text-[11px]">
+                                                  {createdUser} <span className="text-slate-400 font-normal">({formatRelativeTime(createdDate)})</span>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {editedUser && (
+                                              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                                <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">
+                                                  <i className="fi fi-rr-edit"></i>
+                                                </div>
+                                                <div className="leading-tight">
+                                                  <div className="text-[9px] uppercase font-bold text-slate-400">Last Edited By</div>
+                                                  <div className="font-bold text-slate-800 text-[11px]">
+                                                    {editedUser} <span className="text-slate-400 font-normal">({formatRelativeTime(editedDate)})</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* QUICK DOCUMENT METRICS CHIPS */}
+                                        <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Buyer Order No</span>
+                                            <span className="font-semibold text-slate-800">{qt.buyerOrderNo || 'PO-99201'}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Order Date</span>
+                                            <span className="font-semibold text-slate-800">{qt.orderDate || '08/13/2025'}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Company Unit</span>
+                                            <span className="font-semibold text-slate-800 truncate">{qt.companyAddress}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Vessel / Flight</span>
+                                            <span className="font-semibold text-slate-800">{qt.vesselFlightNo || 'N/A'}</span>
+                                          </div>
+                                        </div>
+
+                                        {/* TIMELINE OF USER ACTIVITIES */}
+                                        <div className="p-5 space-y-4">
+                                          <div className="flex items-center justify-between">
+                                            <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                              <i className="fi fi-rr-list-check text-indigo-500"></i>
+                                              <span>User Activities & Audit Trail for {qt.quotationNo}</span>
+                                            </h5>
+                                            <span className="text-[11px] text-slate-400 font-mono">
+                                              {docActivities.length} total events recorded
+                                            </span>
+                                          </div>
+
+                                          <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                                            {docActivities.map((act, aIdx) => (
+                                              <div key={act.id || aIdx} className="relative group">
+                                                <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                                                  act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                                                  act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                                                  act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                                                  act.badgeColor === 'sky' ? 'bg-sky-500 text-white' :
+                                                  act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                                                  'bg-slate-700 text-white'
+                                                }`}>
+                                                  <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                                                </div>
+                                                <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="font-bold text-slate-900 text-xs">{act.title}</span>
+                                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                                        <i className="fi fi-rr-user text-[9px]"></i>
+                                                        <span>{act.userName || 'System'}</span>
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                                      <span>{formatAuditDateTime(act.timestamp)}</span>
+                                                      <span className="px-1.5 py-0.5 bg-slate-200/80 rounded text-slate-600 font-semibold">
+                                                        {formatRelativeTime(act.timestamp)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                  {act.description && (
+                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+
+                                          {/* QUICK AUDIT NOTE LOGGER */}
+                                          <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                            <div className="relative flex-1">
+                                              <input
+                                                type="text"
+                                                value={inlineAuditNotes[rowKey] || ''}
+                                                onChange={(e) => setInlineAuditNotes(prev => ({ ...prev, [rowKey]: e.target.value }))}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddInlineAuditNote(qt.quotationNo, qt.id, 'qt', rowKey); }}
+                                                placeholder={`Add user activity remark or note for ${qt.quotationNo}...`}
+                                                className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                                              />
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleAddInlineAuditNote(qt.quotationNo, qt.id, 'qt', rowKey)}
+                                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                                            >
+                                              <i className="fi fi-rr-comment-alt text-xs"></i>
+                                              <span>Add Note</span>
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
                             </React.Fragment>
                           );
                         })}
@@ -10148,19 +10374,166 @@
                                   <td className="py-3 px-3 font-mono font-bold text-indigo-900">₹ {pi.amountInr.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                 </tr>
 
-                                {/* EXPANDED ROW DRAWER */}
-                                {expandedRows[pi.id] && (
-                                  <tr className="bg-slate-50/90 border-b border-slate-200">
-                                    <td colSpan={13} className="p-4">
-                                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-4 gap-4 text-xs">
-                                        <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Exporter Unit</span><span className="font-semibold text-slate-800">{pi.exporter}</span></div>
-                                        <div><span className="font-bold text-slate-400 block text-[10px] uppercase">CBM Volume</span><span className="font-semibold text-indigo-600 font-mono">{pi.cbm} ({pi.fillPercent}% Fill)</span></div>
-                                        <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Direct Expenses</span><span className="font-semibold text-rose-600 font-mono">₹ {pi.expenses.toLocaleString('en-IN')}</span></div>
-                                        <div><span className="font-bold text-slate-400 block text-[10px] uppercase">Consignee Address</span><span className="font-semibold text-slate-800 truncate">{pi.consigneeAddr}</span></div>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
+                                {/* EXPANDED ROW DRAWER: ALL USER ACTIVITIES & AUDIT TIMELINE */}
+                                {(expandedRows[rowKey] || expandedRows[pi.id]) && (() => {
+                                  const docType = (activeEngine === 'invoices' || (pi && (pi.invoiceType === 'Commercial Invoice' || (pi.invNumber || '').toUpperCase().startsWith('INV/') || (pi.invNumber || '').toUpperCase().startsWith('CI/')))) ? 'ci' : 'pi';
+                                  const docActivities = getDocumentActivities(pi, docType);
+                                  const createdUser = pi.createdBy || pi.salesperson || 'Admin User';
+                                  const createdDate = pi.createdAt || pi.date || '2026-08-04';
+                                  const editedUser = pi.lastEditedBy;
+                                  const editedDate = pi.updatedAt;
+
+                                  return (
+                                    <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                                      <td colSpan={13} className="p-4 sm:p-5">
+                                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden space-y-0">
+                                          
+                                          {/* DRAWER TOP BAR: Document identity & User lifecycle */}
+                                          <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                                <i className="fi fi-rr-time-past"></i>
+                                              </div>
+                                              <div>
+                                                <div className="flex items-center gap-2">
+                                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">{pi.invNumber}</span>
+                                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                                    {docActivities.length} User {docActivities.length === 1 ? 'Activity' : 'Activities'}
+                                                  </span>
+                                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${pi.statusColor || 'bg-emerald-100 text-emerald-700'}`}>
+                                                    {pi.status || 'Active'}
+                                                  </span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 font-medium">User activity log, audit trail & document history</p>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 text-xs">
+                                              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">
+                                                  <i className="fi fi-rr-user-add"></i>
+                                                </div>
+                                                <div className="leading-tight">
+                                                  <div className="text-[9px] uppercase font-bold text-slate-400">Created By</div>
+                                                  <div className="font-bold text-slate-800 text-[11px]">
+                                                    {createdUser} <span className="text-slate-400 font-normal">({formatRelativeTime(createdDate)})</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              {editedUser && (
+                                                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">
+                                                    <i className="fi fi-rr-edit"></i>
+                                                  </div>
+                                                  <div className="leading-tight">
+                                                    <div className="text-[9px] uppercase font-bold text-slate-400">Last Edited By</div>
+                                                    <div className="font-bold text-slate-800 text-[11px]">
+                                                      {editedUser} <span className="text-slate-400 font-normal">({formatRelativeTime(editedDate)})</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* QUICK DOCUMENT METRICS CHIPS */}
+                                          <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                            <div>
+                                              <span className="font-bold text-slate-400 block text-[9px] uppercase">Exporter Unit</span>
+                                              <span className="font-semibold text-slate-800 truncate">{pi.exporter}</span>
+                                            </div>
+                                            <div>
+                                              <span className="font-bold text-slate-400 block text-[9px] uppercase">CBM Volume</span>
+                                              <span className="font-semibold text-indigo-600 font-mono">{pi.cbm} ({pi.fillPercent}% Fill)</span>
+                                            </div>
+                                            <div>
+                                              <span className="font-bold text-slate-400 block text-[9px] uppercase">Direct Expenses</span>
+                                              <span className="font-semibold text-rose-600 font-mono">₹ {pi.expenses.toLocaleString('en-IN')}</span>
+                                            </div>
+                                            <div>
+                                              <span className="font-bold text-slate-400 block text-[9px] uppercase">Consignee Address</span>
+                                              <span className="font-semibold text-slate-800 truncate">{pi.consigneeAddr}</span>
+                                            </div>
+                                          </div>
+
+                                          {/* TIMELINE OF USER ACTIVITIES */}
+                                          <div className="p-5 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                              <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                <i className="fi fi-rr-list-check text-indigo-500"></i>
+                                                <span>User Activities & Audit Trail for {pi.invNumber}</span>
+                                              </h5>
+                                              <span className="text-[11px] text-slate-400 font-mono">
+                                                {docActivities.length} total events recorded
+                                              </span>
+                                            </div>
+
+                                            <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                                              {docActivities.map((act, aIdx) => (
+                                                <div key={act.id || aIdx} className="relative group">
+                                                  <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                                                    act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                                                    act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                                                    act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                                                    act.badgeColor === 'sky' ? 'bg-sky-500 text-white' :
+                                                    act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                                                    'bg-slate-700 text-white'
+                                                  }`}>
+                                                    <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                                                  </div>
+                                                  <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-slate-900 text-xs">{act.title}</span>
+                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                                          <i className="fi fi-rr-user text-[9px]"></i>
+                                                          <span>{act.userName || 'System'}</span>
+                                                        </span>
+                                                      </div>
+                                                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                                        <span>{formatAuditDateTime(act.timestamp)}</span>
+                                                        <span className="px-1.5 py-0.5 bg-slate-200/80 rounded text-slate-600 font-semibold">
+                                                          {formatRelativeTime(act.timestamp)}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                    {act.description && (
+                                                      <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+
+                                            {/* QUICK AUDIT NOTE LOGGER */}
+                                            <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                              <div className="relative flex-1">
+                                                <input
+                                                  type="text"
+                                                  value={inlineAuditNotes[rowKey] || ''}
+                                                  onChange={(e) => setInlineAuditNotes(prev => ({ ...prev, [rowKey]: e.target.value }))}
+                                                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddInlineAuditNote(pi.invNumber, pi.id, docType, rowKey); }}
+                                                  placeholder={`Add user activity remark or note for ${pi.invNumber}...`}
+                                                  className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                                                />
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleAddInlineAuditNote(pi.invNumber, pi.id, docType, rowKey)}
+                                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                                              >
+                                                <i className="fi fi-rr-comment-alt text-xs"></i>
+                                                <span>Add Note</span>
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })()}
                               </React.Fragment>
                             );
                           })}
@@ -10302,6 +10675,7 @@
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]">
+                          <th className="py-3 px-2 text-center">Expand</th>
                           <th className="py-3 px-3">Action</th>
                           <th className="py-3 px-3">Doc</th>
                           <th className="py-3 px-3">PI No.</th>
@@ -10319,39 +10693,164 @@
                           const isActionOpen = openActionMenuId === rowKey;
 
                           return (
-                            <tr key={rowKey} className="hover:bg-slate-50/80 transition-all relative">
-                              <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
-                                <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
-                                {isActionOpen && (
-                                  <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
-                                    <button onClick={() => { alert(`Viewing BL Draft for ${r.piNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View</span></button>
-                                    <button onClick={() => { handleOpenEditBlModal(r); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Update</span></button>
-                                    <button onClick={() => handleDirectPrintBl(r)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><i className="fi fi-rr-print text-xs"></i><span>Direct Print</span></button>
-                                    <div className="border-t border-slate-100 my-1"></div>
-                                    <button onClick={() => { handleDeleteBl(r.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete</span></button>
-                                  </div>
-                                )}
-                              </td>
+                            <React.Fragment key={rowKey}>
+                              <tr className="hover:bg-slate-50/80 transition-all relative">
+                                <td className="py-3 px-2 text-center">
+                                  <button onClick={() => handleToggleExpand(rowKey)} className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center mx-auto">{expandedRows[rowKey] ? '-' : '+'}</button>
+                                </td>
 
-                              <td className="py-3 px-3 relative">
-                                <button onClick={() => setOpenDocMenuId(openDocMenuId === r.id ? null : r.id)} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
-                                {openDocMenuId === r.id && (
-                                  <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5">
-                                    <button onClick={() => { window.print(); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View BL Draft</span></button>
-                                    <button onClick={() => { alert(`Downloading BL Draft PDF for ${r.piNo}...`); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-download text-xs"></i><span>Download BL Draft</span></button>
-                                    <button onClick={() => { alert(`BL Draft sent to ${r.consignee}!`); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send Mail</span></button>
-                                  </div>
-                                )}
-                              </td>
+                                <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
+                                  <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
+                                  {isActionOpen && (
+                                    <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                      <button onClick={() => { alert(`Viewing BL Draft for ${r.piNo}`); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View</span></button>
+                                      <button onClick={() => { handleOpenEditBlModal(r); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Update</span></button>
+                                      <button onClick={() => handleDirectPrintBl(r)} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><i className="fi fi-rr-print text-xs"></i><span>Direct Print</span></button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button onClick={() => { handleDeleteBl(r.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-trash text-xs"></i><span>Delete</span></button>
+                                    </div>
+                                  )}
+                                </td>
 
-                              <td className="py-3 px-3 font-mono font-bold text-indigo-600">{r.piNo}</td>
-                              <td className="py-3 px-3 font-mono font-bold text-blue-600">{r.invoiceNo}</td>
-                              <td className="py-3 px-3 font-bold text-slate-800">{r.shippingLine}</td>
-                              <td className="py-3 px-3 font-mono text-slate-700">{r.bookingNo}</td>
-                              <td className="py-3 px-3 font-mono text-slate-700">{r.containerNo}</td>
-                              <td className="py-3 px-3 font-mono text-slate-700">{r.sealNo}</td>
-                              <td className="py-3 px-3 font-bold text-slate-800">{r.consignee}</td>
-                            </tr>
+                                <td className="py-3 px-3 relative">
+                                  <button onClick={() => setOpenDocMenuId(openDocMenuId === r.id ? null : r.id)} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
+                                  {openDocMenuId === r.id && (
+                                    <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5">
+                                      <button onClick={() => { window.print(); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View BL Draft</span></button>
+                                      <button onClick={() => { alert(`Downloading BL Draft PDF for ${r.piNo}...`); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-download text-xs"></i><span>Download BL Draft</span></button>
+                                      <button onClick={() => { alert(`BL Draft sent to ${r.consignee}!`); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-envelope text-xs"></i><span>Send Mail</span></button>
+                                    </div>
+                                  )}
+                                </td>
+
+                                <td className="py-3 px-3 font-mono font-bold text-indigo-600">{r.piNo}</td>
+                                <td className="py-3 px-3 font-mono font-bold text-blue-600">{r.invoiceNo}</td>
+                                <td className="py-3 px-3 font-bold text-slate-800">{r.shippingLine}</td>
+                                <td className="py-3 px-3 font-mono text-slate-700">{r.bookingNo}</td>
+                                <td className="py-3 px-3 font-mono text-slate-700">{r.containerNo}</td>
+                                <td className="py-3 px-3 font-mono text-slate-700">{r.sealNo}</td>
+                                <td className="py-3 px-3 font-bold text-slate-800">{r.consignee}</td>
+                              </tr>
+
+                              {/* EXPANDED ROW DRAWER: ALL USER ACTIVITIES */}
+                              {(expandedRows[rowKey] || expandedRows[r.id]) && (() => {
+                                const docActivities = getDocumentActivities(r, 'bl');
+                                return (
+                                  <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                                    <td colSpan={10} className="p-4 sm:p-5">
+                                      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden space-y-0">
+                                        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                              <i className="fi fi-rr-time-past"></i>
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-extrabold text-slate-900 text-xs tracking-tight">{r.piNo} / {r.invoiceNo}</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                                  {docActivities.length} User {docActivities.length === 1 ? 'Activity' : 'Activities'}
+                                                </span>
+                                              </div>
+                                              <p className="text-[11px] text-slate-500 font-medium">Bill of Lading user activity log & carrier audit history</p>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Shipping Line</span>
+                                            <span className="font-semibold text-slate-800">{r.shippingLine}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Booking No</span>
+                                            <span className="font-semibold text-slate-800 font-mono">{r.bookingNo}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Container & Seal</span>
+                                            <span className="font-semibold text-slate-800 font-mono">{r.containerNo} / {r.sealNo}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Consignee</span>
+                                            <span className="font-semibold text-slate-800 truncate">{r.consignee}</span>
+                                          </div>
+                                        </div>
+
+                                        <div className="p-5 space-y-4">
+                                          <div className="flex items-center justify-between">
+                                            <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                              <i className="fi fi-rr-list-check text-indigo-500"></i>
+                                              <span>User Activities & Audit Trail for {r.piNo}</span>
+                                            </h5>
+                                            <span className="text-[11px] text-slate-400 font-mono">
+                                              {docActivities.length} total events recorded
+                                            </span>
+                                          </div>
+
+                                          <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                                            {docActivities.map((act, aIdx) => (
+                                              <div key={act.id || aIdx} className="relative group">
+                                                <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                                                  act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                                                  act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                                                  act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                                                  act.badgeColor === 'sky' ? 'bg-sky-500 text-white' :
+                                                  act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                                                  'bg-slate-700 text-white'
+                                                }`}>
+                                                  <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                                                </div>
+                                                <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="font-bold text-slate-900 text-xs">{act.title}</span>
+                                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                                        <i className="fi fi-rr-user text-[9px]"></i>
+                                                        <span>{act.userName || 'System'}</span>
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                                      <span>{formatAuditDateTime(act.timestamp)}</span>
+                                                      <span className="px-1.5 py-0.5 bg-slate-200/80 rounded text-slate-600 font-semibold">
+                                                        {formatRelativeTime(act.timestamp)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                  {act.description && (
+                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+
+                                          <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                            <div className="relative flex-1">
+                                              <input
+                                                type="text"
+                                                value={inlineAuditNotes[rowKey] || ''}
+                                                onChange={(e) => setInlineAuditNotes(prev => ({ ...prev, [rowKey]: e.target.value }))}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddInlineAuditNote(r.piNo, r.id, 'bl', rowKey); }}
+                                                placeholder={`Add user activity remark or note for ${r.piNo}...`}
+                                                className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                                              />
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleAddInlineAuditNote(r.piNo, r.id, 'bl', rowKey)}
+                                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                                            >
+                                              <i className="fi fi-rr-comment-alt text-xs"></i>
+                                              <span>Add Note</span>
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </React.Fragment>
                           );
                         })}
                       </tbody>
@@ -10407,6 +10906,7 @@
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]">
+                          <th className="py-3 px-2 text-center">Expand</th>
                           <th className="py-3 px-3">Action</th>
                           <th className="py-3 px-3">Doc</th>
                           <th className="py-3 px-3">Packing List No.</th>
@@ -10425,44 +10925,210 @@
                           const isActionOpen = openActionMenuId === rowKey;
 
                           return (
-                            <tr key={rowKey} className="hover:bg-slate-50/80 transition-all relative">
-                              <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
-                                <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
-                                {isActionOpen && (
-                                  <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
-                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
-                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
-                                    <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
-                                    <button onClick={() => { setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
-                                    <div className="border-t border-slate-100 my-1"></div>
-                                    <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete</span></button>
+                            <React.Fragment key={rowKey}>
+                              <tr className="hover:bg-slate-50/80 transition-all relative">
+                                <td className="py-3 px-2 text-center">
+                                  <button onClick={() => handleToggleExpand(rowKey)} className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center mx-auto">{expandedRows[rowKey] ? '-' : '+'}</button>
+                                </td>
+
+                                <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
+                                  <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
+                                  {isActionOpen && (
+                                    <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
+                                      <button onClick={() => { setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete</span></button>
+                                    </div>
+                                  )}
+                                </td>
+
+                                <td className="py-3 px-3">
+                                  <button onClick={() => window.print()} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
+                                </td>
+
+                                <td className="py-3 px-3 font-mono font-bold text-emerald-600">{p.pklNo}</td>
+                                <td className="py-3 px-3 font-mono font-bold text-indigo-600">{p.piInvoiceNo}</td>
+                                <td className="py-3 px-4 font-bold text-slate-800">{p.consignee}</td>
+                                <td className="py-3 px-3 font-semibold text-slate-700">{p.totalPackages}</td>
+                                <td className="py-3 px-3 font-mono font-bold text-slate-800">{p.netWeight}</td>
+                                <td className="py-3 px-3 font-mono font-bold text-slate-800">{p.grossWeight}</td>
+                                <td className="py-3 px-3 font-mono font-bold text-indigo-600">{p.cbm}</td>
+                                <td className="py-3 px-3">
+                                  <div className="flex flex-col min-w-[110px]">
+                                    <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
+                                      <i className="fi fi-rr-user text-[10px] text-purple-500"></i>
+                                      <span>{p.createdBy || 'Admin User'}</span>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      {formatRelativeTime(p.createdAt || p.date)}
+                                    </span>
                                   </div>
-                                )}
-                              </td>
+                                </td>
+                              </tr>
 
-                              <td className="py-3 px-3">
-                                <button onClick={() => window.print()} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
-                              </td>
+                              {/* EXPANDED ROW DRAWER: ALL USER ACTIVITIES */}
+                              {(expandedRows[rowKey] || expandedRows[p.id]) && (() => {
+                                const docActivities = getDocumentActivities(p, 'pkl');
+                                const createdUser = p.createdBy || 'Admin User';
+                                const createdDate = p.createdAt || p.date || '2026-08-04';
+                                const editedUser = p.lastEditedBy;
+                                const editedDate = p.updatedAt;
 
-                              <td className="py-3 px-3 font-mono font-bold text-emerald-600">{p.pklNo}</td>
-                              <td className="py-3 px-3 font-mono font-bold text-indigo-600">{p.piInvoiceNo}</td>
-                              <td className="py-3 px-4 font-bold text-slate-800">{p.consignee}</td>
-                              <td className="py-3 px-3 font-semibold text-slate-700">{p.totalPackages}</td>
-                              <td className="py-3 px-3 font-mono font-bold text-slate-800">{p.netWeight}</td>
-                              <td className="py-3 px-3 font-mono font-bold text-slate-800">{p.grossWeight}</td>
-                              <td className="py-3 px-3 font-mono font-bold text-indigo-600">{p.cbm}</td>
-                              <td className="py-3 px-3">
-                                <div className="flex flex-col min-w-[110px]">
-                                  <span className="font-bold text-slate-800 text-xs truncate flex items-center gap-1">
-                                    <i className="fi fi-rr-user text-[10px] text-purple-500"></i>
-                                    <span>{p.createdBy || 'Admin User'}</span>
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                    {formatRelativeTime(p.createdAt || p.date)}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
+                                return (
+                                  <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                                    <td colSpan={11} className="p-4 sm:p-5">
+                                      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+                                        
+                                        {/* DRAWER TOP BAR: Document identity & User lifecycle */}
+                                        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-purple-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                              <i className="fi fi-rr-time-past"></i>
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-extrabold text-slate-900 text-xs tracking-tight">{p.pklNo}</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                                                  {docActivities.length} User {docActivities.length === 1 ? 'Activity' : 'Activities'}
+                                                </span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                  {p.status || 'Active'}
+                                                </span>
+                                              </div>
+                                              <p className="text-[11px] text-slate-500 font-medium">Packing List user activity log & warehouse packaging history</p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-3 text-xs">
+                                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px]">
+                                                <i className="fi fi-rr-user-add"></i>
+                                              </div>
+                                              <div className="leading-tight">
+                                                <div className="text-[9px] uppercase font-bold text-slate-400">Created By</div>
+                                                <div className="font-bold text-slate-800 text-[11px]">
+                                                  {createdUser} <span className="text-slate-400 font-normal">({formatRelativeTime(createdDate)})</span>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {editedUser && (
+                                              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                                                <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">
+                                                  <i className="fi fi-rr-edit"></i>
+                                                </div>
+                                                <div className="leading-tight">
+                                                  <div className="text-[9px] uppercase font-bold text-slate-400">Last Edited By</div>
+                                                  <div className="font-bold text-slate-800 text-[11px]">
+                                                    {editedUser} <span className="text-slate-400 font-normal">({formatRelativeTime(editedDate)})</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* QUICK DOCUMENT METRICS CHIPS */}
+                                        <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Associated PI / Inv</span>
+                                            <span className="font-semibold text-slate-800 font-mono">{p.piInvoiceNo}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Total Packages</span>
+                                            <span className="font-semibold text-slate-800">{p.totalPackages}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Weights (Net / Gross)</span>
+                                            <span className="font-semibold text-slate-800 font-mono">{p.netWeight} / {p.grossWeight}</span>
+                                          </div>
+                                          <div>
+                                            <span className="font-bold text-slate-400 block text-[9px] uppercase">Volume (CBM)</span>
+                                            <span className="font-semibold text-indigo-600 font-mono">{p.cbm} m³</span>
+                                          </div>
+                                        </div>
+
+                                        {/* TIMELINE OF USER ACTIVITIES */}
+                                        <div className="p-5 space-y-4">
+                                          <div className="flex items-center justify-between">
+                                            <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                              <i className="fi fi-rr-list-check text-purple-500"></i>
+                                              <span>User Activities & Audit Trail for {p.pklNo}</span>
+                                            </h5>
+                                            <span className="text-[11px] text-slate-400 font-mono">
+                                              {docActivities.length} total events recorded
+                                            </span>
+                                          </div>
+
+                                          <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                                            {docActivities.map((act, aIdx) => (
+                                              <div key={act.id || aIdx} className="relative group">
+                                                <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs ${
+                                                  act.badgeColor === 'emerald' ? 'bg-emerald-500 text-white' :
+                                                  act.badgeColor === 'amber' ? 'bg-amber-500 text-white' :
+                                                  act.badgeColor === 'indigo' ? 'bg-indigo-600 text-white' :
+                                                  act.badgeColor === 'sky' ? 'bg-sky-500 text-white' :
+                                                  act.badgeColor === 'purple' ? 'bg-purple-600 text-white' :
+                                                  'bg-slate-700 text-white'
+                                                }`}>
+                                                  <i className={act.iconClass || 'fi fi-rr-bell'}></i>
+                                                </div>
+                                                <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="font-bold text-slate-900 text-xs">{act.title}</span>
+                                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 flex items-center gap-1">
+                                                        <i className="fi fi-rr-user text-[9px]"></i>
+                                                        <span>{act.userName || 'System'}</span>
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                                      <span>{formatAuditDateTime(act.timestamp)}</span>
+                                                      <span className="px-1.5 py-0.5 bg-slate-200/80 rounded text-slate-600 font-semibold">
+                                                        {formatRelativeTime(act.timestamp)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                  {act.description && (
+                                                    <p className="text-[11px] text-slate-600 mt-1">{act.description}</p>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+
+                                          {/* QUICK AUDIT NOTE LOGGER */}
+                                          <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                            <div className="relative flex-1">
+                                              <input
+                                                type="text"
+                                                value={inlineAuditNotes[rowKey] || ''}
+                                                onChange={(e) => setInlineAuditNotes(prev => ({ ...prev, [rowKey]: e.target.value }))}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddInlineAuditNote(p.pklNo, p.id, 'pkl', rowKey); }}
+                                                placeholder={`Add user activity remark or note for ${p.pklNo}...`}
+                                                className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:outline-none transition-all"
+                                              />
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleAddInlineAuditNote(p.pklNo, p.id, 'pkl', rowKey)}
+                                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                                            >
+                                              <i className="fi fi-rr-comment-alt text-xs"></i>
+                                              <span>Add Note</span>
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </React.Fragment>
                           );
                         })}
                       </tbody>

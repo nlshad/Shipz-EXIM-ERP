@@ -43,6 +43,11 @@ export const BLDraftEngine: React.FC = () => {
 
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   const [openDocMenuId, setOpenDocMenuId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  const handleToggleExpand = (id: string) => {
+    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -242,6 +247,7 @@ export const BLDraftEngine: React.FC = () => {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]">
+                <th className="py-3 px-2 text-center">Expand</th>
                 <th className="py-3 px-3">Action</th>
                 <th className="py-3 px-3">Doc</th>
                 <th onClick={() => handleSort('piNo')} className="py-3 px-3 cursor-pointer select-none">
@@ -269,9 +275,19 @@ export const BLDraftEngine: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
               {filteredAndSorted.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/80 transition-all relative">
-                  {/* ACTION DROPDOWN */}
-                  <td className="py-3 px-3 relative">
+                <React.Fragment key={r.id}>
+                  <tr className="hover:bg-slate-50/80 transition-all relative">
+                    <td className="py-3 px-2 text-center">
+                      <button
+                        onClick={() => handleToggleExpand(r.id)}
+                        className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center mx-auto"
+                      >
+                        {expandedRows[r.id] ? '-' : '+'}
+                      </button>
+                    </td>
+
+                    {/* ACTION DROPDOWN */}
+                    <td className="py-3 px-3 relative">
                     <button
                       onClick={() => setOpenActionMenuId(openActionMenuId === r.id ? null : r.id)}
                       className="px-3 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-md flex items-center space-x-1"
@@ -362,9 +378,71 @@ export const BLDraftEngine: React.FC = () => {
                   <td className="py-3 px-3 font-bold text-slate-800">{r.shippingLine}</td>
                   <td className="py-3 px-3 font-mono text-slate-700">{r.bookingNo}</td>
                   <td className="py-3 px-3 font-mono text-slate-700">{r.containerNo}</td>
-                  <td className="py-3 px-3 font-mono text-slate-700">{r.sealNo}</td>
-                  <td className="py-3 px-3 font-bold text-slate-800">{r.consignee}</td>
-                </tr>
+                    <td className="py-3 px-3 font-mono text-slate-700">{r.sealNo}</td>
+                    <td className="py-3 px-3 font-bold text-slate-800">{r.consignee}</td>
+                  </tr>
+
+                  {/* EXPANDED ROW DRAWER: ALL USER ACTIVITIES */}
+                  {expandedRows[r.id] && (
+                    <tr className="bg-slate-50/95 border-b border-slate-200 shadow-inner animate-in fade-in duration-150">
+                      <td colSpan={10} className="p-4 sm:p-5">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+                          <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs text-sm">
+                                <i className="fi fi-rr-time-past"></i>
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs tracking-tight">{r.piNo} / {r.invoiceNo}</span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                    User Activities & Audit Trail
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 font-medium">Bill of Lading user activity log & carrier history</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="px-5 py-2.5 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Shipping Line</span><span className="font-semibold text-slate-800">{r.shippingLine}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Booking No</span><span className="font-semibold text-slate-800 font-mono">{r.bookingNo}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Container & Seal</span><span className="font-semibold text-slate-800 font-mono">{r.containerNo} / {r.sealNo}</span></div>
+                            <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Consignee</span><span className="font-semibold text-slate-800 truncate">{r.consignee}</span></div>
+                          </div>
+
+                          <div className="p-5 space-y-4">
+                            <h5 className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                              <i className="fi fi-rr-list-check text-indigo-500"></i>
+                              <span>User Activities for {r.piNo}</span>
+                            </h5>
+
+                            <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 pl-8">
+                              <div className="relative group">
+                                <div className="absolute -left-8 top-1 w-7 h-7 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-xs bg-emerald-500 text-white">
+                                  <i className="fi fi-rr-plus-circle"></i>
+                                </div>
+                                <div className="bg-slate-50 hover:bg-slate-100/70 transition-all p-3 rounded-xl border border-slate-200/80">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-900 text-xs">BL Draft Initiated</span>
+                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60 flex items-center gap-1">
+                                        <i className="fi fi-rr-user text-[9px]"></i>
+                                        <span>{(r as any).createdBy || 'Logistics Lead'}</span>
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-mono">{(r as any).createdAt || '2026-08-04'}</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 mt-1">Draft initiated and container details mapped for {r.consignee}.</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
