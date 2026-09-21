@@ -18,12 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // 1. Load Database Configuration
 require_once __DIR__ . '/config.php';
 
-// Action dispatcher
-$action = $_GET['action'] ?? '';
+// Action dispatcher & Input parser
+$rawInput = null;
+$input = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
+    $rawInput = file_get_contents('php://input');
+    if ($rawInput) {
+        $input = json_decode($rawInput, true) ?: [];
+    }
+}
+$action = $_GET['action'] ?? ($input['action'] ?? '');
 
 // 2. Handle DB Configuration Save & Test Endpoint
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_db_config') {
-    $input = json_decode(file_get_contents('php://input'), true);
     $testHost = trim($input['db_host'] ?? 'localhost');
     $testName = trim($input['db_name'] ?? '');
     $testUser = trim($input['db_user'] ?? '');
@@ -187,6 +194,14 @@ function createErpTables($db) {
           `data_json` LONGTEXT NOT NULL,
           `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS `deleted_records` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `record_id` VARCHAR(150) NOT NULL,
+          `alt_id` VARCHAR(150) DEFAULT '',
+          `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY `uniq_record` (`record_id`, `alt_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 }
 
@@ -303,6 +318,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $data['recentActivities'] = array_map(fn($r) => json_decode($r, true), $rowsAct);
         }
 
+        // 8. Sync Tombstones (Deleted Documents across all PCs)
+        $tombstoneList = [];
+        try {
+            $stmtDelRecs = $pdo->query("SELECT record_id, alt_id FROM deleted_records");
+            while ($row = $stmtDelRecs->fetch(PDO::FETCH_ASSOC)) {
+                if (!empty($row['record_id'])) $tombstoneList[] = strval($row['record_id']);
+                if (!empty($row['alt_id'])) $tombstoneList[] = strval($row['alt_id']);
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            $stmtDel = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_deleted_doc_ids'");
+            $stmtDel->execute();
+            $fbDel = $stmtDel->fetchColumn();
+            if ($fbDel) {
+                $arr = json_decode($fbDel, true);
+                if (is_array($arr)) {
+                    foreach ($arr as $item) {
+                        if ($item) $tombstoneList[] = strval($item);
+                    }
+                }
+            }
+        } catch (\Exception $e) {}
+
+        $data['deletedDocIds'] = array_values(array_unique($tombstoneList));
+
         echo json_encode($data);
         exit;
     }
@@ -348,9 +389,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+// Helper to add tombstone for deleted documents across all clients
+function addTombstone($pdo, $id, $altId) {
+    if (!$id && !$altId) return;
+    try {
+        $stmt = $pdo->prepare("INSERT INTO deleted_records (record_id, alt_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE deleted_at = CURRENT_TIMESTAMP");
+        $stmt->execute([$id ?: $altId, $altId ?: $id]);
+    } catch (\Exception $e) {}
+    try {
+        $stmt = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_deleted_doc_ids'");
+        $stmt->execute();
+        $json = $stmt->fetchColumn();
+        $list = $json ? (json_decode($json, true) ?: []) : [];
+        $changed = false;
+        if ($id && !in_array(strval($id), $list)) { $list[] = strval($id); $changed = true; }
+        if ($altId && !in_array(strval($altId), $list)) { $list[] = strval($altId); $changed = true; }
+        if ($changed) {
+            $stmtUp = $pdo->prepare("INSERT INTO erp_sync_store (key_name, data_json) VALUES ('shipz_deleted_doc_ids', ?) ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP");
+            $stmtUp->execute([json_encode(array_values($list))]);
+        }
+    } catch (\Exception $e) {}
+}
+
+// Helper to remove deleted items from erp_sync_store JSON
+function cleanSyncStoreArray($pdo, $key, $id, $altId, $altKeyName) {
+    try {
+        $stmt = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = ?");
+        $stmt->execute([$key]);
+        $json = $stmt->fetchColumn();
+        if ($json) {
+            $arr = json_decode($json, true);
+            if (is_array($arr)) {
+                $filtered = array_values(array_filter($arr, function($item) use ($id, $altId, $altKeyName) {
+                    if (!is_array($item)) return false;
+                    $iId = strval($item['id'] ?? '');
+                    $iAlt = strval($item[$altKeyName] ?? '');
+                    if ($id && $iId === strval($id)) return false;
+                    if ($altId && $iAlt === strval($altId)) return false;
+                    if ($altId && $iId === strval($altId)) return false;
+                    return true;
+                }));
+                $stmtUp = $pdo->prepare("UPDATE erp_sync_store SET data_json = ?, updated_at = CURRENT_TIMESTAMP WHERE key_name = ?");
+                $stmtUp->execute([json_encode($filtered), $key]);
+            }
+        }
+    } catch (\Exception $e) {}
+}
+
 // 6. POST REQUESTS - WRITE & LIVE SYNC DATA ACROSS USERS & PCs
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    if (empty($input)) {
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+    }
+
+    // Direct Record Deletion Action (Permanent Deletion from MySQL & Tombstone Broadcast)
+    if ($action === 'delete_record') {
+        $table = trim($input['table'] ?? '');
+        $docId = trim($input['id'] ?? '');
+        $altId = trim($input['alt_id'] ?? '');
+        $deletedCount = 0;
+
+        try {
+            if ($table === 'quotations' || $table === 'shipz_quotations') {
+                $stmt = $pdo->prepare("DELETE FROM quotations WHERE quotation_no = ? OR id = ? OR quotation_no = ?");
+                $stmt->execute([$altId, $docId, $docId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_quotations', $docId, $altId, 'quotationNo');
+            } else if ($table === 'proforma_invoices' || $table === 'shipz_proforma_invoices') {
+                $stmt = $pdo->prepare("DELETE FROM proforma_invoices WHERE pi_no = ? OR id = ? OR pi_no = ?");
+                $stmt->execute([$altId, $docId, $docId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_proforma_invoices', $docId, $altId, 'invNumber');
+            } else if ($table === 'commercial_invoices' || $table === 'shipz_commercial_invoices') {
+                $stmt = $pdo->prepare("DELETE FROM commercial_invoices WHERE ci_no = ? OR id = ? OR ci_no = ?");
+                $stmt->execute([$altId, $docId, $docId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_commercial_invoices', $docId, $altId, 'invNumber');
+            } else if ($table === 'packing_lists' || $table === 'shipz_packing_lists') {
+                $stmt = $pdo->prepare("DELETE FROM packing_lists WHERE pkl_no = ? OR id = ? OR pkl_no = ?");
+                $stmt->execute([$altId, $docId, $docId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_packing_lists', $docId, $altId, 'pklNo');
+            } else if ($table === 'bl_records' || $table === 'shipz_bl_records') {
+                $stmt = $pdo->prepare("DELETE FROM bl_records WHERE rec_id = ? OR id = ? OR rec_id = ?");
+                $stmt->execute([$docId, $docId, $altId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_bl_records', $docId, $altId, 'piNo');
+            } else if ($table === 'system_users' || $table === 'shipz_system_users_v2') {
+                $stmt = $pdo->prepare("DELETE FROM system_users WHERE id = ? OR email = ?");
+                $stmt->execute([$docId, $altId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_system_users_v2', $docId, $altId, 'email');
+            }
+            
+            // Broadcast tombstone so other PCs automatically remove it on their next poll
+            addTombstone($pdo, $docId, $altId);
+
+            echo json_encode(['success' => true, 'table' => $table, 'deleted' => $deletedCount]);
+            exit;
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+
     $key = $input['key'] ?? '';
     $data = $input['data'] ?? null;
 

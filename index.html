@@ -498,6 +498,17 @@
       );
     };
 
+    // Global Tombstone Registry: Tracks deleted documents so they can never resurrect across reloads, tabs, or network polling
+    const loadInitialTombstones = () => {
+      try {
+        const stored = localStorage.getItem('shipz_deleted_doc_ids');
+        return new Set(stored ? JSON.parse(stored) : []);
+      } catch (e) {
+        return new Set();
+      }
+    };
+    const syncTombstones = loadInitialTombstones();
+
     const loadSavedState = (key, fallback) => {
       try {
         const saved = localStorage.getItem(key);
@@ -508,8 +519,15 @@
             if (typeof item === 'string') {
               return !['FOB Mundra', 'FOB Nhava Sheva', 'CIF Montreal', 'CFR Jakarta', 'FOB Visakhapatnam', '100% LC at Sight', '30% Advance, 70% against BL', 'Rajesh Sharma', 'Anita Mehta', 'Rajesh Sharma (Director)'].includes(item);
             }
-            if (item && item.name) {
-              return !['Rajesh Sharma', 'Anita Mehta'].includes(item.name);
+            if (item && typeof item === 'object') {
+              const iId = String(item.id || '');
+              const iNo = String(item.quotationNo || item.invNumber || item.piNo || item.ciNo || item.pklNo || item.rec_id || item.email || '');
+              if ((iId && syncTombstones.has(iId)) || (iNo && syncTombstones.has(iNo))) {
+                return false;
+              }
+              if (item.name) {
+                return !['Rajesh Sharma', 'Anita Mehta'].includes(item.name);
+              }
             }
             return true;
           });
@@ -910,6 +928,25 @@
       const [packingLists, setPackingLists] = useState(() => loadSavedState('shipz_packing_lists', INITIAL_PACKING_LISTS));
       const [recentActivities, setRecentActivities] = useState(() => loadSavedState('shipz_recent_activities', INITIAL_RECENT_ACTIVITIES));
       const [, setActivityTicker] = useState(0);
+      const [, setTombstoneRevision] = useState(0);
+
+      // Centralized Document Deletion Dispatcher:
+      // Permanently registers tombstone, removes from local cache, and sends backend DELETE to MySQL
+      const markAsDeleted = (id, altNo, table) => {
+        const toAdd = [id, altNo].filter(Boolean).map(String);
+        toAdd.forEach(k => syncTombstones.add(k));
+        setTombstoneRevision(prev => prev + 1);
+        try {
+          localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(Array.from(syncTombstones)));
+        } catch (e) { }
+
+        // Send direct permanent delete request to backend MySQL
+        fetch(getApiUrl('action=delete_record'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table, id: id ? String(id) : '', alt_id: altNo ? String(altNo) : '' })
+        }).catch(() => { });
+      };
 
       // Auto-tick every 30s so relative times like "Just now" stay live without reload
       React.useEffect(() => {
@@ -1886,26 +1923,35 @@
         }
       };
 
-      // Safe deep merge helper: keeps all remote additions from all users, while preserving local in-progress items
+      // Safe deep merge helper: keeps all remote additions from all users, while filtering out any deleted records
       const mergeArraysByIdOrNo = (localArr, remoteArr, idKey = 'id', altKey = null) => {
-        if (!Array.isArray(remoteArr) || remoteArr.length === 0) return localArr || [];
-        if (!Array.isArray(localArr) || localArr.length === 0) return remoteArr;
+        const isItemDeleted = (item) => {
+          if (!item) return true;
+          const k1 = String(item[idKey] || '');
+          const k2 = String(altKey && item[altKey] ? item[altKey] : '');
+          return (Boolean(k1) && syncTombstones.has(k1)) || (Boolean(k2) && syncTombstones.has(k2));
+        };
 
         const map = new Map();
-        // 1. Index remote items from server (shared across all users)
-        remoteArr.forEach(item => {
-          if (!item) return;
-          const k = String(item[idKey] || (altKey && item[altKey]) || '');
-          if (k) map.set(k, item);
-        });
-        // 2. Preserve any local items not yet on the server
-        localArr.forEach(item => {
-          if (!item) return;
-          const k = String(item[idKey] || (altKey && item[altKey]) || '');
-          if (k && !map.has(k)) {
-            map.set(k, item);
-          }
-        });
+        // 1. Index remote items from server (shared across all users), ignoring deleted tombstones
+        if (Array.isArray(remoteArr)) {
+          remoteArr.forEach(item => {
+            if (isItemDeleted(item)) return;
+            const k = String(item[idKey] || (altKey && item[altKey]) || '');
+            if (k) map.set(k, item);
+          });
+        }
+
+        // 2. Preserve any local items not yet on the server, ignoring deleted tombstones
+        if (Array.isArray(localArr)) {
+          localArr.forEach(item => {
+            if (isItemDeleted(item)) return;
+            const k = String(item[idKey] || (altKey && item[altKey]) || '');
+            if (k && !map.has(k)) {
+              map.set(k, item);
+            }
+          });
+        }
         return Array.from(map.values());
       };
 
@@ -1971,6 +2017,30 @@
               }
 
               setDbConnectionStatus({ connected: true, message: 'Connected', config: null });
+
+              // 0. Sync tombstones from all clients to permanently suppress deleted documents
+              if (Array.isArray(bundle.deletedDocIds) && bundle.deletedDocIds.length > 0) {
+                let addedAny = false;
+                bundle.deletedDocIds.forEach(idStr => {
+                  const s = String(idStr);
+                  if (s && !syncTombstones.has(s)) {
+                    syncTombstones.add(s);
+                    addedAny = true;
+                  }
+                });
+                if (addedAny) {
+                  try {
+                    localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(Array.from(syncTombstones)));
+                  } catch (e) { }
+                  setTombstoneRevision(prev => prev + 1);
+                  setQuotations(prev => (prev || []).filter(q => !syncTombstones.has(String(q.id)) && !syncTombstones.has(String(q.quotationNo || ''))));
+                  setProformaInvoices(prev => (prev || []).filter(p => !syncTombstones.has(String(p.id)) && !syncTombstones.has(String(p.invNumber || p.piNo || ''))));
+                  setCommercialInvoices(prev => (prev || []).filter(c => !syncTombstones.has(String(c.id)) && !syncTombstones.has(String(c.invNumber || c.ciNo || ''))));
+                  setPackingLists(prev => (prev || []).filter(p => !syncTombstones.has(String(p.id)) && !syncTombstones.has(String(p.pklNo || ''))));
+                  setBlRecords(prev => (prev || []).filter(b => !syncTombstones.has(String(b.id)) && !syncTombstones.has(String(b.rec_id || b.piNo || ''))));
+                  setSystemUsers(prev => (prev || []).filter(u => !syncTombstones.has(String(u.id)) && !syncTombstones.has(String(u.email || ''))));
+                }
+              }
 
               // 1. Sync Quotations created by any user
               if (Array.isArray(bundle.quotations) && bundle.quotations.length > 0) {
@@ -2360,6 +2430,7 @@
         }
         const u = systemUsers.find(x => x.id === userId);
         if (u && confirm(`Are you sure you want to permanently delete user account "${u.first_name} ${u.last_name}" (${u.email})?`)) {
+          markAsDeleted(userId, u.email, 'system_users');
           setSystemUsers(prev => prev.filter(x => x.id !== userId));
           setUserActionMenuId(null);
           recordActivity({
@@ -4876,9 +4947,24 @@
 
 
       const handleDeletePi = (id) => {
-        if (confirm('Delete/void this Proforma Invoice?')) {
-          setProformaInvoices(proformaInvoices.filter((p) => p.id !== id));
+        const target = (proformaInvoices || []).find((p) => p.id === id);
+        if (confirm(`Delete/void this Proforma Invoice ${target ? (target.invNumber || target.piNo || '') : ''}?`)) {
+          markAsDeleted(id, target?.invNumber || target?.piNo, 'proforma_invoices');
+          setProformaInvoices((prev) => (prev || []).filter((p) => p.id !== id));
           setOpenActionMenuId(null);
+          recordActivity({
+            type: 'pi',
+            title: 'Proforma Invoice Deleted',
+            badge: target ? (target.invNumber || 'Deleted') : 'Deleted',
+            badgeColor: 'rose',
+            iconClass: 'fi fi-rr-trash',
+            iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+            description: `Proforma Invoice ${target ? (target.invNumber || '') : ''} was removed`,
+            actionText: 'Proforma →',
+            targetEngine: 'proforma'
+          });
+          setToastNotice(`Proforma Invoice deleted.`);
+          setTimeout(() => setToastNotice(null), 3000);
         }
       };
 
@@ -4951,7 +5037,9 @@
       };
 
       const handleDeleteCommercialInvoice = (id) => {
-        if (confirm('Are you sure you want to delete this Commercial Invoice record?')) {
+        const target = (commercialInvoices || []).find((ci) => ci.id === id);
+        if (confirm(`Are you sure you want to delete this Commercial Invoice record ${target ? (target.invNumber || '') : ''}?`)) {
+          markAsDeleted(id, target?.invNumber || target?.ciNo, 'commercial_invoices');
           setCommercialInvoices((prev) => (prev || []).filter((ci) => ci.id !== id));
           setOpenActionMenuId(null);
           recordActivity({
@@ -4961,10 +5049,12 @@
             badgeColor: 'rose',
             iconClass: 'fi fi-rr-trash',
             iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
-            description: `Commercial Invoice record was removed`,
+            description: `Commercial Invoice record ${target ? (target.invNumber || '') : ''} was removed`,
             actionText: 'Invoices →',
             targetEngine: 'invoices'
           });
+          setToastNotice(`Commercial Invoice deleted successfully.`);
+          setTimeout(() => setToastNotice(null), 3000);
         }
       };
 
@@ -6524,7 +6614,8 @@
       const handleDeleteQuotation = (qtId) => {
         const target = quotations.find((q) => q.id === qtId);
         if (window.confirm(`Are you sure you want to delete / cancel Quotation ${target ? target.quotationNo : ''}?`)) {
-          setQuotations((prev) => prev.filter((q) => q.id !== qtId));
+          markAsDeleted(qtId, target?.quotationNo, 'quotations');
+          setQuotations((prev) => prev.filter((q) => q.id !== qtId && (target ? q.quotationNo !== target.quotationNo : true)));
           setOpenActionMenuId(null);
           recordActivity({
             type: 'qt',
@@ -6831,16 +6922,24 @@
       };
 
       const handleDeleteBl = (id) => {
-        if (confirm('Delete this BL Draft entry?')) {
+        const target = (blRecords || []).find((r) => r.id === id);
+        if (confirm(`Delete this BL Draft entry ${target ? (target.piNo || target.bookingNo || '') : ''}?`)) {
+          markAsDeleted(id, target?.rec_id || target?.piNo || target?.bookingNo, 'bl_records');
           setBlRecords(blRecords.filter((r) => r.id !== id));
           setOpenActionMenuId(null);
+          setToastNotice(`BL Draft entry deleted.`);
+          setTimeout(() => setToastNotice(null), 3000);
         }
       };
 
       const handleDeletePkl = (id) => {
-        if (confirm('Delete this Packing List entry?')) {
+        const target = (packingLists || []).find((p) => p.id === id);
+        if (confirm(`Delete this Packing List entry ${target ? (target.pklNo || '') : ''}?`)) {
+          markAsDeleted(id, target?.pklNo, 'packing_lists');
           setPackingLists(packingLists.filter((p) => p.id !== id));
           setOpenActionMenuId(null);
+          setToastNotice(`Packing List entry deleted.`);
+          setTimeout(() => setToastNotice(null), 3000);
         }
       };
 
