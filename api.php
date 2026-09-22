@@ -10,7 +10,9 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($requestMethod === 'OPTIONS') {
     http_response_code(200);
     exit(0);
 }
@@ -21,7 +23,7 @@ require_once __DIR__ . '/config.php';
 // Action dispatcher & Input parser
 $rawInput = null;
 $input = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
+if ($requestMethod === 'POST' || $requestMethod === 'PUT') {
     $rawInput = file_get_contents('php://input');
     if ($rawInput) {
         $input = json_decode($rawInput, true) ?: [];
@@ -30,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT
 $action = $_GET['action'] ?? ($input['action'] ?? '');
 
 // 2. Handle DB Configuration Save & Test Endpoint
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_db_config') {
+if ($requestMethod === 'POST' && $action === 'save_db_config') {
     $testHost = trim($input['db_host'] ?? 'localhost');
     $testName = trim($input['db_name'] ?? '');
     $testUser = trim($input['db_user'] ?? '');
@@ -195,6 +197,22 @@ function createErpTables($db) {
           `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+        CREATE TABLE IF NOT EXISTS `pre_shipment_certificates` (
+          `id` VARCHAR(100) PRIMARY KEY,
+          `cert_no` VARCHAR(100),
+          `cert_type` VARCHAR(100),
+          `invoice_no` VARCHAR(100),
+          `issuing_authority` VARCHAR(255),
+          `issue_date` VARCHAR(50),
+          `expiry_date` VARCHAR(50),
+          `file_name` VARCHAR(255),
+          `file_size` VARCHAR(50),
+          `status` VARCHAR(50) DEFAULT 'Valid',
+          `data_json` LONGTEXT NOT NULL,
+          `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
         CREATE TABLE IF NOT EXISTS `deleted_records` (
           `id` INT AUTO_INCREMENT PRIMARY KEY,
           `record_id` VARCHAR(150) NOT NULL,
@@ -223,7 +241,7 @@ if (!$pdo) {
 }
 
 // 5. GET REQUESTS - READ DATA
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($requestMethod === 'GET') {
     if ($action === 'ping' || $action === 'db_status') {
         echo json_encode([
             'status' => 'online',
@@ -318,7 +336,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $data['recentActivities'] = array_map(fn($r) => json_decode($r, true), $rowsAct);
         }
 
-        // 8. Sync Tombstones (Deleted Documents across all PCs - using unique record IDs only)
+        // 8. Pre-Shipment Certificates
+        try {
+            $stmt = $pdo->query("SELECT data_json FROM pre_shipment_certificates ORDER BY id DESC LIMIT 500");
+            $rowsCerts = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+            if (empty($rowsCerts)) {
+                $stmtFallback = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_pre_shipment_certificates'");
+                $stmtFallback->execute();
+                $fb = $stmtFallback->fetchColumn();
+                $data['preShipmentCertificates'] = $fb ? (json_decode($fb, true) ?: []) : [];
+            } else {
+                $data['preShipmentCertificates'] = array_map(fn($r) => json_decode($r, true), $rowsCerts);
+            }
+        } catch (\Exception $e) {
+            $data['preShipmentCertificates'] = [];
+        }
+
+        // 9. Sync Tombstones (Deleted Documents across all PCs - using unique record IDs only)
         $tombstoneList = [];
         try {
             $stmtDelRecs = $pdo->query("SELECT record_id FROM deleted_records");
@@ -443,7 +477,7 @@ function cleanSyncStoreArray($pdo, $key, $id, $altId, $altKeyName) {
 }
 
 // 6. POST REQUESTS - WRITE & LIVE SYNC DATA ACROSS USERS & PCs
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($requestMethod === 'POST') {
     if (empty($input)) {
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
     }
@@ -486,6 +520,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$docId, $altId]);
                 $deletedCount += $stmt->rowCount();
                 cleanSyncStoreArray($pdo, 'shipz_system_users_v2', $docId, $altId, 'email');
+            } else if ($table === 'pre_shipment_certificates' || $table === 'shipz_pre_shipment_certificates') {
+                $stmt = $pdo->prepare("DELETE FROM pre_shipment_certificates WHERE id = ? OR cert_no = ?");
+                $stmt->execute([$docId, $altId]);
+                $deletedCount += $stmt->rowCount();
+                cleanSyncStoreArray($pdo, 'shipz_pre_shipment_certificates', $docId, $altId, 'certNo');
             }
             
             // Broadcast tombstone so other PCs automatically remove it on their next poll
@@ -600,6 +639,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $badge = $item['badge'] ?? '';
                 $iso = $item['timestamp'] ?? date('c');
                 $stmt->execute([$actId, $type, $title, $badge, $iso, json_encode($item)]);
+            }
+            echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
+            exit;
+        }
+
+        if ($key === 'shipz_pre_shipment_certificates' && is_array($data)) {
+            $stmt = $pdo->prepare("INSERT INTO pre_shipment_certificates (id, cert_no, cert_type, invoice_no, issuing_authority, issue_date, expiry_date, file_name, file_size, status, data_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE cert_no=VALUES(cert_no), cert_type=VALUES(cert_type), invoice_no=VALUES(invoice_no), issuing_authority=VALUES(issuing_authority), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), file_name=VALUES(file_name), file_size=VALUES(file_size), status=VALUES(status), data_json=VALUES(data_json)");
+            foreach ($data as $item) {
+                $cId = $item['id'] ?? ('cert-' . uniqid());
+                $cNo = $item['certNo'] ?? $item['cert_no'] ?? '';
+                $cType = $item['certType'] ?? $item['cert_type'] ?? 'General';
+                $invNo = $item['invoiceNo'] ?? $item['invoice_no'] ?? '';
+                $auth = $item['issuingAuthority'] ?? $item['issuing_authority'] ?? '';
+                $issDate = $item['issueDate'] ?? $item['issue_date'] ?? '';
+                $expDate = $item['expiryDate'] ?? $item['expiry_date'] ?? '';
+                $fName = $item['fileName'] ?? $item['file_name'] ?? '';
+                $fSize = $item['fileSize'] ?? $item['file_size'] ?? '';
+                $stat = $item['status'] ?? 'Valid';
+                $stmt->execute([$cId, $cNo, $cType, $invNo, $auth, $issDate, $expDate, $fName, $fSize, $stat, json_encode($item)]);
             }
             echo json_encode(['success' => true, 'key' => $key, 'count' => count($data)]);
             exit;
