@@ -1575,25 +1575,14 @@
       const [dashboardCopyToast, setDashboardCopyToast] = useState(false);
 
       // Pre-Shipment Certificates UI States
-      const [preShipmentActiveTab, setPreShipmentActiveTab] = useState('certificates'); // 'certificates' or 'declarations'
       const [isUploadCertModalOpen, setIsUploadCertModalOpen] = useState(false);
       const [previewCertModalData, setPreviewCertModalData] = useState(null);
-      const [certFilterCategory, setCertFilterCategory] = useState('ALL');
       const [certSearchQuery, setCertSearchQuery] = useState('');
-      const [certStatusFilter, setCertStatusFilter] = useState('ALL');
       const [certFormData, setCertFormData] = useState({
-        certNo: '',
-        certType: 'Fumigation Certificate',
-        invoiceNo: '',
-        issuingAuthority: 'SGS India Inspection Services',
-        issueDate: new Date().toISOString().split('T')[0],
+        certName: '',
         expiryDate: '',
-        status: 'Valid',
-        remarks: '',
         fileDataUrl: '',
-        fileName: '',
-        fileSize: '',
-        fileType: ''
+        fileName: ''
       });
 
       // Settings Navigation & Submenu States
@@ -7127,20 +7116,11 @@
 
       // PRE-SHIPMENT CERTIFICATES ACTION HANDLERS
       const handleOpenUploadCertModal = () => {
-        const defaultInv = (proformaInvoices && proformaInvoices[0] ? proformaInvoices[0].invNumber : '') || (commercialInvoices && commercialInvoices[0] ? commercialInvoices[0].invNumber : 'PI/1/25-26');
         setCertFormData({
-          certNo: `CERT-${Date.now().toString().slice(-6)}`,
-          certType: 'Fumigation Certificate',
-          invoiceNo: defaultInv,
-          issuingAuthority: 'SGS India Inspection Services',
-          issueDate: new Date().toISOString().split('T')[0],
-          expiryDate: new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0],
-          status: 'Valid',
-          remarks: '',
+          certName: '',
+          expiryDate: '',
           fileDataUrl: '',
-          fileName: '',
-          fileSize: '',
-          fileType: ''
+          fileName: ''
         });
         setIsUploadCertModalOpen(true);
       };
@@ -7148,22 +7128,12 @@
       const handleCertFileUpload = (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
-        if (file.size > 10 * 1024 * 1024) {
-          alert('File size exceeds 10MB limit. Please upload a smaller PDF or image.');
-          return;
-        }
-        const sizeFormatted = file.size > 1024 * 1024 
-          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
-          : `${Math.round(file.size / 1024)} KB`;
-
         const reader = new FileReader();
         reader.onload = (ev) => {
           setCertFormData(prev => ({
             ...prev,
             fileDataUrl: ev.target.result,
-            fileName: file.name,
-            fileSize: sizeFormatted,
-            fileType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')
+            fileName: file.name
           }));
         };
         reader.readAsDataURL(file);
@@ -7171,31 +7141,22 @@
 
       const handleSaveCertificate = (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        if (!certFormData.certNo.trim()) {
-          alert('Please enter a Certificate Reference Number.');
+        if (!certFormData.certName.trim()) {
+          alert('Please enter Certificate Name.');
           return;
         }
-        if (!certFormData.fileDataUrl) {
-          alert('Please select and upload a Certificate file (PDF or Image).');
+        if (!certFormData.expiryDate) {
+          alert('Please select Certificate Expire Date.');
           return;
         }
 
         const newCert = {
           id: `cert-${Date.now()}`,
-          certNo: certFormData.certNo.trim(),
-          certType: certFormData.certType,
-          invoiceNo: certFormData.invoiceNo || 'General',
-          issuingAuthority: certFormData.issuingAuthority.trim() || 'Inspection Agency',
-          issueDate: certFormData.issueDate,
+          certName: certFormData.certName.trim(),
           expiryDate: certFormData.expiryDate,
-          status: certFormData.status || 'Valid',
-          remarks: certFormData.remarks,
-          fileName: certFormData.fileName || 'certificate.pdf',
-          fileSize: certFormData.fileSize || 'N/A',
-          fileType: certFormData.fileType || 'application/pdf',
-          fileUrl: certFormData.fileDataUrl,
-          uploadedBy: (currentUser && (currentUser.name || `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim())) || 'EXIM Officer',
-          uploadedAt: new Date().toISOString()
+          fileName: certFormData.fileName || '',
+          fileUrl: certFormData.fileDataUrl || '',
+          createdAt: new Date().toISOString()
         };
 
         setPreShipmentCertificates(prev => {
@@ -7204,29 +7165,17 @@
           return next;
         });
 
-        recordActivity({
-          type: 'doc',
-          title: 'Certificate Uploaded',
-          badge: newCert.certNo,
-          badgeColor: 'emerald',
-          iconClass: 'fi fi-rr-diploma',
-          iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-          description: `${newCert.certType} uploaded for ${newCert.invoiceNo} • Authority: ${newCert.issuingAuthority}`,
-          actionText: 'View Cert →',
-          targetEngine: 'preShipment',
-          docId: newCert.id
-        });
-
         setIsUploadCertModalOpen(false);
-        setToastNotice(`Certificate "${newCert.certNo}" uploaded successfully!`);
-        setTimeout(() => setToastNotice(null), 4000);
+        setToastNotice(`Certificate "${newCert.certName}" saved!`);
+        setTimeout(() => setToastNotice(null), 3000);
       };
 
       const handleDeleteCertificate = (certId) => {
         const target = (preShipmentCertificates || []).find(c => c.id === certId);
         if (!target) return;
-        if (confirm(`Are you sure you want to delete certificate ${target.certNo} (${target.certType})?`)) {
-          markAsDeleted(certId, target.certNo, 'pre_shipment_certificates');
+        const displayName = target.certName || target.certNo || 'Certificate';
+        if (confirm(`Are you sure you want to delete "${displayName}"?`)) {
+          markAsDeleted(certId, displayName, 'pre_shipment_certificates');
           setPreShipmentCertificates(prev => {
             const next = (prev || []).filter(c => c.id !== certId);
             pushDocumentSync('shipz_pre_shipment_certificates', next);
@@ -7235,19 +7184,19 @@
           if (previewCertModalData && previewCertModalData.id === certId) {
             setPreviewCertModalData(null);
           }
-          setToastNotice(`Certificate ${target.certNo} deleted.`);
+          setToastNotice(`Certificate "${displayName}" deleted.`);
           setTimeout(() => setToastNotice(null), 3000);
         }
       };
 
       const handleDownloadCertificate = (cert) => {
         if (!cert || !cert.fileUrl) {
-          alert('Certificate file not found.');
+          alert('No attached certificate file found.');
           return;
         }
         const a = document.createElement('a');
         a.href = cert.fileUrl;
-        a.download = cert.fileName || `${cert.certNo || 'certificate'}.pdf`;
+        a.download = cert.fileName || `${cert.certName || 'certificate'}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -11969,86 +11918,37 @@
               const isPreShipment = activeEngine === 'preShipment';
               const filteredCerts = (preShipmentCertificates || []).filter((c) => {
                 if (!c) return false;
-                const matchesCategory = certFilterCategory === 'ALL' || c.certType === certFilterCategory;
-                const matchesStatus = certStatusFilter === 'ALL' || (c.status || 'Valid') === certStatusFilter;
                 const q = certSearchQuery.toLowerCase().trim();
-                const matchesSearch = !q ||
-                  (c.certNo && c.certNo.toLowerCase().includes(q)) ||
-                  (c.certType && c.certType.toLowerCase().includes(q)) ||
-                  (c.invoiceNo && c.invoiceNo.toLowerCase().includes(q)) ||
-                  (c.issuingAuthority && c.issuingAuthority.toLowerCase().includes(q)) ||
-                  (c.fileName && c.fileName.toLowerCase().includes(q));
-                return matchesCategory && matchesStatus && matchesSearch;
+                if (!q) return true;
+                const name = (c.certName || c.certNo || '').toLowerCase();
+                const exp = (c.expiryDate || '').toLowerCase();
+                return name.includes(q) || exp.includes(q);
               });
-
-              const validCertsCount = (preShipmentCertificates || []).filter(c => (c.status || 'Valid') === 'Valid').length;
-              const expiredCertsCount = (preShipmentCertificates || []).filter(c => c.status === 'Expired' || (c.expiryDate && new Date(c.expiryDate) < new Date())).length;
-              const coveredInvoicesCount = new Set((preShipmentCertificates || []).map(c => c.invoiceNo).filter(Boolean)).size;
 
               return (
                 <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
-                  {/* HEADER & VIEW SWITCHER */}
+                  {/* TOP HEADER */}
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-                          <span>{isPreShipment ? 'Pre-Shipment Documents & Certificates' : 'Post-Shipment Documents Engine'}</span>
-                        </h2>
-                        {isPreShipment && (
-                          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
-                            <i className="fi fi-rr-shield-check text-[10px]"></i>
-                            <span>EXIM Compliance Ready</span>
-                          </span>
-                        )}
-                      </div>
+                      <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
+                        <span>{isPreShipment ? 'Pre-Shipment Certificates' : 'Post-Shipment Documents Engine'}</span>
+                      </h2>
                       <p className="text-xs text-slate-500 mt-1">
                         {isPreShipment
-                          ? 'Manage & verify mandatory third-party certificates (Fumigation, Origin, Phytosanitary, Quality) and compile dynamic export declarations.'
+                          ? 'Track certificate validity and expire dates.'
                           : 'Generate Bill of Exchange, Shipment Advice, COA, Non-ETO Statements & Pesticide Certificates.'}
                       </p>
                     </div>
 
-                    {/* TOP ACTION BUTTONS */}
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      {isPreShipment && (
-                        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-                          <button
-                            type="button"
-                            onClick={() => setPreShipmentActiveTab('certificates')}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                              preShipmentActiveTab === 'certificates' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            <i className="fi fi-rr-diploma text-xs"></i>
-                            <span>Uploaded Certificates</span>
-                            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-50 text-indigo-600 font-extrabold">
-                              {preShipmentCertificates.length}
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPreShipmentActiveTab('declarations')}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                              preShipmentActiveTab === 'declarations' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            <i className="fi fi-rr-document text-xs"></i>
-                            <span>Declarations & Templates</span>
-                            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-extrabold">
-                              {activeTemplates.length}
-                            </span>
-                          </button>
-                        </div>
-                      )}
-
+                    <div className="flex items-center gap-3">
                       {isPreShipment && (
                         <button
                           type="button"
                           onClick={handleOpenUploadCertModal}
-                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 flex items-center space-x-2 transition-all cursor-pointer"
+                          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 flex items-center space-x-2 transition-all cursor-pointer"
                         >
-                          <i className="fi fi-rr-cloud-upload text-sm"></i>
-                          <span>+ Upload Certificate</span>
+                          <i className="fi fi-rr-plus text-xs"></i>
+                          <span>+ Add Certificate</span>
                         </button>
                       )}
 
@@ -12057,8 +11957,8 @@
                           onClick={() => setIsCreateDocDropdownOpen(!isCreateDocDropdownOpen)}
                           className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center space-x-2"
                         >
-                          <i className="fi fi-rr-plus text-xs"></i>
-                          <span>Create Declaration</span>
+                          <i className="fi fi-rr-document text-xs"></i>
+                          <span>Export Declarations</span>
                           <span className="text-[10px]">▼</span>
                         </button>
 
@@ -12073,7 +11973,6 @@
                                 onClick={() => {
                                   setSelectedDocTemplate(t);
                                   setIsCreateDocDropdownOpen(false);
-                                  setPreShipmentActiveTab('declarations');
                                 }}
                                 className="w-full text-left px-4 py-2 hover:bg-blue-600/30 flex items-center justify-between transition-all"
                               >
@@ -12089,328 +11988,152 @@
                     </div>
                   </div>
 
-                  {/* TAB 1: UPLOADED CERTIFICATES REGISTER */}
-                  {(!isPreShipment || preShipmentActiveTab === 'certificates') && (
-                    <div className="space-y-6">
-                      {/* STATS OVERVIEW CARDS */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                          <div>
-                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Certificates</div>
-                            <div className="text-2xl font-black text-slate-900 mt-1">{preShipmentCertificates.length}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">Uploaded across all shipments</div>
-                          </div>
-                          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                  {/* PRE-SHIPMENT CERTIFICATES TABLE */}
+                  {isPreShipment && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                      {/* SEARCH BAR */}
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                        <div className="relative w-full max-w-sm">
+                          <i className="fi fi-rr-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                          <input
+                            type="text"
+                            placeholder="Search by certificate name..."
+                            value={certSearchQuery}
+                            onChange={(e) => setCertSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
+                          />
+                          {certSearchQuery && (
+                            <button
+                              onClick={() => setCertSearchQuery('')}
+                              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-500 font-bold">
+                          Total: <span className="text-slate-900 font-extrabold">{preShipmentCertificates.length}</span>
+                        </div>
+                      </div>
+
+                      {filteredCerts.length === 0 ? (
+                        <div className="text-center py-16 px-4 space-y-3">
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center text-2xl">
                             <i className="fi fi-rr-diploma"></i>
                           </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                          <div>
-                            <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Valid & Verified</div>
-                            <div className="text-2xl font-black text-emerald-700 mt-1">{validCertsCount}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">Active compliance certificates</div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-extrabold text-slate-800">No Certificates Added</h3>
+                            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                              Click "+ Add Certificate" to enter certificate name and expire date.
+                            </p>
                           </div>
-                          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-                            <i className="fi fi-rr-shield-check"></i>
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                          <div>
-                            <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Expiring / Expired</div>
-                            <div className="text-2xl font-black text-amber-700 mt-1">{expiredCertsCount}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">Requires renewal or re-test</div>
-                          </div>
-                          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
-                            <i className="fi fi-rr-clock"></i>
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                          <div>
-                            <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Linked Invoices</div>
-                            <div className="text-2xl font-black text-blue-700 mt-1">{coveredInvoicesCount}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">Shipments with certificates</div>
-                          </div>
-                          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-                            <i className="fi fi-rr-document-signed"></i>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* FILTER & SEARCH TOOLBAR */}
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                          {/* SEARCH INPUT */}
-                          <div className="relative w-full md:w-80">
-                            <i className="fi fi-rr-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                            <input
-                              type="text"
-                              placeholder="Search by Cert No, Invoice, Authority..."
-                              value={certSearchQuery}
-                              onChange={(e) => setCertSearchQuery(e.target.value)}
-                              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
-                            />
-                            {certSearchQuery && (
-                              <button
-                                onClick={() => setCertSearchQuery('')}
-                                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold"
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
-
-                          {/* STATUS & ACTIONS */}
-                          <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
-                            <select
-                              value={certStatusFilter}
-                              onChange={(e) => setCertStatusFilter(e.target.value)}
-                              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:outline-none"
-                            >
-                              <option value="ALL">All Status</option>
-                              <option value="Valid">Valid Only</option>
-                              <option value="Expired">Expired Only</option>
-                            </select>
-
-                            <button
-                              type="button"
-                              onClick={handleOpenUploadCertModal}
-                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-                            >
-                              <i className="fi fi-rr-upload text-xs"></i>
-                              <span>Upload Certificate</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* CATEGORY FILTER PILLS */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
                           <button
                             type="button"
-                            onClick={() => setCertFilterCategory('ALL')}
-                            className={`px-3 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all ${
-                              certFilterCategory === 'ALL'
-                                ? 'bg-indigo-600 text-white shadow-xs'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
+                            onClick={handleOpenUploadCertModal}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
                           >
-                            All Categories ({preShipmentCertificates.length})
+                            <i className="fi fi-rr-plus text-xs"></i>
+                            <span>+ Add Certificate</span>
                           </button>
-                          {PRE_SHIPMENT_CERTIFICATE_TYPES.map((t) => {
-                            const count = (preShipmentCertificates || []).filter(c => c.certType === t.label).length;
-                            return (
-                              <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => setCertFilterCategory(t.label)}
-                                className={`px-3 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all flex items-center gap-1 ${
-                                  certFilterCategory === t.label
-                                    ? 'bg-indigo-600 text-white shadow-xs'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                }`}
-                              >
-                                <span>{t.label}</span>
-                                {count > 0 && (
-                                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${certFilterCategory === t.label ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                                    {count}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
+                                <th className="py-3 px-4 w-12 text-center">#</th>
+                                <th className="py-3 px-4">Certificate Name</th>
+                                <th className="py-3 px-4">Certificate Expire Date</th>
+                                <th className="py-3 px-4">Status</th>
+                                <th className="py-3 px-4 text-center">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
+                              {filteredCerts.map((cert, index) => {
+                                const todayStr = new Date().toISOString().split('T')[0];
+                                const isExpired = cert.expiryDate ? cert.expiryDate < todayStr : false;
+                                const certDisplayName = cert.certName || cert.certNo || 'Certificate';
 
-                      {/* CERTIFICATES REGISTER TABLE */}
-                      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        {filteredCerts.length === 0 ? (
-                          <div className="text-center py-16 px-4 space-y-4">
-                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 mx-auto flex items-center justify-center text-3xl">
-                              <i className="fi fi-rr-diploma"></i>
-                            </div>
-                            <div className="space-y-1">
-                              <h3 className="text-base font-extrabold text-slate-800">No Pre-Shipment Certificates Found</h3>
-                              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                                {certSearchQuery || certFilterCategory !== 'ALL' || certStatusFilter !== 'ALL'
-                                  ? 'No certificates match your current filters. Try resetting search or category pills.'
-                                  : 'Upload mandatory pre-shipment certificates like Fumigation, Origin, Phytosanitary, or Inspection reports to link them with export invoices.'}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleOpenUploadCertModal}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                            >
-                              <i className="fi fi-rr-cloud-upload text-sm"></i>
-                              <span>+ Upload First Certificate</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs border-collapse">
-                              <thead>
-                                <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
-                                  <th className="py-3.5 px-4">Certificate / Ref No.</th>
-                                  <th className="py-3.5 px-4">Certificate Type</th>
-                                  <th className="py-3.5 px-4">Linked Document</th>
-                                  <th className="py-3.5 px-4">Issuing Authority</th>
-                                  <th className="py-3.5 px-4">Validity & Dates</th>
-                                  <th className="py-3.5 px-4">File Info</th>
-                                  <th className="py-3.5 px-4 text-center">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
-                                {filteredCerts.map((cert) => {
-                                  const isExpired = cert.status === 'Expired' || (cert.expiryDate && new Date(cert.expiryDate) < new Date());
-                                  const certTypePreset = PRE_SHIPMENT_CERTIFICATE_TYPES.find(t => t.label === cert.certType) || {
-                                    badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200'
-                                  };
-                                  const isPdf = (cert.fileType && cert.fileType.includes('pdf')) || (cert.fileName && cert.fileName.endsWith('.pdf'));
-
-                                  return (
-                                    <tr key={cert.id} className="hover:bg-slate-50/80 transition-all group">
-                                      {/* CERT NO & FILE PREVIEW THUMB */}
-                                      <td className="py-3.5 px-4">
-                                        <div className="flex items-center gap-3">
-                                          <div
-                                            onClick={() => handlePreviewCertificate(cert)}
-                                            className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer shrink-0 border transition-all ${
-                                              isPdf
-                                                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                                                : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100'
-                                            }`}
-                                            title="Click to preview certificate"
-                                          >
-                                            {cert.fileUrl && !isPdf ? (
-                                              <img src={cert.fileUrl} alt={cert.certNo} className="w-full h-full object-cover rounded-xl" />
-                                            ) : (
-                                              <i className={`fi ${isPdf ? 'fi-rr-file-pdf' : 'fi-rr-picture'} text-lg`}></i>
-                                            )}
-                                          </div>
-                                          <div>
-                                            <div
-                                              onClick={() => handlePreviewCertificate(cert)}
-                                              className="font-mono font-extrabold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer flex items-center gap-1.5"
-                                            >
-                                              <span>{cert.certNo}</span>
-                                              <i className="fi fi-rr-arrow-up-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                            </div>
-                                            <div className="text-[10px] text-slate-500 font-medium truncate max-w-[200px]" title={cert.fileName}>
-                                              {cert.fileName || 'certificate.pdf'}
-                                            </div>
-                                          </div>
+                                return (
+                                  <tr key={cert.id} className="hover:bg-slate-50/80 transition-all">
+                                    <td className="py-3.5 px-4 text-center text-slate-400 font-bold font-mono">
+                                      {index + 1}
+                                    </td>
+                                    <td className="py-3.5 px-4">
+                                      <div className="font-extrabold text-slate-900 text-xs flex items-center gap-2">
+                                        <i className="fi fi-rr-diploma text-indigo-500 text-sm"></i>
+                                        <span>{certDisplayName}</span>
+                                      </div>
+                                      {cert.fileName && (
+                                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
+                                          <i className="fi fi-rr-clip text-[9px]"></i>
+                                          <span>{cert.fileName}</span>
                                         </div>
-                                      </td>
-
-                                      {/* TYPE BADGE */}
-                                      <td className="py-3.5 px-4">
-                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${certTypePreset.badgeColor} inline-flex items-center gap-1`}>
-                                          <i className="fi fi-rr-bookmark text-[9px]"></i>
-                                          <span>{cert.certType}</span>
+                                      )}
+                                    </td>
+                                    <td className="py-3.5 px-4">
+                                      <div className="font-mono font-bold text-slate-800 text-xs">
+                                        {cert.expiryDate || 'N/A'}
+                                      </div>
+                                    </td>
+                                    <td className="py-3.5 px-4">
+                                      {isExpired ? (
+                                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                          <span>Expired</span>
                                         </span>
-                                      </td>
-
-                                      {/* LINKED INVOICE */}
-                                      <td className="py-3.5 px-4">
-                                        <div className="flex items-center gap-1.5 font-bold font-mono text-slate-800">
-                                          <i className="fi fi-rr-document text-slate-400"></i>
-                                          <span>{cert.invoiceNo || 'General'}</span>
-                                        </div>
-                                      </td>
-
-                                      {/* ISSUING AUTHORITY */}
-                                      <td className="py-3.5 px-4">
-                                        <div className="font-bold text-slate-900">{cert.issuingAuthority || 'Inspection Body'}</div>
-                                        {cert.remarks && (
-                                          <div className="text-[10px] text-slate-400 truncate max-w-[160px]" title={cert.remarks}>
-                                            {cert.remarks}
-                                          </div>
-                                        )}
-                                      </td>
-
-                                      {/* VALIDITY & DATES */}
-                                      <td className="py-3.5 px-4">
-                                        <div className="space-y-1">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className={`w-2 h-2 rounded-full ${isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
-                                            <span className={`font-bold text-[10px] uppercase ${isExpired ? 'text-rose-700' : 'text-emerald-700'}`}>
-                                              {isExpired ? 'Expired' : 'Valid'}
-                                            </span>
-                                          </div>
-                                          <div className="text-[10px] text-slate-500 font-mono">
-                                            <span>Issued: {cert.issueDate || 'N/A'}</span>
-                                            {cert.expiryDate && (
-                                              <span className="block text-slate-400">Expires: {cert.expiryDate}</span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </td>
-
-                                      {/* FILE SIZE & UPLOAD INFO */}
-                                      <td className="py-3.5 px-4">
-                                        <div className="text-[10px] font-mono font-bold text-slate-600">{cert.fileSize || 'PDF'}</div>
-                                        <div className="text-[10px] text-slate-400">By {cert.uploadedBy || 'EXIM Team'}</div>
-                                      </td>
-
-                                      {/* ACTIONS */}
-                                      <td className="py-3.5 px-4 text-center">
-                                        <div className="flex items-center justify-center gap-1.5">
+                                      ) : (
+                                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                          <span>Valid</span>
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        {cert.fileUrl && (
                                           <button
                                             type="button"
                                             onClick={() => handlePreviewCertificate(cert)}
                                             className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all cursor-pointer"
-                                            title="Preview Certificate"
+                                            title="View Certificate"
                                           >
                                             <i className="fi fi-rr-eye text-xs"></i>
                                           </button>
+                                        )}
+                                        {cert.fileUrl && (
                                           <button
                                             type="button"
                                             onClick={() => handleDownloadCertificate(cert)}
                                             className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all cursor-pointer"
-                                            title="Download Certificate File"
+                                            title="Download Certificate"
                                           >
                                             <i className="fi fi-rr-download text-xs"></i>
                                           </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleDeleteCertificate(cert.id)}
-                                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all cursor-pointer"
-                                            title="Delete Certificate"
-                                          >
-                                            <i className="fi fi-rr-trash text-xs"></i>
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteCertificate(cert.id)}
+                                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all cursor-pointer"
+                                          title="Delete Certificate"
+                                        >
+                                          <i className="fi fi-rr-trash text-xs"></i>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* TAB 2: DECLARATIONS & TEMPLATES */}
-                  {(preShipmentActiveTab === 'declarations' || !isPreShipment) && (
+                  {/* DECLARATIONS TABLE (for postShipment or compiling templates) */}
+                  {!isPreShipment && (
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                        <div>
-                          <h3 className="text-sm font-extrabold text-slate-900">Dynamic Export Declarations by Shipment</h3>
-                          <p className="text-[11px] text-slate-500">Select an invoice to generate Appendix-III drawback, SOLAS VGM, or export value statements.</p>
-                        </div>
-                        <button
-                          onClick={() => setIsCreateDocDropdownOpen(!isCreateDocDropdownOpen)}
-                          className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5"
-                        >
-                          <i className="fi fi-rr-plus text-xs"></i>
-                          <span>New Declaration</span>
-                        </button>
-                      </div>
-
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
@@ -15564,171 +15287,79 @@
             </div>
           )}
 
-          {/* UPLOAD PRE-SHIPMENT CERTIFICATE MODAL */}
+          {/* SIMPLE ADD CERTIFICATE MODAL */}
           {isUploadCertModalOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92vh] overflow-y-auto flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-10">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                      <i className="fi fi-rr-cloud-upload text-indigo-600"></i>
-                      <span>Upload Pre-Shipment Compliance Certificate</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-medium">Link inspection, phytosanitary, or origin certificates to your export shipments.</p>
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                      <i className="fi fi-rr-diploma"></i>
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Certificate</h3>
                   </div>
-                  <button onClick={() => setIsUploadCertModalOpen(false)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
+                  <button onClick={() => setIsUploadCertModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer">✕</button>
                 </div>
 
-                <form onSubmit={handleSaveCertificate} className="p-6 space-y-4 text-xs text-slate-700">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Certificate Type <span className="text-red-500">*</span></label>
-                      <select
-                        value={certFormData.certType}
-                        onChange={(e) => setCertFormData({ ...certFormData, certType: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-semibold focus:border-indigo-500 focus:outline-none"
-                      >
-                        {PRE_SHIPMENT_CERTIFICATE_TYPES.map((t) => (
-                          <option key={t.id} value={t.label}>{t.label} ({t.category})</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Certificate / Reference No. <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        required
-                        value={certFormData.certNo}
-                        onChange={(e) => setCertFormData({ ...certFormData, certNo: e.target.value })}
-                        placeholder="e.g. FUM-2026/09/8821"
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Linked Export Document / Invoice</label>
-                      <select
-                        value={certFormData.invoiceNo}
-                        onChange={(e) => setCertFormData({ ...certFormData, invoiceNo: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold focus:border-indigo-500 focus:outline-none"
-                      >
-                        <option value="General">General / Master Document</option>
-                        {(proformaInvoices || []).map((pi) => (
-                          <option key={pi.id} value={pi.invNumber}>PI: {pi.invNumber} — {pi.consignee}</option>
-                        ))}
-                        {(commercialInvoices || []).map((ci) => (
-                          <option key={ci.id} value={ci.invNumber}>CI: {ci.invNumber} — {ci.buyerName || ci.consignee}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Issuing Authority / Agency <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        required
-                        value={certFormData.issuingAuthority}
-                        onChange={(e) => setCertFormData({ ...certFormData, issuingAuthority: e.target.value })}
-                        placeholder="e.g. SGS India / Bureau Veritas / EIC"
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-semibold focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Issue Date <span className="text-red-500">*</span></label>
-                      <input
-                        type="date"
-                        required
-                        value={certFormData.issueDate}
-                        onChange={(e) => setCertFormData({ ...certFormData, issueDate: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Expiry Date</label>
-                      <input
-                        type="date"
-                        value={certFormData.expiryDate}
-                        onChange={(e) => setCertFormData({ ...certFormData, expiryDate: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:border-indigo-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Compliance Status</label>
-                      <select
-                        value={certFormData.status}
-                        onChange={(e) => setCertFormData({ ...certFormData, status: e.target.value })}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:border-indigo-500 focus:outline-none"
-                      >
-                        <option value="Valid">Valid & Verified</option>
-                        <option value="Expired">Expired</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* FILE UPLOAD DROPZONE */}
+                <form onSubmit={handleSaveCertificate} className="p-6 space-y-4 text-xs">
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Certificate Document File (PDF, PNG, JPG) <span className="text-red-500">*</span></label>
-                    <div className="border-2 border-dashed border-indigo-200 rounded-2xl p-5 bg-indigo-50/40 text-center hover:bg-indigo-50/70 transition-all relative">
+                    <label className="block text-slate-700 font-bold mb-1.5 text-xs">Certificate Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={certFormData.certName}
+                      onChange={(e) => setCertFormData({ ...certFormData, certName: e.target.value })}
+                      placeholder="e.g. Fumigation Certificate"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5 text-xs">Certificate Expire Date <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      required
+                      value={certFormData.expiryDate}
+                      onChange={(e) => setCertFormData({ ...certFormData, expiryDate: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-indigo-500 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* OPTIONAL ATTACHMENT */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block text-slate-500 font-medium mb-1.5 text-[11px]">Attach Certificate File (Optional)</label>
+                    <label className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100/80 cursor-pointer transition-all">
+                      <i className="fi fi-rr-clip text-slate-400 text-xs"></i>
+                      <span className="text-[11px] text-slate-600 truncate flex-1">
+                        {certFormData.fileName || 'Choose PDF or image...'}
+                      </span>
+                      {certFormData.fileName && (
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Attached</span>
+                      )}
                       <input
                         type="file"
-                        accept=".pdf,image/png,image/jpeg,image/jpg"
+                        accept=".pdf,image/*"
                         onChange={handleCertFileUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        className="hidden"
                       />
-                      {certFormData.fileDataUrl ? (
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-white shadow-xs border border-indigo-200 flex items-center justify-center text-xl text-indigo-600">
-                            <i className={`fi ${certFormData.fileType.includes('pdf') ? 'fi-rr-file-pdf' : 'fi-rr-picture'}`}></i>
-                          </div>
-                          <div className="text-left">
-                            <div className="font-bold text-slate-900 text-xs">{certFormData.fileName}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">{certFormData.fileSize} • Click or drag to replace</div>
-                          </div>
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Ready</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <i className="fi fi-rr-cloud-upload text-3xl text-indigo-500 block mb-1"></i>
-                          <div className="font-bold text-slate-800 text-xs">Click to browse or drop certificate file here</div>
-                          <div className="text-[10px] text-slate-400">PDF, PNG or JPG up to 10MB</div>
-                        </div>
-                      )}
-                    </div>
+                    </label>
                   </div>
 
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Inspection Notes / Remarks</label>
-                    <textarea
-                      rows="2"
-                      value={certFormData.remarks}
-                      onChange={(e) => setCertFormData({ ...certFormData, remarks: e.target.value })}
-                      placeholder="e.g. Treatment completed with Methyl Bromide. Approved for EU customs clearance."
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none"
-                    ></textarea>
-                  </div>
-
-                  <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-end gap-2.5 pt-4">
                     <button
                       type="button"
                       onClick={() => setIsUploadCertModalOpen(false)}
-                      className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                      className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer"
+                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 cursor-pointer transition-all flex items-center gap-1.5"
                     >
                       <i className="fi fi-rr-check text-xs"></i>
-                      <span>Save & Upload Certificate</span>
+                      <span>Save Certificate</span>
                     </button>
                   </div>
                 </form>
@@ -15740,30 +15371,29 @@
           {previewCertModalData && (
             <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden">
-                {/* MODAL HEADER */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center text-lg">
                       <i className="fi fi-rr-diploma"></i>
                     </div>
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-900">{previewCertModalData.certNo}</h3>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                        <span className="font-bold text-indigo-600">{previewCertModalData.certType}</span>
-                        <span>•</span>
-                        <span>Linked: <strong className="text-slate-800">{previewCertModalData.invoiceNo || 'General'}</strong></span>
+                      <h3 className="text-base font-extrabold text-slate-900">{previewCertModalData.certName || previewCertModalData.certNo || 'Certificate'}</h3>
+                      <div className="text-[11px] text-slate-500">
+                        <span>Expire Date: <strong className="text-slate-800 font-mono">{previewCertModalData.expiryDate || 'N/A'}</strong></span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadCertificate(previewCertModalData)}
-                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
-                    >
-                      <i className="fi fi-rr-download text-xs"></i>
-                      <span>Download</span>
-                    </button>
+                    {previewCertModalData.fileUrl && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadCertificate(previewCertModalData)}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <i className="fi fi-rr-download text-xs"></i>
+                        <span>Download</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setPreviewCertModalData(null)}
@@ -15774,66 +15404,44 @@
                   </div>
                 </div>
 
-                {/* METADATA STRIP */}
-                <div className="px-6 py-2.5 bg-slate-100/70 border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Issuing Authority:</span>
-                    <strong className="text-slate-800">{previewCertModalData.issuingAuthority || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Issue Date:</span>
-                    <strong className="text-slate-800">{previewCertModalData.issueDate || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Expiry Date:</span>
-                    <strong className="text-slate-800">{previewCertModalData.expiryDate || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Status:</span>
-                    <span className={`px-2 py-0.2 rounded-full font-bold text-[10px] ${
-                      (previewCertModalData.status || 'Valid') === 'Valid' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                    }`}>
-                      {previewCertModalData.status || 'Valid'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* DOCUMENT VIEWER BODY */}
                 <div className="flex-1 p-4 bg-slate-900/5 overflow-auto min-h-[50vh] flex items-center justify-center">
                   {previewCertModalData.fileUrl ? (
                     (previewCertModalData.fileType && previewCertModalData.fileType.includes('pdf')) ||
                     (previewCertModalData.fileName && previewCertModalData.fileName.endsWith('.pdf')) ? (
                       <iframe
                         src={previewCertModalData.fileUrl}
-                        title={previewCertModalData.certNo}
+                        title={previewCertModalData.certName}
                         className="w-full h-[65vh] rounded-xl border border-slate-200 shadow-sm bg-white"
                       ></iframe>
                     ) : (
                       <img
                         src={previewCertModalData.fileUrl}
-                        alt={previewCertModalData.certNo}
+                        alt={previewCertModalData.certName}
                         className="max-h-[65vh] max-w-full object-contain rounded-xl shadow-md"
                       />
                     )
                   ) : (
                     <div className="text-center text-slate-400 py-12">
                       <i className="fi fi-rr-file-slash text-4xl block mb-2"></i>
-                      <span>No document preview available</span>
+                      <span>No document attachment preview available</span>
                     </div>
                   )}
                 </div>
 
-                {/* MODAL FOOTER */}
                 <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200 bg-white">
                   <div className="text-[11px] text-slate-500 font-medium">
-                    File: <span className="font-mono text-slate-700 font-bold">{previewCertModalData.fileName}</span> ({previewCertModalData.fileSize || 'N/A'})
+                    {previewCertModalData.fileName ? (
+                      <span>File: <span className="font-mono text-slate-700 font-bold">{previewCertModalData.fileName}</span></span>
+                    ) : (
+                      <span>No file attached</span>
+                    )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setPreviewCertModalData(null)}
                     className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs cursor-pointer"
                   >
-                    Close Preview
+                    Close
                   </button>
                 </div>
               </div>
