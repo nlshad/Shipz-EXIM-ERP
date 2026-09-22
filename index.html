@@ -498,11 +498,19 @@
       );
     };
 
-    // Global Tombstone Registry: Tracks deleted documents so they can never resurrect across reloads, tabs, or network polling
+    // Global Tombstone Registry: Tracks deleted documents by unique instance ID only (never document reference numbers)
     const loadInitialTombstones = () => {
       try {
         const stored = localStorage.getItem('shipz_deleted_doc_ids');
-        return new Set(stored ? JSON.parse(stored) : []);
+        const list = stored ? JSON.parse(stored) : [];
+        // Only keep genuine unique instance IDs (e.g. qt-*, pi-*, ci-*, bl-*, pkl-*, usr-*), NEVER document numbers like QT/*, PI/*, INV/*, CI/*
+        const validIds = (Array.isArray(list) ? list : []).filter(id => {
+          if (!id || typeof id !== 'string') return false;
+          return id.includes('-') && !id.includes('/');
+        });
+        // Immediately clean sanitized list back to localStorage to purge any previously stored doc numbers
+        try { localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(validIds)); } catch(e){}
+        return new Set(validIds);
       } catch (e) {
         return new Set();
       }
@@ -520,9 +528,7 @@
               return !['FOB Mundra', 'FOB Nhava Sheva', 'CIF Montreal', 'CFR Jakarta', 'FOB Visakhapatnam', '100% LC at Sight', '30% Advance, 70% against BL', 'Rajesh Sharma', 'Anita Mehta', 'Rajesh Sharma (Director)'].includes(item);
             }
             if (item && typeof item === 'object') {
-              const iId = String(item.id || '');
-              const iNo = String(item.quotationNo || item.invNumber || item.piNo || item.ciNo || item.pklNo || item.rec_id || item.email || '');
-              if ((iId && syncTombstones.has(iId)) || (iNo && syncTombstones.has(iNo))) {
+              if (item.id && syncTombstones.has(String(item.id))) {
                 return false;
               }
               if (item.name) {
@@ -933,18 +939,35 @@
       // Centralized Document Deletion Dispatcher:
       // Permanently registers tombstone, removes from local cache, and sends backend DELETE to MySQL
       const markAsDeleted = (id, altNo, table) => {
-        const toAdd = [id, altNo].filter(Boolean).map(String);
-        toAdd.forEach(k => syncTombstones.add(k));
-        setTombstoneRevision(prev => prev + 1);
-        try {
-          localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(Array.from(syncTombstones)));
-        } catch (e) { }
+        if (id) {
+          const sId = String(id);
+          if (sId.includes('-') && !sId.includes('/')) {
+            syncTombstones.add(sId);
+            setTombstoneRevision(prev => prev + 1);
+            try {
+              localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(Array.from(syncTombstones)));
+            } catch (e) { }
+          }
+        }
 
         // Send direct permanent delete request to backend MySQL
         fetch(getApiUrl('action=delete_record'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ table, id: id ? String(id) : '', alt_id: altNo ? String(altNo) : '' })
+        }).catch(() => { });
+      };
+
+      // Immediate Server & LocalStorage Sync Dispatcher
+      const pushDocumentSync = (key, data) => {
+        if (!key || !Array.isArray(data)) return;
+        try {
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) { }
+        fetch(getApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, data })
         }).catch(() => { });
       };
 
@@ -1923,35 +1946,47 @@
         }
       };
 
-      // Safe deep merge helper: keeps all remote additions from all users, while filtering out any deleted records
+      // Safe deep merge helper: preserves local in-progress and newly created items, merges remote items
       const mergeArraysByIdOrNo = (localArr, remoteArr, idKey = 'id', altKey = null) => {
         const isItemDeleted = (item) => {
-          if (!item) return true;
-          const k1 = String(item[idKey] || '');
-          const k2 = String(altKey && item[altKey] ? item[altKey] : '');
-          return (Boolean(k1) && syncTombstones.has(k1)) || (Boolean(k2) && syncTombstones.has(k2));
+          if (!item || !item.id) return false;
+          return syncTombstones.has(String(item.id));
         };
 
+        if (!Array.isArray(remoteArr) || remoteArr.length === 0) {
+          return (localArr || []).filter(item => !isItemDeleted(item));
+        }
+
         const map = new Map();
-        // 1. Index remote items from server (shared across all users), ignoring deleted tombstones
-        if (Array.isArray(remoteArr)) {
-          remoteArr.forEach(item => {
-            if (isItemDeleted(item)) return;
+        // 1. Index local items first so newly created documents are ALWAYS retained
+        if (Array.isArray(localArr)) {
+          localArr.forEach(item => {
+            if (!item || isItemDeleted(item)) return;
             const k = String(item[idKey] || (altKey && item[altKey]) || '');
             if (k) map.set(k, item);
           });
         }
 
-        // 2. Preserve any local items not yet on the server, ignoring deleted tombstones
-        if (Array.isArray(localArr)) {
-          localArr.forEach(item => {
-            if (isItemDeleted(item)) return;
+        // 2. Add remote items from other users, but don't overwrite newer local items
+        if (Array.isArray(remoteArr)) {
+          remoteArr.forEach(item => {
+            if (!item || isItemDeleted(item)) return;
             const k = String(item[idKey] || (altKey && item[altKey]) || '');
-            if (k && !map.has(k)) {
+            if (!k) return;
+            if (!map.has(k)) {
               map.set(k, item);
+            } else {
+              // If remote item is explicitly newer, update it
+              const localItem = map.get(k);
+              const localTime = new Date(localItem.updatedAt || localItem.date || 0).getTime();
+              const remoteTime = new Date(item.updatedAt || item.date || 0).getTime();
+              if (remoteTime > localTime && remoteTime > 0) {
+                map.set(k, item);
+              }
             }
           });
         }
+
         return Array.from(map.values());
       };
 
@@ -2023,7 +2058,7 @@
                 let addedAny = false;
                 bundle.deletedDocIds.forEach(idStr => {
                   const s = String(idStr);
-                  if (s && !syncTombstones.has(s)) {
+                  if (s && s.includes('-') && !s.includes('/') && !syncTombstones.has(s)) {
                     syncTombstones.add(s);
                     addedAny = true;
                   }
@@ -2033,12 +2068,12 @@
                     localStorage.setItem('shipz_deleted_doc_ids', JSON.stringify(Array.from(syncTombstones)));
                   } catch (e) { }
                   setTombstoneRevision(prev => prev + 1);
-                  setQuotations(prev => (prev || []).filter(q => !syncTombstones.has(String(q.id)) && !syncTombstones.has(String(q.quotationNo || ''))));
-                  setProformaInvoices(prev => (prev || []).filter(p => !syncTombstones.has(String(p.id)) && !syncTombstones.has(String(p.invNumber || p.piNo || ''))));
-                  setCommercialInvoices(prev => (prev || []).filter(c => !syncTombstones.has(String(c.id)) && !syncTombstones.has(String(c.invNumber || c.ciNo || ''))));
-                  setPackingLists(prev => (prev || []).filter(p => !syncTombstones.has(String(p.id)) && !syncTombstones.has(String(p.pklNo || ''))));
-                  setBlRecords(prev => (prev || []).filter(b => !syncTombstones.has(String(b.id)) && !syncTombstones.has(String(b.rec_id || b.piNo || ''))));
-                  setSystemUsers(prev => (prev || []).filter(u => !syncTombstones.has(String(u.id)) && !syncTombstones.has(String(u.email || ''))));
+                  setQuotations(prev => (prev || []).filter(q => q && q.id && !syncTombstones.has(String(q.id))));
+                  setProformaInvoices(prev => (prev || []).filter(p => p && p.id && !syncTombstones.has(String(p.id))));
+                  setCommercialInvoices(prev => (prev || []).filter(c => c && c.id && !syncTombstones.has(String(c.id))));
+                  setPackingLists(prev => (prev || []).filter(p => p && p.id && !syncTombstones.has(String(p.id))));
+                  setBlRecords(prev => (prev || []).filter(b => b && b.id && !syncTombstones.has(String(b.id))));
+                  setSystemUsers(prev => (prev || []).filter(u => u && u.id && !syncTombstones.has(String(u.id))));
                 }
               }
 
@@ -5766,9 +5801,17 @@
         const existingPkl = (packingLists || []).find(p => (pklFormData.id && p.id === pklFormData.id) || p.pklNo === newPklRecord.pklNo);
         const pklDiff = existingPkl ? computeDocumentChanges(existingPkl, newPklRecord, 'pkl') : null;
         if (existingPkl) {
-          setPackingLists(prev => (prev || []).map(p => (p.id === existingPkl.id || p.pklNo === newPklRecord.pklNo) ? newPklRecord : p));
+          setPackingLists(prev => {
+            const next = (prev || []).map(p => (p.id === existingPkl.id || p.pklNo === newPklRecord.pklNo) ? newPklRecord : p);
+            pushDocumentSync('shipz_packing_lists', next);
+            return next;
+          });
         } else {
-          setPackingLists(prev => [newPklRecord, ...(prev || [])]);
+          setPackingLists(prev => {
+            const next = [newPklRecord, ...(prev || [])];
+            pushDocumentSync('shipz_packing_lists', next);
+            return next;
+          });
         }
 
         // Live Record to Recent Activity
@@ -6216,7 +6259,11 @@
           lineItems: qtFormData.lineItems
         };
 
-        setQuotations((prev) => [draftQt, ...prev]);
+        setQuotations((prev) => {
+          const next = [draftQt, ...(prev || [])];
+          pushDocumentSync('shipz_quotations', next);
+          return next;
+        });
 
         // Live Record to Recent Activity
         recordActivity({
@@ -6312,7 +6359,11 @@
 
         if (editingQtId) {
           const qtDiff = computeDocumentChanges(existingQt, finalQt, 'qt');
-          setQuotations((prev) => prev.map((q) => (q.id === editingQtId ? finalQt : q)));
+          setQuotations((prev) => {
+            const next = (prev || []).map((q) => (q.id === editingQtId ? finalQt : q));
+            pushDocumentSync('shipz_quotations', next);
+            return next;
+          });
           setEditingQtId(null);
           // Live Record to Recent Activity
           recordActivity({
@@ -6330,7 +6381,11 @@
           });
           setToastNotice(`Quotation ${finalQt.quotationNo} updated successfully!`);
         } else {
-          setQuotations((prev) => [finalQt, ...prev]);
+          setQuotations((prev) => {
+            const next = [finalQt, ...(prev || [])];
+            pushDocumentSync('shipz_quotations', next);
+            return next;
+          });
           // Live Record to Recent Activity
           recordActivity({
             type: 'qt',
@@ -6824,7 +6879,11 @@
         if (editingPiId) {
           const piDiff = computeDocumentChanges(existingPi, newPi, isCommercialTarget ? 'ci' : 'pi');
           if (isCommercialTarget) {
-            setCommercialInvoices((prev) => prev.map((c) => (c.id === editingPiId ? newPi : c)));
+            setCommercialInvoices((prev) => {
+              const next = (prev || []).map((c) => (c.id === editingPiId ? newPi : c));
+              pushDocumentSync('shipz_commercial_invoices', next);
+              return next;
+            });
             recordActivity({
               type: 'ci',
               title: 'Commercial Invoice Updated',
@@ -6839,7 +6898,11 @@
               docId: newPi.id
             });
           } else {
-            setProformaInvoices((prev) => prev.map((p) => (p.id === editingPiId ? newPi : p)));
+            setProformaInvoices((prev) => {
+              const next = (prev || []).map((p) => (p.id === editingPiId ? newPi : p));
+              pushDocumentSync('shipz_proforma_invoices', next);
+              return next;
+            });
             recordActivity({
               type: 'pi',
               title: 'Proforma Invoice Updated',
@@ -6857,7 +6920,11 @@
           setEditingPiId(null);
           setToastNotice(`Invoice ${newPi.invNumber} updated successfully!`);
         } else if (isCommercialTarget) {
-          setCommercialInvoices((prev) => [newPi, ...prev]);
+          setCommercialInvoices((prev) => {
+            const next = [newPi, ...(prev || [])];
+            pushDocumentSync('shipz_commercial_invoices', next);
+            return next;
+          });
           const amtFormatted = `${newPi.currencyFx || 'USD'} ${(newPi.amountFx || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
           recordActivity({
             type: 'ci',
@@ -6873,7 +6940,11 @@
           });
           setToastNotice(`Commercial Invoice ${newPi.invNumber} created successfully!`);
         } else {
-          setProformaInvoices((prev) => [newPi, ...prev]);
+          setProformaInvoices((prev) => {
+            const next = [newPi, ...(prev || [])];
+            pushDocumentSync('shipz_proforma_invoices', next);
+            return next;
+          });
           const amtFormatted = `${newPi.currencyFx || 'USD'} ${(newPi.amountFx || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
           recordActivity({
             type: 'pi',
@@ -6948,7 +7019,11 @@
           const existingBl = (blRecords || []).find((r) => r.id === editingBlId) || {};
           const updatedBl = { ...existingBl, ...blFormData };
           const blDiff = computeDocumentChanges(existingBl, updatedBl, 'bl');
-          setBlRecords((prev) => prev.map((r) => (r.id === editingBlId ? updatedBl : r)));
+          setBlRecords((prev) => {
+            const next = (prev || []).map((r) => (r.id === editingBlId ? updatedBl : r));
+            pushDocumentSync('shipz_bl_records', next);
+            return next;
+          });
           recordActivity({
             type: 'bl',
             title: 'BL Draft Updated',
@@ -6970,7 +7045,11 @@
             containerNo: `MSKU-${Math.floor(1000000 + Math.random() * 9000000)}`,
             sealNo: `SL-MDR-${Math.floor(1000 + Math.random() * 9000)}`,
           };
-          setBlRecords([newRec, ...blRecords]);
+          setBlRecords((prev) => {
+            const next = [newRec, ...(prev || [])];
+            pushDocumentSync('shipz_bl_records', next);
+            return next;
+          });
           recordActivity({
             type: 'bl',
             title: 'BL Draft Generated',

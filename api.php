@@ -318,13 +318,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $data['recentActivities'] = array_map(fn($r) => json_decode($r, true), $rowsAct);
         }
 
-        // 8. Sync Tombstones (Deleted Documents across all PCs)
+        // 8. Sync Tombstones (Deleted Documents across all PCs - using unique record IDs only)
         $tombstoneList = [];
         try {
-            $stmtDelRecs = $pdo->query("SELECT record_id, alt_id FROM deleted_records");
+            $stmtDelRecs = $pdo->query("SELECT record_id FROM deleted_records");
             while ($row = $stmtDelRecs->fetch(PDO::FETCH_ASSOC)) {
-                if (!empty($row['record_id'])) $tombstoneList[] = strval($row['record_id']);
-                if (!empty($row['alt_id'])) $tombstoneList[] = strval($row['alt_id']);
+                $rid = strval($row['record_id'] ?? '');
+                if ($rid && strpos($rid, '-') !== false && strpos($rid, '/') === false) {
+                    $tombstoneList[] = $rid;
+                }
             }
         } catch (\Exception $e) {}
 
@@ -336,7 +338,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $arr = json_decode($fbDel, true);
                 if (is_array($arr)) {
                     foreach ($arr as $item) {
-                        if ($item) $tombstoneList[] = strval($item);
+                        $sItem = strval($item ?? '');
+                        if ($sItem && strpos($sItem, '-') !== false && strpos($sItem, '/') === false) {
+                            $tombstoneList[] = $sItem;
+                        }
                     }
                 }
             }
@@ -391,20 +396,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // Helper to add tombstone for deleted documents across all clients
 function addTombstone($pdo, $id, $altId) {
-    if (!$id && !$altId) return;
+    if (!$id) return;
+    $sId = strval($id);
+    if (strpos($sId, '-') === false || strpos($sId, '/') !== false) return;
+
     try {
         $stmt = $pdo->prepare("INSERT INTO deleted_records (record_id, alt_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE deleted_at = CURRENT_TIMESTAMP");
-        $stmt->execute([$id ?: $altId, $altId ?: $id]);
+        $stmt->execute([$sId, strval($altId ?: '')]);
     } catch (\Exception $e) {}
     try {
         $stmt = $pdo->prepare("SELECT data_json FROM erp_sync_store WHERE key_name = 'shipz_deleted_doc_ids'");
         $stmt->execute();
         $json = $stmt->fetchColumn();
         $list = $json ? (json_decode($json, true) ?: []) : [];
-        $changed = false;
-        if ($id && !in_array(strval($id), $list)) { $list[] = strval($id); $changed = true; }
-        if ($altId && !in_array(strval($altId), $list)) { $list[] = strval($altId); $changed = true; }
-        if ($changed) {
+        if (!in_array($sId, $list)) {
+            $list[] = $sId;
             $stmtUp = $pdo->prepare("INSERT INTO erp_sync_store (key_name, data_json) VALUES ('shipz_deleted_doc_ids', ?) ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP");
             $stmtUp->execute([json_encode(array_values($list))]);
         }

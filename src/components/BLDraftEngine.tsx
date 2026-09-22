@@ -35,6 +35,19 @@ export const BLDraftEngine: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem('shipz_bl_records', JSON.stringify(blRecords));
+      if (blRecords && blRecords.length > 0) {
+        fetch('api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'shipz_bl_records', data: blRecords })
+        }).catch(() => {
+          fetch('/api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_bl_records', data: blRecords })
+          }).catch(() => {});
+        });
+      }
     } catch (e) {}
   }, [blRecords]);
 
@@ -233,7 +246,7 @@ export const BLDraftEngine: React.FC = () => {
         notifyParty: formData.notifyParty,
         otherNotifyParty: formData.otherNotifyParty,
       };
-      setBlRecords([newRec, ...blRecords]);
+      setBlRecords((prev) => [newRec, ...prev]);
       alert(`BL Draft for ${newRec.piNo} created and PDF generated!`);
     }
 

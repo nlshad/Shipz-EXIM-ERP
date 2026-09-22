@@ -246,6 +246,19 @@ export const QuotationsEngine: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem('shipz_quotations', JSON.stringify(quotations));
+      if (quotations && quotations.length > 0) {
+        fetch('api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'shipz_quotations', data: quotations })
+        }).catch(() => {
+          fetch('/api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'shipz_quotations', data: quotations })
+          }).catch(() => {});
+        });
+      }
     } catch (e) {}
   }, [quotations]);
 
