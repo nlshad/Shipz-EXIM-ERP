@@ -378,6 +378,7 @@
       { id: 'companyAddress', label: 'Company Address', iconClass: 'fi fi-rr-marker', category: 'Corporate' },
       { id: 'usersPermissions', label: 'Users & Permissions', iconClass: 'fi fi-rr-users', category: 'Corporate' },
       { id: 'customizeFields', label: 'Customize Fields', iconClass: 'fi fi-rr-settings-sliders', category: 'System' },
+      { id: 'backupRestore', label: 'Backup & Restore', iconClass: 'fi fi-rr-database', category: 'System' },
       { id: 'products', label: 'Products', iconClass: 'fi fi-rr-box', category: 'Masters' },
       { id: 'customers', label: 'Customers', iconClass: 'fi fi-rr-users-alt', category: 'Masters' },
       { id: 'notifyParty', label: 'Notify Party', iconClass: 'fi fi-rr-bell-ring', category: 'Masters' },
@@ -1588,6 +1589,296 @@
       // Settings Navigation & Submenu States
       const [activeSettingsSubMenu, setActiveSettingsSubMenu] = useState('companyInfo');
       const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
+
+      // Backup & Restore System States
+      const [backupSnapshotsList, setBackupSnapshotsList] = useState([]);
+      const [isBackupLoading, setIsBackupLoading] = useState(false);
+      const [isRestoreLoading, setIsRestoreLoading] = useState(false);
+      const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+      const [restoreInspectionData, setRestoreInspectionData] = useState(null);
+      const [selectedRestoreModules, setSelectedRestoreModules] = useState({
+        quotations: true,
+        proforma_invoices: true,
+        commercial_invoices: true,
+        packing_lists: true,
+        bl_records: true,
+        pre_shipment_certificates: true,
+        sync_store: true,
+        system_users: true,
+        recent_activities: false
+      });
+      const [restoreMode, setRestoreMode] = useState('merge');
+
+      // Fetch server backup snapshots list
+      const fetchBackupSnapshots = async () => {
+        try {
+          setIsBackupLoading(true);
+          const res = await fetch(getApiUrl('action=list_server_backups'));
+          const data = await res.json();
+          if (data && data.success) {
+            setBackupSnapshotsList(data.snapshots || []);
+          }
+        } catch (err) {
+          console.error('Failed to load backup snapshots:', err);
+        } finally {
+          setIsBackupLoading(false);
+        }
+      };
+
+      React.useEffect(() => {
+        if (activeSettingsSubMenu === 'backupRestore') {
+          fetchBackupSnapshots();
+        }
+      }, [activeSettingsSubMenu]);
+
+      // Download Complete ERP Backup JSON
+      const handleDownloadBackup = async () => {
+        try {
+          setIsBackupLoading(true);
+          setToastNotice('Generating complete ERP database backup snapshot...');
+          const res = await fetch(getApiUrl('action=generate_full_backup'));
+          const resData = await res.json();
+          if (resData && resData.success && resData.backup) {
+            const jsonStr = JSON.stringify(resData.backup, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = resData.snapshot_file || `shipz_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setToastNotice('Backup file downloaded and server snapshot archived successfully!');
+            fetchBackupSnapshots();
+          } else {
+            alert('Failed to generate backup: ' + (resData?.error || 'Unknown server error'));
+          }
+        } catch (err) {
+          alert('Backup generation error: ' + err.message);
+        } finally {
+          setIsBackupLoading(false);
+          setTimeout(() => setToastNotice(null), 4000);
+        }
+      };
+
+      // Create an instant server snapshot in /backups/
+      const handleCreateServerSnapshot = async () => {
+        try {
+          setIsBackupLoading(true);
+          setToastNotice('Creating instant server database snapshot...');
+          const res = await fetch(getApiUrl('action=generate_full_backup'));
+          const resData = await res.json();
+          if (resData && resData.success) {
+            setToastNotice(`Snapshot archived: ${resData.snapshot_file}`);
+            fetchBackupSnapshots();
+          } else {
+            alert('Failed to create snapshot: ' + (resData?.error || 'Unknown server error'));
+          }
+        } catch (err) {
+          alert('Snapshot creation error: ' + err.message);
+        } finally {
+          setIsBackupLoading(false);
+          setTimeout(() => setToastNotice(null), 4000);
+        }
+      };
+
+      // Handle Backup JSON File Upload from User's Computer
+      const handleBackupFileUpload = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.json')) {
+          alert('Please select a valid .json Shipz backup file.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (!parsed || (!parsed.data && !parsed.backup)) {
+              alert('Invalid backup file format: Missing "data" or "backup" payload.');
+              return;
+            }
+            const backupObj = parsed.backup ? parsed.backup : parsed;
+            const dataObj = backupObj.data || {};
+            setRestoreInspectionData({
+              filename: file.name,
+              fileSize: (file.size / 1024).toFixed(1) + ' KB',
+              sourceType: 'Uploaded File',
+              timestamp: backupObj.backup_timestamp || backupObj.timestamp || new Date().toISOString(),
+              server: backupObj.server || {},
+              counts: {
+                quotations: Array.isArray(dataObj.quotations) ? dataObj.quotations.length : (backupObj.counts?.quotations || 0),
+                proforma_invoices: Array.isArray(dataObj.proforma_invoices) ? dataObj.proforma_invoices.length : (backupObj.counts?.proforma_invoices || 0),
+                commercial_invoices: Array.isArray(dataObj.commercial_invoices) ? dataObj.commercial_invoices.length : (backupObj.counts?.commercial_invoices || 0),
+                packing_lists: Array.isArray(dataObj.packing_lists) ? dataObj.packing_lists.length : (backupObj.counts?.packing_lists || 0),
+                bl_records: Array.isArray(dataObj.bl_records) ? dataObj.bl_records.length : (backupObj.counts?.bl_records || 0),
+                pre_shipment_certificates: Array.isArray(dataObj.pre_shipment_certificates) ? dataObj.pre_shipment_certificates.length : (backupObj.counts?.pre_shipment_certificates || 0),
+                sync_store: Object.keys(dataObj.sync_store || {}).length,
+                system_users: Array.isArray(dataObj.system_users) ? dataObj.system_users.length : (backupObj.counts?.system_users || 0),
+                recent_activities: Array.isArray(dataObj.recent_activities) ? dataObj.recent_activities.length : (backupObj.counts?.recent_activities || 0),
+              },
+              rawBackup: backupObj
+            });
+            setSelectedRestoreModules({
+              quotations: true,
+              proforma_invoices: true,
+              commercial_invoices: true,
+              packing_lists: true,
+              bl_records: true,
+              pre_shipment_certificates: true,
+              sync_store: true,
+              system_users: true,
+              recent_activities: false
+            });
+            setRestoreMode('merge');
+            setIsRestoreModalOpen(true);
+          } catch (err) {
+            alert('Failed to parse backup JSON file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+      };
+
+      // Inspect a Server Snapshot from the Table
+      const handleInspectServerSnapshot = async (filename) => {
+        try {
+          setIsBackupLoading(true);
+          setToastNotice('Loading snapshot from server...');
+          const res = await fetch(getApiUrl(`action=download_server_backup&filename=${encodeURIComponent(filename)}`));
+          const parsed = await res.json();
+          const backupObj = parsed.backup ? parsed.backup : parsed;
+          const dataObj = backupObj.data || {};
+          setRestoreInspectionData({
+            filename: filename,
+            fileSize: 'Server Snapshot',
+            sourceType: 'Server Snapshot Archive',
+            timestamp: backupObj.backup_timestamp || backupObj.timestamp || new Date().toISOString(),
+            server: backupObj.server || {},
+            counts: {
+              quotations: Array.isArray(dataObj.quotations) ? dataObj.quotations.length : (backupObj.counts?.quotations || 0),
+              proforma_invoices: Array.isArray(dataObj.proforma_invoices) ? dataObj.proforma_invoices.length : (backupObj.counts?.proforma_invoices || 0),
+              commercial_invoices: Array.isArray(dataObj.commercial_invoices) ? dataObj.commercial_invoices.length : (backupObj.counts?.commercial_invoices || 0),
+              packing_lists: Array.isArray(dataObj.packing_lists) ? dataObj.packing_lists.length : (backupObj.counts?.packing_lists || 0),
+              bl_records: Array.isArray(dataObj.bl_records) ? dataObj.bl_records.length : (backupObj.counts?.bl_records || 0),
+              pre_shipment_certificates: Array.isArray(dataObj.pre_shipment_certificates) ? dataObj.pre_shipment_certificates.length : (backupObj.counts?.pre_shipment_certificates || 0),
+              sync_store: Object.keys(dataObj.sync_store || {}).length,
+              system_users: Array.isArray(dataObj.system_users) ? dataObj.system_users.length : (backupObj.counts?.system_users || 0),
+              recent_activities: Array.isArray(dataObj.recent_activities) ? dataObj.recent_activities.length : (backupObj.counts?.recent_activities || 0),
+            },
+            rawBackup: backupObj
+          });
+          setSelectedRestoreModules({
+            quotations: true,
+            proforma_invoices: true,
+            commercial_invoices: true,
+            packing_lists: true,
+            bl_records: true,
+            pre_shipment_certificates: true,
+            sync_store: true,
+            system_users: true,
+            recent_activities: false
+          });
+          setRestoreMode('merge');
+          setIsRestoreModalOpen(true);
+        } catch (err) {
+          alert('Failed to load server snapshot: ' + err.message);
+        } finally {
+          setIsBackupLoading(false);
+          setTimeout(() => setToastNotice(null), 2000);
+        }
+      };
+
+      // Download a specific Server Snapshot
+      const handleDownloadServerSnapshot = (filename) => {
+        window.open(getApiUrl(`action=download_server_backup&filename=${encodeURIComponent(filename)}`), '_blank');
+      };
+
+      // Delete a specific Server Snapshot
+      const handleDeleteServerSnapshot = async (filename) => {
+        if (!confirm(`Are you sure you want to permanently delete backup snapshot "${filename}" from server storage?`)) return;
+        try {
+          const res = await fetch(getApiUrl('action=delete_server_backup'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            setToastNotice(`Snapshot ${filename} deleted.`);
+            fetchBackupSnapshots();
+          } else {
+            alert('Delete failed: ' + (data?.error || 'Unknown error'));
+          }
+        } catch (err) {
+          alert('Error deleting backup snapshot: ' + err.message);
+        } finally {
+          setTimeout(() => setToastNotice(null), 3000);
+        }
+      };
+
+      // Execute Selected Modules Database Restore
+      const handleExecuteRestore = async () => {
+        if (!restoreInspectionData || !restoreInspectionData.rawBackup) {
+          alert('No backup data loaded for restore.');
+          return;
+        }
+
+        const selectedKeys = Object.keys(selectedRestoreModules).filter(k => selectedRestoreModules[k]);
+        if (selectedKeys.length === 0) {
+          alert('Please select at least one module or data category to restore.');
+          return;
+        }
+
+        const modeWarning = restoreMode === 'replace'
+          ? `CAUTION: You selected "Clean Replace (Overwrite)" mode.\n\nThis will ERASE existing records in the selected modules (${selectedKeys.join(', ')}) and replace them completely with the backup.\n\nAre you sure you want to proceed?`
+          : `Proceed with "Safe Merge" restore for selected modules (${selectedKeys.join(', ')})?\n\nThis will update existing records and add missing ones without deleting unbacked data.`;
+
+        if (!confirm(modeWarning)) return;
+
+        try {
+          setIsRestoreLoading(true);
+          setToastNotice('Restoring database records and syncing states...');
+          const payload = {
+            backup_data: restoreInspectionData.rawBackup,
+            selected_modules: selectedKeys,
+            mode: restoreMode
+          };
+
+          const res = await fetch(getApiUrl('action=restore_backup'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const resData = await res.json();
+          if (resData && resData.success) {
+            // Also sync localStorage for sync_store items if restored
+            if (selectedRestoreModules.sync_store && restoreInspectionData.rawBackup?.data?.sync_store) {
+              const sStore = restoreInspectionData.rawBackup.data.sync_store;
+              Object.keys(sStore).forEach(k => {
+                try {
+                  const val = typeof sStore[k] === 'string' ? sStore[k] : JSON.stringify(sStore[k]);
+                  localStorage.setItem(k, val);
+                } catch (e) {}
+              });
+            }
+
+            setIsRestoreModalOpen(false);
+            setToastNotice('Database restored successfully! Reloading ERP data in 1 second...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1200);
+          } else {
+            alert('Restore failed: ' + (resData?.error || 'Unknown server error'));
+          }
+        } catch (err) {
+          alert('Error executing restore: ' + err.message);
+        } finally {
+          setIsRestoreLoading(false);
+        }
+      };
 
       // Support & AI Chatbot Assistant States
       const [chatMessages, setChatMessages] = useState(() => loadSavedState('shipz_chat_messages', [
@@ -10141,6 +10432,273 @@
                               <span>Save Credentials & Config</span>
                             </button>
                           </div>
+                        </div>
+                      </div>
+                    {/* 22. BACKUP & RESTORE CENTER */}
+                    {activeSettingsSubMenu === 'backupRestore' && (
+                      <div className="space-y-6">
+                        {/* BANNER HEADER */}
+                        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2 text-[10px] uppercase tracking-wider font-extrabold text-indigo-400">
+                              <span>System Administration & Disaster Recovery</span>
+                            </div>
+                            <h4 className="font-black text-white text-lg flex items-center space-x-2.5">
+                              <i className="fi fi-rr-database text-indigo-400"></i>
+                              <span>ERP Database Backup & Restore Center</span>
+                            </h4>
+                            <p className="text-xs text-slate-300">
+                              Export 100% of all ERP records, restore selectively with Safe Merge protection, or manage local server snapshots.
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 flex items-center space-x-2">
+                            <span className="px-3 py-1.5 rounded-full text-xs font-extrabold border flex items-center space-x-1.5 bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+                              <i className="fi fi-rr-check-circle text-emerald-400"></i>
+                              <span>Local MySQL: Online</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={fetchBackupSnapshots}
+                              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-full transition-colors flex items-center space-x-1"
+                              title="Refresh Snapshot List"
+                            >
+                              <i className="fi fi-rr-refresh text-xs"></i>
+                              <span>Refresh</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* THREE ACTION CARDS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {/* CARD 1: DOWNLOAD COMPLETE BACKUP */}
+                          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-indigo-300 transition-colors">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-lg shadow-xs">
+                                  <i className="fi fi-rr-cloud-download"></i>
+                                </div>
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100">
+                                  1-Click Export
+                                </span>
+                              </div>
+                              <h5 className="font-extrabold text-sm text-slate-900">Download Full ERP Backup</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed">
+                                Generates a portable, timestamped <code>.json</code> file containing all Quotations, Invoices, BL Drafts, Packing Lists, Certificates, Master Settings, and Users.
+                              </p>
+
+                              {/* LIVE STATS PILLS */}
+                              <div className="pt-1 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-600">
+                                <span className="bg-slate-100 px-2 py-0.5 rounded-md">Quotes: {(quotations || []).length}</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded-md">PIs: {(proformaInvoices || []).length}</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded-md">CIs: {(commercialInvoices || []).length}</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded-md">BLs: {(blRecords || []).length}</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded-md">Certs: {(preShipmentCertificates || []).length}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleDownloadBackup}
+                              disabled={isBackupLoading}
+                              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+                            >
+                              <i className={`fi ${isBackupLoading ? 'fi-rr-spinner animate-spin' : 'fi-rr-download'} text-xs`}></i>
+                              <span>{isBackupLoading ? 'Exporting ERP Data...' : 'Download Full Backup (.json)'}</span>
+                            </button>
+                          </div>
+
+                          {/* CARD 2: UPLOAD & RESTORE */}
+                          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-emerald-300 transition-colors">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-lg shadow-xs">
+                                  <i className="fi fi-rr-cloud-upload"></i>
+                                </div>
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100">
+                                  Select & Restore
+                                </span>
+                              </div>
+                              <h5 className="font-extrabold text-sm text-slate-900">Upload & Restore from File</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed">
+                                Upload any previously exported Shipz <code>.json</code> backup file. Inspect contained data and selectively pick which modules to merge or replace.
+                              </p>
+
+                              <div className="p-3 bg-emerald-50/60 rounded-xl border border-dashed border-emerald-200 text-center">
+                                <label htmlFor="backupFileInput" className="cursor-pointer block">
+                                  <i className="fi fi-rr-file-import text-emerald-600 text-base mb-1 block"></i>
+                                  <span className="text-xs font-bold text-emerald-800">Click to Select .json File</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5">Supports Shipz backup JSON format</span>
+                                </label>
+                                <input
+                                  type="file"
+                                  id="backupFileInput"
+                                  accept=".json"
+                                  onChange={handleBackupFileUpload}
+                                  className="hidden"
+                                />
+                              </div>
+                            </div>
+
+                            <label
+                              htmlFor="backupFileInput"
+                              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer text-center"
+                            >
+                              <i className="fi fi-rr-upload text-xs"></i>
+                              <span>Upload & Inspect Backup</span>
+                            </label>
+                          </div>
+
+                          {/* CARD 3: SERVER SNAPSHOT ARCHIVE */}
+                          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-violet-300 transition-colors">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 text-lg shadow-xs">
+                                  <i className="fi fi-rr-database"></i>
+                                </div>
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 bg-violet-50 text-violet-700 rounded-lg border border-violet-100">
+                                  Local Server Storage
+                                </span>
+                              </div>
+                              <h5 className="font-extrabold text-sm text-slate-900">Create Server Snapshot</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed">
+                                Instantly archive the current database state directly to the server filesystem (<code>/backups/</code>). Access or roll back at any time.
+                              </p>
+
+                              <div className="p-3 bg-violet-50/50 rounded-xl border border-violet-100 text-xs text-slate-600">
+                                <div className="flex items-center justify-between font-bold text-slate-700 mb-1">
+                                  <span>Snapshots on disk:</span>
+                                  <span className="text-violet-700 font-extrabold">{backupSnapshotsList.length}</span>
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                  Stored in <code>/backups/</code>
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleCreateServerSnapshot}
+                              disabled={isBackupLoading}
+                              className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-extrabold rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md shadow-violet-600/20 transition-all cursor-pointer"
+                            >
+                              <i className={`fi ${isBackupLoading ? 'fi-rr-spinner animate-spin' : 'fi-rr-plus'} text-xs`}></i>
+                              <span>Create Server Snapshot Now</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* SERVER SNAPSHOTS TABLE */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                          <div className="px-5 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="flex items-center space-x-2">
+                              <h5 className="font-extrabold text-sm text-slate-900 flex items-center space-x-2">
+                                <i className="fi fi-rr-time-past text-indigo-600"></i>
+                                <span>Server Backup Snapshots Archive</span>
+                              </h5>
+                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-extrabold text-[10px] rounded-full border border-indigo-100">
+                                {backupSnapshotsList.length} Archived
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-500">
+                              Click <strong>Inspect & Restore</strong> on any snapshot to selectively restore documents or master data.
+                            </p>
+                          </div>
+
+                          {backupSnapshotsList.length === 0 ? (
+                            <div className="p-12 text-center space-y-3">
+                              <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xl">
+                                <i className="fi fi-rr-box-open"></i>
+                              </div>
+                              <h6 className="font-bold text-slate-700 text-sm">No Server Snapshots Found</h6>
+                              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                                Click "Create Server Snapshot Now" or "Download Full Backup" to generate your first complete ERP snapshot.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-slate-50/75 border-b border-slate-200 text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
+                                    <th className="px-5 py-3">Snapshot File & Date</th>
+                                    <th className="px-4 py-3">File Size</th>
+                                    <th className="px-4 py-3">Included Records</th>
+                                    <th className="px-5 py-3 text-right">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-xs">
+                                  {backupSnapshotsList.map((snap, idx) => (
+                                    <tr key={snap.filename || idx} className="hover:bg-indigo-50/20 transition-colors">
+                                      <td className="px-5 py-3.5">
+                                        <div className="font-bold text-slate-900 flex items-center space-x-2">
+                                          <i className="fi fi-rr-file-code text-indigo-600 text-sm"></i>
+                                          <span>{snap.filename}</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 mt-0.5">
+                                          Created: {snap.backup_timestamp ? new Date(snap.backup_timestamp).toLocaleString() : snap.modified_time}
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3.5 font-semibold text-slate-700">
+                                        {snap.file_size}
+                                      </td>
+                                      <td className="px-4 py-3.5">
+                                        <div className="flex flex-wrap gap-1 text-[10px] font-bold">
+                                          {snap.counts?.quotations !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">Quotes: {snap.counts.quotations}</span>
+                                          )}
+                                          {snap.counts?.proforma_invoices !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">PIs: {snap.counts.proforma_invoices}</span>
+                                          )}
+                                          {snap.counts?.commercial_invoices !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">CIs: {snap.counts.commercial_invoices}</span>
+                                          )}
+                                          {snap.counts?.packing_lists !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">PKLs: {snap.counts.packing_lists}</span>
+                                          )}
+                                          {snap.counts?.bl_records !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">BLs: {snap.counts.bl_records}</span>
+                                          )}
+                                          {snap.counts?.pre_shipment_certificates !== undefined && (
+                                            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">Certs: {snap.counts.pre_shipment_certificates}</span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="px-5 py-3.5 text-right">
+                                        <div className="flex items-center justify-end space-x-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleInspectServerSnapshot(snap.filename)}
+                                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[11px] rounded-lg border border-indigo-200 transition-colors flex items-center space-x-1 cursor-pointer"
+                                            title="Inspect and selectively restore data from this snapshot"
+                                          >
+                                            <i className="fi fi-rr-time-past text-xs"></i>
+                                            <span>Inspect & Restore</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDownloadServerSnapshot(snap.filename)}
+                                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition-colors flex items-center space-x-1 cursor-pointer"
+                                            title="Download this backup file to your computer"
+                                          >
+                                            <i className="fi fi-rr-download text-xs"></i>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteServerSnapshot(snap.filename)}
+                                            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] rounded-lg transition-colors flex items-center space-x-1 cursor-pointer"
+                                            title="Delete this backup snapshot"
+                                          >
+                                            <i className="fi fi-rr-trash text-xs"></i>
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -19442,6 +20000,269 @@
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          {/* SELECT AND RESTORE MODAL */}
+          {isRestoreModalOpen && restoreInspectionData && (
+            <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-[250] p-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+                {/* MODAL HEADER */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
+                      <i className="fi fi-rr-time-past text-base"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black tracking-tight text-white flex items-center space-x-2">
+                        <span>Select & Restore ERP Data</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                          Pre-Restore Inspector
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        Select specific modules to restore and pick your restoration mode
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRestoreModalOpen(false)}
+                    className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* MODAL BODY (SCROLLABLE) */}
+                <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-700">
+                  {/* BACKUP METADATA OVERVIEW */}
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Backup Source</span>
+                      <span className="font-extrabold text-slate-800 truncate block" title={restoreInspectionData.filename}>
+                        {restoreInspectionData.filename}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Backup Timestamp</span>
+                      <span className="font-extrabold text-slate-800 block">
+                        {restoreInspectionData.timestamp ? new Date(restoreInspectionData.timestamp).toLocaleString() : 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">File Size / Type</span>
+                      <span className="font-extrabold text-slate-800 block">
+                        {restoreInspectionData.fileSize || 'JSON File'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Origin Database</span>
+                      <span className="font-extrabold text-slate-800 block">
+                        {restoreInspectionData.server?.database || 'shipz_db'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* MODULE SELECTION SECTION */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
+                        <i className="fi fi-rr-apps text-indigo-600"></i>
+                        <span>1. Select Modules to Restore</span>
+                      </h4>
+                      <div className="flex items-center space-x-3 text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRestoreModules({
+                            quotations: true,
+                            proforma_invoices: true,
+                            commercial_invoices: true,
+                            packing_lists: true,
+                            bl_records: true,
+                            pre_shipment_certificates: true,
+                            sync_store: true,
+                            system_users: true,
+                            recent_activities: true
+                          })}
+                          className="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                        >
+                          Select All
+                        </button>
+                        <span className="text-slate-300">|</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRestoreModules({
+                            quotations: false,
+                            proforma_invoices: false,
+                            commercial_invoices: false,
+                            packing_lists: false,
+                            bl_records: false,
+                            pre_shipment_certificates: false,
+                            sync_store: false,
+                            system_users: false,
+                            recent_activities: false
+                          })}
+                          className="text-slate-500 hover:text-slate-700 cursor-pointer"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* MODULE CHECKBOX GRID */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {[
+                        { key: 'quotations', label: 'Quotations', icon: 'fi fi-rr-document', count: restoreInspectionData.counts?.quotations || 0, desc: 'Cost sheets & quotations' },
+                        { key: 'proforma_invoices', label: 'Proforma Invoices', icon: 'fi fi-rr-file-invoice-dollar', count: restoreInspectionData.counts?.proforma_invoices || 0, desc: 'PI orders & contracts' },
+                        { key: 'commercial_invoices', label: 'Commercial Invoices', icon: 'fi fi-rr-receipt', count: restoreInspectionData.counts?.commercial_invoices || 0, desc: 'Post-shipment billing' },
+                        { key: 'packing_lists', label: 'Packing Lists', icon: 'fi fi-rr-boxes', count: restoreInspectionData.counts?.packing_lists || 0, desc: 'Cartons, weights & dims' },
+                        { key: 'bl_records', label: 'BL Drafts', icon: 'fi fi-rr-ship', count: restoreInspectionData.counts?.bl_records || 0, desc: 'Bills of Lading drafts' },
+                        { key: 'pre_shipment_certificates', label: 'Certificates', icon: 'fi fi-rr-diploma', count: restoreInspectionData.counts?.pre_shipment_certificates || 0, desc: 'Pre-shipment certs' },
+                        { key: 'sync_store', label: 'Masters & Settings', icon: 'fi fi-rr-settings-sliders', count: `${restoreInspectionData.counts?.sync_store || 0} keys`, desc: 'Products, customers, terms' },
+                        { key: 'system_users', label: 'Users & Roles', icon: 'fi fi-rr-users', count: restoreInspectionData.counts?.system_users || 0, desc: 'Accounts & permissions' },
+                        { key: 'recent_activities', label: 'Activity Logs', icon: 'fi fi-rr-time-past', count: restoreInspectionData.counts?.recent_activities || 0, desc: 'Audit log entries' }
+                      ].map((mod) => (
+                        <label
+                          key={mod.key}
+                          className={`flex items-start space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                            selectedRestoreModules[mod.key]
+                              ? 'bg-indigo-50/50 border-indigo-300 shadow-xs'
+                              : 'bg-white border-slate-200 hover:border-slate-300 opacity-60'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!selectedRestoreModules[mod.key]}
+                            onChange={(e) => setSelectedRestoreModules({
+                              ...selectedRestoreModules,
+                              [mod.key]: e.target.checked
+                            })}
+                            className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold text-slate-900 text-xs truncate">{mod.label}</span>
+                              <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-md">
+                                {mod.count}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 block truncate mt-0.5">{mod.desc}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* RESTORE STRATEGY SELECTION */}
+                  <div className="space-y-3">
+                    <h4 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2 border-b border-slate-200 pb-2">
+                      <i className="fi fi-rr-shield-check text-indigo-600"></i>
+                      <span>2. Choose Restore Strategy</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* SAFE MERGE */}
+                      <label
+                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                          restoreMode === 'merge'
+                            ? 'border-indigo-600 bg-indigo-50/40 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            name="restoreStrategy"
+                            checked={restoreMode === 'merge'}
+                            onChange={() => setRestoreMode('merge')}
+                            className="mt-1 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-extrabold text-slate-900 text-sm">Safe Merge</span>
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                                Recommended
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              Non-destructive update. Updates existing records and inserts missing records from backup. Any newly created records not in this backup are <strong>preserved</strong>.
+                            </p>
+                          </div>
+                        </div>
+                      </label>
+
+                      {/* CLEAN REPLACE */}
+                      <label
+                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                          restoreMode === 'replace'
+                            ? 'border-rose-600 bg-rose-50/40 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            name="restoreStrategy"
+                            checked={restoreMode === 'replace'}
+                            onChange={() => setRestoreMode('replace')}
+                            className="mt-1 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                          />
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-extrabold text-slate-900 text-sm">Clean Replace</span>
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full">
+                                Full Overwrite
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              Replaces the selected modules completely. Records not present in the backup snapshot will be removed to match the snapshot exactly.
+                            </p>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    {restoreMode === 'replace' && (
+                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start space-x-2 text-xs text-amber-800">
+                        <i className="fi fi-rr-triangle-warning text-amber-600 mt-0.5 text-sm"></i>
+                        <span>
+                          <strong>Caution:</strong> You selected Clean Replace. Existing records in selected modules that are not present in this backup will be erased.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* MODAL FOOTER */}
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setIsRestoreModalOpen(false)}
+                    disabled={isRestoreLoading}
+                    className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <div className="flex items-center space-x-3">
+                    <span className="text-[11px] text-slate-500">
+                      {Object.keys(selectedRestoreModules).filter(k => selectedRestoreModules[k]).length} of 9 modules selected
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleExecuteRestore}
+                      disabled={isRestoreLoading || Object.keys(selectedRestoreModules).filter(k => selectedRestoreModules[k]).length === 0}
+                      className={`px-6 py-2.5 font-extrabold text-white rounded-xl text-xs flex items-center space-x-2 shadow-lg transition-all cursor-pointer ${
+                        restoreMode === 'replace'
+                          ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
+                          : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                      } disabled:opacity-50`}
+                    >
+                      <i className={`fi ${isRestoreLoading ? 'fi-rr-spinner animate-spin' : 'fi-rr-check-circle'} text-xs`}></i>
+                      <span>{isRestoreLoading ? 'Restoring ERP Database...' : 'Execute Restore Now'}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

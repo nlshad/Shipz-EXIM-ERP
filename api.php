@@ -424,8 +424,153 @@ if ($requestMethod === 'GET') {
         exit;
     }
 
+    // Full System Backup Generator Endpoint
+    if ($action === 'generate_full_backup') {
+        $backup = buildFullBackupData($pdo, $DB_HOST, $DB_NAME);
+        $jsonStr = json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        
+        $backupsDir = __DIR__ . '/backups';
+        if (!is_dir($backupsDir)) {
+            @mkdir($backupsDir, 0755, true);
+        }
+        $filename = 'shipz_backup_' . date('Y-m-d_H-i-s') . '.json';
+        @file_put_contents($backupsDir . '/' . $filename, $jsonStr);
+
+        if (isset($_GET['download']) && $_GET['download'] === '1') {
+            header('Content-Type: application/json');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($jsonStr));
+            echo $jsonStr;
+            exit;
+        }
+
+        echo json_encode([
+            'success'       => true,
+            'snapshot_file' => $filename,
+            'backup'        => $backup
+        ]);
+        exit;
+    }
+
+    // List Historical Server Backups
+    if ($action === 'list_server_backups') {
+        $backupsDir = __DIR__ . '/backups';
+        $list = [];
+        if (is_dir($backupsDir)) {
+            $files = scandir($backupsDir);
+            foreach ($files as $f) {
+                if ($f === '.' || $f === '..' || !str_ends_with($f, '.json')) continue;
+                $path = $backupsDir . '/' . $f;
+                $size = filesize($path);
+                $mtime = filemtime($path);
+                
+                $meta = null;
+                $fp = @fopen($path, 'r');
+                if ($fp) {
+                    $preview = fread($fp, 8192);
+                    fclose($fp);
+                    $meta = json_decode($preview, true);
+                }
+                $counts = $meta['counts'] ?? [];
+
+                $list[] = [
+                    'filename'         => $f,
+                    'file_size'        => $size > 1048576 ? round($size / 1048576, 2) . ' MB' : round($size / 1024, 1) . ' KB',
+                    'modified_time'    => date('Y-m-d H:i:s', $mtime),
+                    'backup_timestamp' => $meta['backup_timestamp'] ?? date('c', $mtime),
+                    'counts'           => $counts
+                ];
+            }
+            usort($list, fn($a, $b) => strcmp($b['modified_time'], $a['modified_time']));
+        }
+        echo json_encode(['success' => true, 'snapshots' => $list]);
+        exit;
+    }
+
+    // Download a Specific Server Backup File
+    if ($action === 'download_server_backup') {
+        $file = basename($_GET['file'] ?? '');
+        $path = __DIR__ . '/backups/' . $file;
+        if (!$file || !file_exists($path)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Backup file not found']);
+            exit;
+        }
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="' . $file . '"');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
+    }
+
     echo json_encode(['status' => 'online', 'message' => 'ExportFlow Local MySQL API Active']);
     exit;
+}
+
+// Helper to construct full ERP backup dictionary
+function buildFullBackupData($pdo, $DB_HOST, $DB_NAME) {
+    $backup = [
+        'schema_version'   => '1.0',
+        'app_name'         => 'Shipz EXIM ERP',
+        'backup_timestamp' => date('c'),
+        'server'           => [
+            'host'     => $DB_HOST,
+            'database' => $DB_NAME,
+            'php'      => PHP_VERSION
+        ],
+        'counts'           => [],
+        'data'             => [
+            'quotations'                => [],
+            'proforma_invoices'         => [],
+            'commercial_invoices'       => [],
+            'packing_lists'             => [],
+            'bl_records'                => [],
+            'pre_shipment_certificates' => [],
+            'system_users'              => [],
+            'recent_activities'         => [],
+            'sync_store'                => []
+        ]
+    ];
+
+    $tables = [
+        'quotations'                => "SELECT data_json FROM quotations ORDER BY id ASC",
+        'proforma_invoices'         => "SELECT data_json FROM proforma_invoices ORDER BY id ASC",
+        'commercial_invoices'       => "SELECT data_json FROM commercial_invoices ORDER BY id ASC",
+        'packing_lists'             => "SELECT data_json FROM packing_lists ORDER BY id ASC",
+        'bl_records'                => "SELECT data_json FROM bl_records ORDER BY id ASC",
+        'pre_shipment_certificates' => "SELECT data_json FROM pre_shipment_certificates ORDER BY id ASC",
+        'system_users'              => "SELECT data_json FROM system_users ORDER BY id ASC",
+        'recent_activities'         => "SELECT data_json FROM recent_activities ORDER BY id ASC"
+    ];
+
+    foreach ($tables as $key => $sql) {
+        try {
+            $stmt = $pdo->query($sql);
+            if ($stmt) {
+                $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $backup['data'][$key] = array_map(fn($r) => json_decode($r, true), $rows);
+            }
+        } catch (\Exception $e) {
+            $backup['data'][$key] = [];
+        }
+        $backup['counts'][$key] = count($backup['data'][$key]);
+    }
+
+    try {
+        $stmtSync = $pdo->query("SELECT key_name, data_json FROM erp_sync_store");
+        if ($stmtSync) {
+            while ($row = $stmtSync->fetch(PDO::FETCH_ASSOC)) {
+                $k = $row['key_name'];
+                $val = json_decode($row['data_json'], true);
+                $backup['data']['sync_store'][$k] = ($val !== null) ? $val : $row['data_json'];
+            }
+        }
+    } catch (\Exception $e) {
+        $backup['data']['sync_store'] = [];
+    }
+    $backup['counts']['sync_store_keys'] = count($backup['data']['sync_store']);
+
+    return $backup;
 }
 
 // Helper to add tombstone for deleted documents across all clients
@@ -480,6 +625,224 @@ function cleanSyncStoreArray($pdo, $key, $id, $altId, $altKeyName) {
 if ($requestMethod === 'POST') {
     if (empty($input)) {
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
+    }
+
+    // Granular Full / Selective Restore Endpoint
+    if ($action === 'restore_backup') {
+        $backupData = $input['backup_data'] ?? null;
+        $serverFile = basename($input['server_file'] ?? '');
+        if (!$backupData && $serverFile) {
+            $path = __DIR__ . '/backups/' . $serverFile;
+            if (file_exists($path)) {
+                $backupData = json_decode(file_get_contents($path), true);
+            }
+        }
+
+        if (!$backupData || !is_array($backupData) || empty($backupData['data'])) {
+            echo json_encode(['success' => false, 'error' => 'Invalid or empty backup data.']);
+            exit;
+        }
+
+        $selectedModules = $input['selected_modules'] ?? [];
+        if (empty($selectedModules)) {
+            $selectedModules = ['quotations', 'proforma_invoices', 'commercial_invoices', 'packing_lists', 'bl_records', 'pre_shipment_certificates', 'masters_and_settings', 'system_users', 'recent_activities'];
+        }
+
+        $mode = ($input['mode'] ?? 'merge') === 'replace' ? 'replace' : 'merge';
+        $data = $backupData['data'];
+        $restoredCounts = [];
+
+        $pdo->beginTransaction();
+        try {
+            $untombstoneStmt = $pdo->prepare("DELETE FROM deleted_records WHERE record_id = ? OR alt_id = ?");
+
+            // 1. Quotations
+            if (in_array('quotations', $selectedModules) && isset($data['quotations']) && is_array($data['quotations'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM quotations");
+                }
+                $stmt = $pdo->prepare("INSERT INTO quotations (id, quotation_no, date, client_name, data_json) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE quotation_no=VALUES(quotation_no), date=VALUES(date), client_name=VALUES(client_name), data_json=VALUES(data_json)");
+                foreach ($data['quotations'] as $item) {
+                    $qId = $item['id'] ?? ('qt-' . uniqid());
+                    $qNo = $item['quotationNo'] ?? $item['quotation_no'] ?? '';
+                    $qDate = $item['date'] ?? date('Y-m-d');
+                    $client = $item['clientName'] ?? $item['client_name'] ?? ($item['customer'] ?? '');
+                    $stmt->execute([$qId, $qNo, $qDate, $client, json_encode($item)]);
+                    $untombstoneStmt->execute([$qId, $qNo]);
+                }
+                $restoredCounts['quotations'] = count($data['quotations']);
+            }
+
+            // 2. Proforma Invoices
+            if (in_array('proforma_invoices', $selectedModules) && isset($data['proforma_invoices']) && is_array($data['proforma_invoices'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM proforma_invoices");
+                }
+                $stmt = $pdo->prepare("INSERT INTO proforma_invoices (id, pi_no, date, consignee, total_fx, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE pi_no=VALUES(pi_no), date=VALUES(date), consignee=VALUES(consignee), total_fx=VALUES(total_fx), data_json=VALUES(data_json)");
+                foreach ($data['proforma_invoices'] as $item) {
+                    $pId = $item['id'] ?? ('pi-' . uniqid());
+                    $pNo = $item['invNumber'] ?? $item['pi_no'] ?? '';
+                    $pDate = $item['date'] ?? date('Y-m-d');
+                    $consignee = $item['consignee'] ?? '';
+                    $fx = floatval($item['amountFx'] ?? ($item['totalFx'] ?? 0));
+                    $stmt->execute([$pId, $pNo, $pDate, $consignee, $fx, json_encode($item)]);
+                    $untombstoneStmt->execute([$pId, $pNo]);
+                }
+                $restoredCounts['proforma_invoices'] = count($data['proforma_invoices']);
+            }
+
+            // 3. Commercial Invoices
+            if (in_array('commercial_invoices', $selectedModules) && isset($data['commercial_invoices']) && is_array($data['commercial_invoices'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM commercial_invoices");
+                }
+                $stmt = $pdo->prepare("INSERT INTO commercial_invoices (id, ci_no, date, consignee, total_fx, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE ci_no=VALUES(ci_no), date=VALUES(date), consignee=VALUES(consignee), total_fx=VALUES(total_fx), data_json=VALUES(data_json)");
+                foreach ($data['commercial_invoices'] as $item) {
+                    $cId = $item['id'] ?? ('ci-' . uniqid());
+                    $cNo = $item['invNumber'] ?? $item['ci_no'] ?? '';
+                    $cDate = $item['date'] ?? date('Y-m-d');
+                    $consignee = $item['consignee'] ?? ($item['buyerName'] ?? '');
+                    $fx = floatval($item['amountFx'] ?? ($item['totalFx'] ?? 0));
+                    $stmt->execute([$cId, $cNo, $cDate, $consignee, $fx, json_encode($item)]);
+                    $untombstoneStmt->execute([$cId, $cNo]);
+                }
+                $restoredCounts['commercial_invoices'] = count($data['commercial_invoices']);
+            }
+
+            // 4. Packing Lists
+            if (in_array('packing_lists', $selectedModules) && isset($data['packing_lists']) && is_array($data['packing_lists'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM packing_lists");
+                }
+                $stmt = $pdo->prepare("INSERT INTO packing_lists (id, pkl_no, date, consignee, total_packages, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE pkl_no=VALUES(pkl_no), date=VALUES(date), consignee=VALUES(consignee), total_packages=VALUES(total_packages), data_json=VALUES(data_json)");
+                foreach ($data['packing_lists'] as $item) {
+                    $pkId = $item['id'] ?? ('pkl-' . uniqid());
+                    $pkNo = $item['pklNo'] ?? $item['pkl_no'] ?? '';
+                    $pkDate = $item['date'] ?? date('Y-m-d');
+                    $consignee = $item['consignee'] ?? '';
+                    $pkgs = intval($item['totalPackages'] ?? ($item['totalPkgs'] ?? 0));
+                    $stmt->execute([$pkId, $pkNo, $pkDate, $consignee, $pkgs, json_encode($item)]);
+                    $untombstoneStmt->execute([$pkId, $pkNo]);
+                }
+                $restoredCounts['packing_lists'] = count($data['packing_lists']);
+            }
+
+            // 5. BL Records
+            if (in_array('bl_records', $selectedModules) && isset($data['bl_records']) && is_array($data['bl_records'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM bl_records");
+                }
+                $stmt = $pdo->prepare("INSERT INTO bl_records (id, rec_id, pi_no, booking_no, bl_type, shipping_line, data_json) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE rec_id=VALUES(rec_id), pi_no=VALUES(pi_no), booking_no=VALUES(booking_no), bl_type=VALUES(bl_type), shipping_line=VALUES(shipping_line), data_json=VALUES(data_json)");
+                foreach ($data['bl_records'] as $item) {
+                    $bId = $item['id'] ?? ('bl-' . uniqid());
+                    $recId = $item['recId'] ?? $item['rec_id'] ?? $bId;
+                    $piNo = $item['piNo'] ?? $item['pi_no'] ?? '';
+                    $bkNo = $item['bookingNo'] ?? $item['booking_no'] ?? '';
+                    $blType = $item['blType'] ?? 'Sea';
+                    $line = $item['shippingLine'] ?? '';
+                    $stmt->execute([$bId, $recId, $piNo, $bkNo, $blType, $line, json_encode($item)]);
+                    $untombstoneStmt->execute([$bId, $piNo]);
+                }
+                $restoredCounts['bl_records'] = count($data['bl_records']);
+            }
+
+            // 6. Pre-Shipment Certificates
+            if (in_array('pre_shipment_certificates', $selectedModules) && isset($data['pre_shipment_certificates']) && is_array($data['pre_shipment_certificates'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM pre_shipment_certificates");
+                }
+                $stmt = $pdo->prepare("INSERT INTO pre_shipment_certificates (id, cert_no, cert_type, invoice_no, issuing_authority, issue_date, expiry_date, file_name, file_size, status, data_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE cert_no=VALUES(cert_no), cert_type=VALUES(cert_type), invoice_no=VALUES(invoice_no), issuing_authority=VALUES(issuing_authority), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), file_name=VALUES(file_name), file_size=VALUES(file_size), status=VALUES(status), data_json=VALUES(data_json)");
+                foreach ($data['pre_shipment_certificates'] as $item) {
+                    $cId = $item['id'] ?? ('cert-' . uniqid());
+                    $cNo = $item['certName'] ?? ($item['certNo'] ?? ($item['cert_no'] ?? ''));
+                    $cType = $item['certType'] ?? 'General';
+                    $invNo = $item['invoiceNo'] ?? '';
+                    $auth = $item['issuingAuthority'] ?? '';
+                    $issDate = $item['issueDate'] ?? date('Y-m-d');
+                    $expDate = $item['expiryDate'] ?? ($item['expiry_date'] ?? '');
+                    $fName = $item['fileName'] ?? '';
+                    $fSize = $item['fileSize'] ?? '';
+                    $stat = $item['status'] ?? 'Valid';
+                    $stmt->execute([$cId, $cNo, $cType, $invNo, $auth, $issDate, $expDate, $fName, $fSize, $stat, json_encode($item)]);
+                    $untombstoneStmt->execute([$cId, $cNo]);
+                }
+                $restoredCounts['pre_shipment_certificates'] = count($data['pre_shipment_certificates']);
+            }
+
+            // 7. Masters & Settings (sync_store)
+            if ((in_array('masters_and_settings', $selectedModules) || in_array('sync_store', $selectedModules)) && isset($data['sync_store']) && is_array($data['sync_store'])) {
+                $stmtStore = $pdo->prepare("INSERT INTO erp_sync_store (key_name, data_json) VALUES (?, ?) ON DUPLICATE KEY UPDATE data_json=VALUES(data_json), updated_at=CURRENT_TIMESTAMP");
+                $synCount = 0;
+                foreach ($data['sync_store'] as $k => $v) {
+                    if ($k === 'shipz_deleted_doc_ids' || $k === 'shipz_tombstones') continue;
+                    $stmtStore->execute([$k, is_string($v) ? $v : json_encode($v)]);
+                    $synCount++;
+                }
+                $restoredCounts['masters_and_settings'] = $synCount;
+            }
+
+            // 8. System Users
+            if (in_array('system_users', $selectedModules) && isset($data['system_users']) && is_array($data['system_users'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM system_users");
+                }
+                $stmt = $pdo->prepare("INSERT INTO system_users (id, email, first_name, last_name, role_name, status, data_json) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email=VALUES(email), first_name=VALUES(first_name), last_name=VALUES(last_name), role_name=VALUES(role_name), status=VALUES(status), data_json=VALUES(data_json)");
+                foreach ($data['system_users'] as $item) {
+                    $uId = $item['id'] ?? ('usr-' . uniqid());
+                    $email = $item['email'] ?? ($uId . '@exportflow.internal');
+                    $fn = $item['first_name'] ?? '';
+                    $ln = $item['last_name'] ?? '';
+                    $role = $item['role_name'] ?? 'Staff';
+                    $status = $item['status'] ?? 'Active';
+                    $stmt->execute([$uId, $email, $fn, $ln, $role, $status, json_encode($item)]);
+                }
+                $restoredCounts['system_users'] = count($data['system_users']);
+            }
+
+            // 9. Recent Activities
+            if (in_array('recent_activities', $selectedModules) && isset($data['recent_activities']) && is_array($data['recent_activities'])) {
+                if ($mode === 'replace') {
+                    $pdo->exec("DELETE FROM recent_activities");
+                }
+                $stmt = $pdo->prepare("INSERT INTO recent_activities (id, type, title, badge, timestamp_iso, data_json) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE type=VALUES(type), title=VALUES(title), badge=VALUES(badge), timestamp_iso=VALUES(timestamp_iso), data_json=VALUES(data_json)");
+                foreach ($data['recent_activities'] as $item) {
+                    $actId = $item['id'] ?? ('act-' . uniqid());
+                    $type = $item['type'] ?? 'doc';
+                    $title = $item['title'] ?? 'Document Action';
+                    $badge = $item['badge'] ?? '';
+                    $iso = $item['timestamp'] ?? date('c');
+                    $stmt->execute([$actId, $type, $title, $badge, $iso, json_encode($item)]);
+                }
+                $restoredCounts['recent_activities'] = count($data['recent_activities']);
+            }
+
+            $pdo->commit();
+            echo json_encode([
+                'success'         => true,
+                'mode'            => $mode,
+                'restored_counts' => $restoredCounts,
+                'message'         => 'Selected modules restored successfully.'
+            ]);
+            exit;
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    // Delete a Server Snapshot
+    if ($action === 'delete_server_backup') {
+        $file = basename($input['filename'] ?? '');
+        $path = __DIR__ . '/backups/' . $file;
+        if ($file && file_exists($path)) {
+            @unlink($path);
+            echo json_encode(['success' => true, 'deleted' => $file]);
+            exit;
+        }
+        echo json_encode(['success' => false, 'error' => 'File not found']);
+        exit;
     }
 
     // Direct Record Deletion Action (Permanent Deletion from MySQL & Tombstone Broadcast)
