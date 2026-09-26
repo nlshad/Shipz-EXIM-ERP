@@ -6,3 +6,5 @@ db_config.json
 node_modules/
 dist/
 .DS_Store
+.babel_compiler.js
+.temp_*
