@@ -17228,17 +17228,7 @@
                                       <td className="py-2 px-2 text-center font-bold text-slate-700 border-r border-slate-200">{itemIdx + 1}</td>
                                       <td className="py-2 px-2.5 font-bold font-mono text-slate-900 border-r border-slate-200">{item.boxRange || `Box ${itemIdx + 1}`}</td>
                                       <td className="py-2 px-3 border-r border-slate-200">
-                                        <div className="flex items-center space-x-3">
-                                          {prodImg ? (
-                                            <img src={prodImg} alt={itemDesc} className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0" />
-                                          ) : (
-                                            <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
-                                          )}
-                                          <div>
-                                            <div className="font-extrabold text-slate-900 leading-snug">{itemDesc}</div>
-                                            {item.dimensions && <div className="text-[8.5px] text-slate-500 font-mono mt-0.5">Dim: {item.dimensions}</div>}
-                                          </div>
-                                        </div>
+                                        <div className="font-extrabold text-slate-900 leading-snug">{itemDesc}</div>
                                       </td>
                                       <td className="py-2 px-2 text-center text-slate-700 border-r border-slate-200">{item.packageType || 'HDPE Bag'}</td>
                                       <td className="py-2 px-2 text-center font-mono font-bold text-slate-900 border-r border-slate-200">{item.qtyPerPkg || 1}</td>
@@ -17548,17 +17538,7 @@
                               <tr key={idx} className="hover:bg-slate-50/50">
                                 <td className="py-2.5 px-2.5 text-center font-bold text-slate-700 border-r border-slate-200">{idx + 1}</td>
                                 <td className="py-2.5 px-3 border-r border-slate-200">
-                                  <div className="flex items-center space-x-3">
-                                    {item.imgUrl ? (
-                                      <img src={item.imgUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0" />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
-                                    )}
-                                    <div>
-                                      <div className="font-extrabold text-slate-900 leading-snug">{item.name}</div>
-                                      {item.desc && <div className="text-[9px] text-slate-500 italic mt-0.5 leading-tight">{item.desc}</div>}
-                                    </div>
-                                  </div>
+                                  <div className="font-extrabold text-slate-900 leading-snug">{item.name}</div>
                                 </td>
                                 <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200">{item.hsn}</td>
                                 <td className="py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200">{item.qty}</td>
@@ -17943,17 +17923,7 @@
                               <tr key={idx} className="hover:bg-slate-50/50">
                                 <td className="py-2.5 px-2.5 text-center font-bold text-slate-700 border-r border-slate-200">{idx + 1}</td>
                                 <td className="py-2.5 px-3 border-r border-slate-200">
-                                  <div className="flex items-center space-x-3">
-                                    {prod.imgUrl ? (
-                                      <img src={prod.imgUrl} alt={prod.description} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0" />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
-                                    )}
-                                    <div>
-                                      <div className="font-extrabold text-slate-900 leading-snug">{prod.description}</div>
-                                      {prod.desc && <div className="text-[9px] text-slate-500 italic mt-0.5 leading-tight">{prod.desc}</div>}
-                                    </div>
-                                  </div>
+                                  <div className="font-extrabold text-slate-900 leading-snug">{prod.description}</div>
                                 </td>
                                 <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200">{prod.hsn || '291814'}</td>
                                 <td className="py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200">{prod.qty}</td>

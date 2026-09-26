@@ -19171,18 +19171,8 @@ function App() {
         }, item.boxRange || `Box ${itemIdx + 1}`), /*#__PURE__*/React.createElement("td", {
           className: "py-2 px-3 border-r border-slate-200"
         }, /*#__PURE__*/React.createElement("div", {
-          className: "flex items-center space-x-3"
-        }, prodImg ? /*#__PURE__*/React.createElement("img", {
-          src: prodImg,
-          alt: itemDesc,
-          className: "w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0"
-        }) : /*#__PURE__*/React.createElement("div", {
-          className: "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0"
-        }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
           className: "font-extrabold text-slate-900 leading-snug"
-        }, itemDesc), item.dimensions && /*#__PURE__*/React.createElement("div", {
-          className: "text-[8.5px] text-slate-500 font-mono mt-0.5"
-        }, "Dim: ", item.dimensions)))), /*#__PURE__*/React.createElement("td", {
+        }, itemDesc)), /*#__PURE__*/React.createElement("td", {
           className: "py-2 px-2 text-center text-slate-700 border-r border-slate-200"
         }, item.packageType || 'HDPE Bag'), /*#__PURE__*/React.createElement("td", {
           className: "py-2 px-2 text-center font-mono font-bold text-slate-900 border-r border-slate-200"
@@ -19510,18 +19500,8 @@ function App() {
     }, idx + 1), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-3 border-r border-slate-200"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-3"
-    }, item.imgUrl ? /*#__PURE__*/React.createElement("img", {
-      src: item.imgUrl,
-      alt: item.name,
-      className: "w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0"
-    }) : /*#__PURE__*/React.createElement("div", {
-      className: "w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0"
-    }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "font-extrabold text-slate-900 leading-snug"
-    }, item.name), item.desc && /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-500 italic mt-0.5 leading-tight"
-    }, item.desc)))), /*#__PURE__*/React.createElement("td", {
+    }, item.name)), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200"
     }, item.hsn), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200"
@@ -19933,18 +19913,8 @@ function App() {
     }, idx + 1), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-3 border-r border-slate-200"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-3"
-    }, prod.imgUrl ? /*#__PURE__*/React.createElement("img", {
-      src: prod.imgUrl,
-      alt: prod.description,
-      className: "w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0"
-    }) : /*#__PURE__*/React.createElement("div", {
-      className: "w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0"
-    }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "font-extrabold text-slate-900 leading-snug"
-    }, prod.description), prod.desc && /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-500 italic mt-0.5 leading-tight"
-    }, prod.desc)))), /*#__PURE__*/React.createElement("td", {
+    }, prod.description)), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200"
     }, prod.hsn || '291814'), /*#__PURE__*/React.createElement("td", {
       className: "py-2.5 px-2.5 text-right font-mono font-extrabold text-slate-900 border-r border-slate-200"
