@@ -4333,6 +4333,10 @@
           unit: '',
           quantity: '',
           price: '',
+          priceInr: '',
+          gstPercent: '18',
+          conversionRate: '85.0000',
+          priceInputMode: 'direct', // 'direct' | 'inr'
           netWeight: '',
           grossWeight: '',
           packageText: '',
@@ -4345,6 +4349,10 @@
       });
 
       const handleOpenAddLineItemModal = (parentType = 'quotation') => {
+        const defaultConv = parentType === 'quotation'
+          ? (parseFloat(qtFormData.conversionRate) || 85.0)
+          : (parseFloat(piFormData.conversionRate) || 85.0);
+
         setLineItemModalState({
           isOpen: true,
           mode: 'add',
@@ -4357,6 +4365,10 @@
             unit: '',
             quantity: '',
             price: '',
+            priceInr: '',
+            gstPercent: '18',
+            conversionRate: String(defaultConv),
+            priceInputMode: 'direct',
             netWeight: '',
             grossWeight: '',
             packageText: '',
@@ -4373,12 +4385,23 @@
         const sourceItems = parentType === 'quotation' ? qtFormData.lineItems : piFormData.lineItems;
         const itemToEdit = sourceItems[index];
         if (!itemToEdit) return;
+
+        const defaultConv = parentType === 'quotation'
+          ? (parseFloat(qtFormData.conversionRate) || 85.0)
+          : (parseFloat(piFormData.conversionRate) || 85.0);
+
         setLineItemModalState({
           isOpen: true,
           mode: 'edit',
           targetIndex: index,
           parentType: parentType,
-          itemData: { ...itemToEdit }
+          itemData: {
+            priceInr: itemToEdit.priceInr || '',
+            gstPercent: itemToEdit.gstPercent !== undefined ? String(itemToEdit.gstPercent) : '18',
+            conversionRate: itemToEdit.conversionRate ? String(itemToEdit.conversionRate) : String(defaultConv),
+            priceInputMode: itemToEdit.priceInr ? 'inr' : 'direct',
+            ...itemToEdit
+          }
         });
       };
 
@@ -18889,127 +18912,382 @@
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Quantity</label>
-                        <div className="flex items-center space-x-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newQty = Math.max(1, (parseFloat(lineItemModalState.itemData.quantity) || 1) - 1);
-                              setLineItemModalState(prev => {
-                                const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-                                let calcNet = prev.itemData.netWeight;
-                                let calcGross = prev.itemData.grossWeight;
-                                if (foundProd) {
-                                  const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-                                  const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-                                  if (uNet > 0) {
-                                    const netVal = uNet * newQty;
-                                    calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
-                                  }
-                                  if (uGross > 0) {
-                                    const grossVal = uGross * newQty;
-                                    calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
-                                  }
-                                }
-                                return {
+                    {/* PRICING & COMMERCIAL CONFIGURATION WITH INR -> USD & GST CONVERTER */}
+                    {(() => {
+                      const mode = lineItemModalState.itemData.priceInputMode || 'direct';
+                      const defaultDocRate = lineItemModalState.parentType === 'quotation'
+                        ? (parseFloat(qtFormData.conversionRate) || 85.0)
+                        : (parseFloat(piFormData.conversionRate) || 85.0);
+
+                      const inrBase = parseFloat(lineItemModalState.itemData.priceInr) || 0;
+                      const gstPct = parseFloat(lineItemModalState.itemData.gstPercent) || 0;
+                      const convRate = parseFloat(lineItemModalState.itemData.conversionRate) || defaultDocRate;
+
+                      const gstAmtInr = (inrBase * gstPct) / 100;
+                      const totalInrWithGst = inrBase + gstAmtInr;
+                      const convertedUsd = convRate > 0 ? (totalInrWithGst / convRate) : 0;
+                      const currentUsdPrice = parseFloat(lineItemModalState.itemData.price) || 0;
+                      const currentQty = parseFloat(lineItemModalState.itemData.quantity) || 0;
+                      const totalUsdLineAmount = (currentQty * currentUsdPrice).toFixed(2);
+
+                      const handleInrPriceChange = (valStr) => {
+                        const inr = parseFloat(valStr) || 0;
+                        const calcGst = (inr * gstPct) / 100;
+                        const calcTotal = inr + calcGst;
+                        const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+                        setLineItemModalState(prev => ({
+                          ...prev,
+                          itemData: {
+                            ...prev.itemData,
+                            priceInr: valStr,
+                            price: inr > 0 ? calcUsd : (valStr === '' ? '' : prev.itemData.price)
+                          }
+                        }));
+                      };
+
+                      const handleGstPercentChange = (valStr) => {
+                        const gst = parseFloat(valStr) || 0;
+                        const calcGst = (inrBase * gst) / 100;
+                        const calcTotal = inrBase + calcGst;
+                        const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+                        setLineItemModalState(prev => ({
+                          ...prev,
+                          itemData: {
+                            ...prev.itemData,
+                            gstPercent: valStr,
+                            price: inrBase > 0 ? calcUsd : prev.itemData.price
+                          }
+                        }));
+                      };
+
+                      const handleConversionRateChange = (valStr) => {
+                        const rate = parseFloat(valStr) || 0;
+                        const calcUsd = rate > 0 ? parseFloat((totalInrWithGst / rate).toFixed(4)) : 0;
+                        setLineItemModalState(prev => ({
+                          ...prev,
+                          itemData: {
+                            ...prev.itemData,
+                            conversionRate: valStr,
+                            price: (inrBase > 0 && rate > 0) ? calcUsd : prev.itemData.price
+                          }
+                        }));
+                      };
+
+                      return (
+                        <div className="space-y-4 pt-2 border-t border-slate-200">
+                          {/* PRICING MODE TOGGLE HEADER */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-100/70 p-2.5 rounded-xl border border-slate-200">
+                            <span className="text-slate-800 font-extrabold flex items-center space-x-1.5 text-xs">
+                              <i className="fi fi-rr-coins text-amber-500 text-sm"></i>
+                              <span>Unit Price Mode & Currency Options</span>
+                            </span>
+
+                            <div className="inline-flex p-0.5 bg-white rounded-lg border border-slate-200 text-xs font-bold shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => setLineItemModalState(prev => ({
                                   ...prev,
-                                  itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
-                                };
-                              });
-                            }}
-                            className="w-8 h-8 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded font-bold text-sm shrink-0 cursor-pointer"
-                          >-</button>
-                          <input
-                            type="number"
-                            value={lineItemModalState.itemData.quantity}
-                            onChange={(e) => {
-                              const newQty = parseFloat(e.target.value) || 0;
-                              setLineItemModalState(prev => {
-                                const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-                                let calcNet = prev.itemData.netWeight;
-                                let calcGross = prev.itemData.grossWeight;
-                                if (foundProd) {
-                                  const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-                                  const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-                                  if (uNet > 0) {
-                                    const netVal = uNet * newQty;
-                                    calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+                                  itemData: { ...prev.itemData, priceInputMode: 'direct' }
+                                }))}
+                                className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                                  mode === 'direct'
+                                    ? 'bg-indigo-600 text-white shadow-xs font-black'
+                                    : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                              >
+                                Direct USD ($)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  let initialInr = lineItemModalState.itemData.priceInr;
+                                  if (!initialInr && currentUsdPrice > 0) {
+                                    const estimatedInr = (currentUsdPrice * convRate) / (1 + (gstPct / 100));
+                                    initialInr = estimatedInr.toFixed(2);
                                   }
-                                  if (uGross > 0) {
-                                    const grossVal = uGross * newQty;
-                                    calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
-                                  }
-                                }
-                                return {
-                                  ...prev,
-                                  itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
-                                };
-                              });
-                            }}
-                            className="w-full text-center bg-white border border-slate-300 rounded py-1.5 text-xs font-bold font-mono"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newQty = (parseFloat(lineItemModalState.itemData.quantity) || 0) + 1;
-                              setLineItemModalState(prev => {
-                                const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-                                let calcNet = prev.itemData.netWeight;
-                                let calcGross = prev.itemData.grossWeight;
-                                if (foundProd) {
-                                  const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-                                  const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-                                  if (uNet > 0) {
-                                    const netVal = uNet * newQty;
-                                    calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
-                                  }
-                                  if (uGross > 0) {
-                                    const grossVal = uGross * newQty;
-                                    calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
-                                  }
-                                }
-                                return {
-                                  ...prev,
-                                  itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
-                                };
-                              });
-                            }}
-                            className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-sm shrink-0 cursor-pointer"
-                          >+</button>
+                                  setLineItemModalState(prev => ({
+                                    ...prev,
+                                    itemData: {
+                                      ...prev.itemData,
+                                      priceInputMode: 'inr',
+                                      priceInr: initialInr || prev.itemData.priceInr
+                                    }
+                                  }));
+                                }}
+                                className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${
+                                  mode === 'inr'
+                                    ? 'bg-indigo-600 text-white shadow-xs font-black'
+                                    : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                              >
+                                <span>INR &rarr; USD (+ GST)</span>
+                                <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${
+                                  mode === 'inr' ? 'bg-amber-400 text-slate-950' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                }`}>
+                                  Calculator
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* INR TO USD CONVERTER EXPANDED CARD */}
+                          {mode === 'inr' && (
+                            <div className="bg-gradient-to-br from-indigo-50/70 via-slate-50 to-blue-50/60 p-4 rounded-xl border border-indigo-200 shadow-2xs space-y-3.5">
+                              <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                                <span className="font-extrabold text-indigo-950 text-xs flex items-center space-x-1.5">
+                                  <i className="fi fi-rr-calculator text-indigo-600"></i>
+                                  <span>INR Unit Price + GST &rarr; USD Auto-Conversion</span>
+                                </span>
+                                <span className="text-[10px] text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full font-bold">
+                                  Auto-Converts to USD
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                {/* 1. PRICE IN INR */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                                    <span>Price in INR (₹) <span className="text-red-500">*</span></span>
+                                    <span className="text-[10px] text-slate-400">Base Cost</span>
+                                  </label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="e.g. 1000.00"
+                                      value={lineItemModalState.itemData.priceInr || ''}
+                                      onChange={(e) => handleInrPriceChange(e.target.value)}
+                                      className="w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* 2. GST PERCENTAGE */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                                    <span>GST Percentage (%)</span>
+                                    <span className="text-[10px] text-emerald-700 font-mono font-bold">
+                                      +₹{gstAmtInr.toFixed(2)}
+                                    </span>
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      placeholder="e.g. 18"
+                                      value={lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18'}
+                                      onChange={(e) => handleGstPercentChange(e.target.value)}
+                                      className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
+                                    />
+                                    <span className="absolute right-3 top-2.5 text-slate-400 font-bold text-xs">%</span>
+                                  </div>
+
+                                  {/* QUICK GST PILLS */}
+                                  <div className="flex items-center space-x-1 mt-1.5">
+                                    {['0', '5', '12', '18', '28'].map(p => (
+                                      <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => handleGstPercentChange(p)}
+                                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${
+                                          String(lineItemModalState.itemData.gstPercent) === p
+                                            ? 'bg-indigo-600 text-white font-extrabold'
+                                            : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'
+                                        }`}
+                                      >
+                                        {p}%
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* 3. USD CONVERSION RATE */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                                    <span>USD Rate (1 USD = ₹)</span>
+                                    <span className="text-[10px] text-indigo-600 font-medium">Rate</span>
+                                  </label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                                    <input
+                                      type="number"
+                                      step="0.0001"
+                                      placeholder="e.g. 85.0000"
+                                      value={lineItemModalState.itemData.conversionRate || ''}
+                                      onChange={(e) => handleConversionRateChange(e.target.value)}
+                                      className="w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-slate-500 mt-1 block">
+                                    Document rate: <strong>₹{defaultDocRate}</strong>
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* LIVE CALCULATION BREAKDOWN DISPLAY */}
+                              <div className="p-3 bg-white/90 rounded-lg border border-indigo-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs">
+                                <div className="space-y-0.5">
+                                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700">
+                                    <span>Base: ₹{inrBase.toFixed(2)}</span>
+                                    <span className="text-slate-400">+</span>
+                                    <span className="text-emerald-700 font-bold">GST ({gstPct}%): ₹{gstAmtInr.toFixed(2)}</span>
+                                    <span className="text-slate-400">=</span>
+                                    <span className="text-indigo-900 font-bold">Total: ₹{totalInrWithGst.toFixed(2)}</span>
+                                    <span className="text-slate-400">&divide;</span>
+                                    <span>₹{convRate}/USD</span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 font-medium">
+                                    Formula: (Price in INR + GST Amount) &divide; USD Conversion Rate = Unit Price (USD)
+                                  </p>
+                                </div>
+
+                                <div className="text-right shrink-0 bg-indigo-50/80 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                  <span className="text-[10px] uppercase font-extrabold text-indigo-700 block">Converted Price</span>
+                                  <span className="text-sm font-black text-indigo-950 font-mono">
+                                    ${convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000'} <span className="text-[10px] text-slate-500 font-sans font-bold">/ unit</span>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* QUANTITY, UNIT PRICE (USD) & TOTAL ROW */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            {/* QUANTITY */}
+                            <div>
+                              <label className="block text-slate-700 font-bold mb-1">Quantity</label>
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newQty = Math.max(1, (parseFloat(lineItemModalState.itemData.quantity) || 1) - 1);
+                                    setLineItemModalState(prev => {
+                                      const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+                                      let calcNet = prev.itemData.netWeight;
+                                      let calcGross = prev.itemData.grossWeight;
+                                      if (foundProd) {
+                                        const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+                                        const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+                                        if (uNet > 0) {
+                                          const netVal = uNet * newQty;
+                                          calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+                                        }
+                                        if (uGross > 0) {
+                                          const grossVal = uGross * newQty;
+                                          calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+                                        }
+                                      }
+                                      return {
+                                        ...prev,
+                                        itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
+                                      };
+                                    });
+                                  }}
+                                  className="w-8 h-8 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded font-bold text-sm shrink-0 cursor-pointer"
+                                >-</button>
+                                <input
+                                  type="number"
+                                  value={lineItemModalState.itemData.quantity}
+                                  onChange={(e) => {
+                                    const newQty = parseFloat(e.target.value) || 0;
+                                    setLineItemModalState(prev => {
+                                      const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+                                      let calcNet = prev.itemData.netWeight;
+                                      let calcGross = prev.itemData.grossWeight;
+                                      if (foundProd) {
+                                        const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+                                        const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+                                        if (uNet > 0) {
+                                          const netVal = uNet * newQty;
+                                          calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+                                        }
+                                        if (uGross > 0) {
+                                          const grossVal = uGross * newQty;
+                                          calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+                                        }
+                                      }
+                                      return {
+                                        ...prev,
+                                        itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
+                                      };
+                                    });
+                                  }}
+                                  className="w-full text-center bg-white border border-slate-300 rounded py-1.5 text-xs font-bold font-mono"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newQty = (parseFloat(lineItemModalState.itemData.quantity) || 0) + 1;
+                                    setLineItemModalState(prev => {
+                                      const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+                                      let calcNet = prev.itemData.netWeight;
+                                      let calcGross = prev.itemData.grossWeight;
+                                      if (foundProd) {
+                                        const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+                                        const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+                                        if (uNet > 0) {
+                                          const netVal = uNet * newQty;
+                                          calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+                                        }
+                                        if (uGross > 0) {
+                                          const grossVal = uGross * newQty;
+                                          calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+                                        }
+                                      }
+                                      return {
+                                        ...prev,
+                                        itemData: { ...prev.itemData, quantity: newQty, netWeight: calcNet, grossWeight: calcGross }
+                                      };
+                                    });
+                                  }}
+                                  className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-sm shrink-0 cursor-pointer"
+                                >+</button>
+                              </div>
+                            </div>
+
+                            {/* UNIT PRICE (USD) */}
+                            <div>
+                              <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                                <span>Unit Price (USD $) <span className="text-red-500">*</span></span>
+                                {mode === 'inr' && inrBase > 0 ? (
+                                  <span className="text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded font-bold">From INR+GST</span>
+                                ) : lineItemModalState.itemData.product ? (
+                                  <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold">Auto-Fetched</span>
+                                ) : null}
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-2 text-slate-400 font-bold text-xs">$</span>
+                                <input
+                                  type="number"
+                                  step="0.0001"
+                                  value={lineItemModalState.itemData.price !== undefined ? lineItemModalState.itemData.price : ''}
+                                  onChange={(e) => setLineItemModalState(prev => ({
+                                    ...prev,
+                                    itemData: { ...prev.itemData, price: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0) }
+                                  }))}
+                                  className="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                            </div>
+
+                            {/* TOTAL (USD) */}
+                            <div>
+                              <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                                <span>Total Amount (USD $)</span>
+                                <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-mono font-bold">Auto</span>
+                              </label>
+                              <input
+                                type="text"
+                                readOnly
+                                value={`$ ${totalUsdLineAmount}`}
+                                className="w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-black text-emerald-900"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                          <span>Price (USD)</span>
-                          {lineItemModalState.itemData.product ? (
-                            <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 rounded font-bold">Auto-Fetched</span>
-                          ) : null}
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={lineItemModalState.itemData.price}
-                          onChange={(e) => setLineItemModalState(prev => ({ ...prev, itemData: { ...prev.itemData, price: parseFloat(e.target.value) || 0 } }))}
-                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                          <span>Total (USD)</span>
-                          <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-mono font-bold">Auto</span>
-                        </label>
-                        <input
-                          type="text"
-                          readOnly
-                          value={`$ ${((parseFloat(lineItemModalState.itemData.quantity) || 0) * (parseFloat(lineItemModalState.itemData.price) || 0)).toFixed(2)}`}
-                          className="w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-900"
-                        />
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     <div>
                       <label className="block text-slate-700 font-bold mb-1">Product Description (Auto-filled from Master)</label>

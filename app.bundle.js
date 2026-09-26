@@ -5897,6 +5897,11 @@ function App() {
       unit: '',
       quantity: '',
       price: '',
+      priceInr: '',
+      gstPercent: '18',
+      conversionRate: '85.0000',
+      priceInputMode: 'direct',
+      // 'direct' | 'inr'
       netWeight: '',
       grossWeight: '',
       packageText: '',
@@ -5908,6 +5913,7 @@ function App() {
     }
   });
   const handleOpenAddLineItemModal = (parentType = 'quotation') => {
+    const defaultConv = parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
     setLineItemModalState({
       isOpen: true,
       mode: 'add',
@@ -5920,6 +5926,10 @@ function App() {
         unit: '',
         quantity: '',
         price: '',
+        priceInr: '',
+        gstPercent: '18',
+        conversionRate: String(defaultConv),
+        priceInputMode: 'direct',
         netWeight: '',
         grossWeight: '',
         packageText: '',
@@ -5935,12 +5945,17 @@ function App() {
     const sourceItems = parentType === 'quotation' ? qtFormData.lineItems : piFormData.lineItems;
     const itemToEdit = sourceItems[index];
     if (!itemToEdit) return;
+    const defaultConv = parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
     setLineItemModalState({
       isOpen: true,
       mode: 'edit',
       targetIndex: index,
       parentType: parentType,
       itemData: {
+        priceInr: itemToEdit.priceInr || '',
+        gstPercent: itemToEdit.gstPercent !== undefined ? String(itemToEdit.gstPercent) : '18',
+        conversionRate: itemToEdit.conversionRate ? String(itemToEdit.conversionRate) : String(defaultConv),
+        priceInputMode: itemToEdit.priceInr ? 'inr' : 'direct',
         ...itemToEdit
       }
     });
@@ -21136,135 +21151,330 @@ function App() {
     value: "Drum"
   }, "Drum"), /*#__PURE__*/React.createElement("option", {
     value: "Bag"
-  }, "Bag")))), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-3 gap-4 items-end"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    className: "block text-slate-700 font-bold mb-1"
-  }, "Quantity"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-1"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => {
-      const newQty = Math.max(1, (parseFloat(lineItemModalState.itemData.quantity) || 1) - 1);
-      setLineItemModalState(prev => {
-        const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-        let calcNet = prev.itemData.netWeight;
-        let calcGross = prev.itemData.grossWeight;
-        if (foundProd) {
-          const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-          const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-          if (uNet > 0) {
-            const netVal = uNet * newQty;
-            calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
-          }
-          if (uGross > 0) {
-            const grossVal = uGross * newQty;
-            calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
-          }
+  }, "Bag")))), (() => {
+    const mode = lineItemModalState.itemData.priceInputMode || 'direct';
+    const defaultDocRate = lineItemModalState.parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
+    const inrBase = parseFloat(lineItemModalState.itemData.priceInr) || 0;
+    const gstPct = parseFloat(lineItemModalState.itemData.gstPercent) || 0;
+    const convRate = parseFloat(lineItemModalState.itemData.conversionRate) || defaultDocRate;
+    const gstAmtInr = inrBase * gstPct / 100;
+    const totalInrWithGst = inrBase + gstAmtInr;
+    const convertedUsd = convRate > 0 ? totalInrWithGst / convRate : 0;
+    const currentUsdPrice = parseFloat(lineItemModalState.itemData.price) || 0;
+    const currentQty = parseFloat(lineItemModalState.itemData.quantity) || 0;
+    const totalUsdLineAmount = (currentQty * currentUsdPrice).toFixed(2);
+    const handleInrPriceChange = valStr => {
+      const inr = parseFloat(valStr) || 0;
+      const calcGst = inr * gstPct / 100;
+      const calcTotal = inr + calcGst;
+      const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+      setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          priceInr: valStr,
+          price: inr > 0 ? calcUsd : valStr === '' ? '' : prev.itemData.price
         }
-        return {
+      }));
+    };
+    const handleGstPercentChange = valStr => {
+      const gst = parseFloat(valStr) || 0;
+      const calcGst = inrBase * gst / 100;
+      const calcTotal = inrBase + calcGst;
+      const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+      setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          gstPercent: valStr,
+          price: inrBase > 0 ? calcUsd : prev.itemData.price
+        }
+      }));
+    };
+    const handleConversionRateChange = valStr => {
+      const rate = parseFloat(valStr) || 0;
+      const calcUsd = rate > 0 ? parseFloat((totalInrWithGst / rate).toFixed(4)) : 0;
+      setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          conversionRate: valStr,
+          price: inrBase > 0 && rate > 0 ? calcUsd : prev.itemData.price
+        }
+      }));
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      className: "space-y-4 pt-2 border-t border-slate-200"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-100/70 p-2.5 rounded-xl border border-slate-200"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-800 font-extrabold flex items-center space-x-1.5 text-xs"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-coins text-amber-500 text-sm"
+    }), /*#__PURE__*/React.createElement("span", null, "Unit Price Mode & Currency Options")), /*#__PURE__*/React.createElement("div", {
+      className: "inline-flex p-0.5 bg-white rounded-lg border border-slate-200 text-xs font-bold shadow-2xs"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          priceInputMode: 'direct'
+        }
+      })),
+      className: `px-3 py-1 rounded-md transition-all cursor-pointer ${mode === 'direct' ? 'bg-indigo-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`
+    }, "Direct USD ($)"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        let initialInr = lineItemModalState.itemData.priceInr;
+        if (!initialInr && currentUsdPrice > 0) {
+          const estimatedInr = currentUsdPrice * convRate / (1 + gstPct / 100);
+          initialInr = estimatedInr.toFixed(2);
+        }
+        setLineItemModalState(prev => ({
           ...prev,
           itemData: {
             ...prev.itemData,
-            quantity: newQty,
-            netWeight: calcNet,
-            grossWeight: calcGross
+            priceInputMode: 'inr',
+            priceInr: initialInr || prev.itemData.priceInr
           }
-        };
-      });
-    },
-    className: "w-8 h-8 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded font-bold text-sm shrink-0 cursor-pointer"
-  }, "-"), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    value: lineItemModalState.itemData.quantity,
-    onChange: e => {
-      const newQty = parseFloat(e.target.value) || 0;
-      setLineItemModalState(prev => {
-        const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-        let calcNet = prev.itemData.netWeight;
-        let calcGross = prev.itemData.grossWeight;
-        if (foundProd) {
-          const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-          const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-          if (uNet > 0) {
-            const netVal = uNet * newQty;
-            calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+        }));
+      },
+      className: `px-3 py-1 rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${mode === 'inr' ? 'bg-indigo-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`
+    }, /*#__PURE__*/React.createElement("span", null, "INR \u2192 USD (+ GST)"), /*#__PURE__*/React.createElement("span", {
+      className: `px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${mode === 'inr' ? 'bg-amber-400 text-slate-950' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}`
+    }, "Calculator")))), mode === 'inr' && /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-br from-indigo-50/70 via-slate-50 to-blue-50/60 p-4 rounded-xl border border-indigo-200 shadow-2xs space-y-3.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between border-b border-indigo-100 pb-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-extrabold text-indigo-950 text-xs flex items-center space-x-1.5"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-calculator text-indigo-600"
+    }), /*#__PURE__*/React.createElement("span", null, "INR Unit Price + GST \u2192 USD Auto-Conversion")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full font-bold"
+    }, "Auto-Converts to USD")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 sm:grid-cols-3 gap-3.5"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "Price in INR (\u20B9) ", /*#__PURE__*/React.createElement("span", {
+      className: "text-red-500"
+    }, "*")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-400"
+    }, "Base Cost")), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "absolute left-3 top-2.5 text-slate-400 font-bold text-xs"
+    }, "\u20B9"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      step: "0.01",
+      placeholder: "e.g. 1000.00",
+      value: lineItemModalState.itemData.priceInr || '',
+      onChange: e => handleInrPriceChange(e.target.value),
+      className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "GST Percentage (%)"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-emerald-700 font-mono font-bold"
+    }, "+\u20B9", gstAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      step: "0.1",
+      placeholder: "e.g. 18",
+      value: lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18',
+      onChange: e => handleGstPercentChange(e.target.value),
+      className: "w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "absolute right-3 top-2.5 text-slate-400 font-bold text-xs"
+    }, "%")), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center space-x-1 mt-1.5"
+    }, ['0', '5', '12', '18', '28'].map(p => /*#__PURE__*/React.createElement("button", {
+      key: p,
+      type: "button",
+      onClick: () => handleGstPercentChange(p),
+      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-indigo-600 text-white font-extrabold' : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'}`
+    }, p, "%")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "USD Rate (1 USD = \u20B9)"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-indigo-600 font-medium"
+    }, "Rate")), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "absolute left-3 top-2.5 text-slate-400 font-bold text-xs"
+    }, "\u20B9"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      step: "0.0001",
+      placeholder: "e.g. 85.0000",
+      value: lineItemModalState.itemData.conversionRate || '',
+      onChange: e => handleConversionRateChange(e.target.value),
+      className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+    })), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-500 mt-1 block"
+    }, "Document rate: ", /*#__PURE__*/React.createElement("strong", null, "\u20B9", defaultDocRate)))), /*#__PURE__*/React.createElement("div", {
+      className: "p-3 bg-white/90 rounded-lg border border-indigo-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "space-y-0.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700"
+    }, /*#__PURE__*/React.createElement("span", null, "Base: \u20B9", inrBase.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400"
+    }, "+"), /*#__PURE__*/React.createElement("span", {
+      className: "text-emerald-700 font-bold"
+    }, "GST (", gstPct, "%): \u20B9", gstAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400"
+    }, "="), /*#__PURE__*/React.createElement("span", {
+      className: "text-indigo-900 font-bold"
+    }, "Total: \u20B9", totalInrWithGst.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400"
+    }, "\xF7"), /*#__PURE__*/React.createElement("span", null, "\u20B9", convRate, "/USD")), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Formula: (Price in INR + GST Amount) \xF7 USD Conversion Rate = Unit Price (USD)")), /*#__PURE__*/React.createElement("div", {
+      className: "text-right shrink-0 bg-indigo-50/80 px-3 py-1.5 rounded-lg border border-indigo-100"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] uppercase font-extrabold text-indigo-700 block"
+    }, "Converted Price"), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm font-black text-indigo-950 font-mono"
+    }, "$", convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000', " ", /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-500 font-sans font-bold"
+    }, "/ unit"))))), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 md:grid-cols-3 gap-4 items-end"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1"
+    }, "Quantity"), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center space-x-1"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        const newQty = Math.max(1, (parseFloat(lineItemModalState.itemData.quantity) || 1) - 1);
+        setLineItemModalState(prev => {
+          const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+          let calcNet = prev.itemData.netWeight;
+          let calcGross = prev.itemData.grossWeight;
+          if (foundProd) {
+            const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+            const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+            if (uNet > 0) {
+              const netVal = uNet * newQty;
+              calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+            }
+            if (uGross > 0) {
+              const grossVal = uGross * newQty;
+              calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+            }
           }
-          if (uGross > 0) {
-            const grossVal = uGross * newQty;
-            calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+          return {
+            ...prev,
+            itemData: {
+              ...prev.itemData,
+              quantity: newQty,
+              netWeight: calcNet,
+              grossWeight: calcGross
+            }
+          };
+        });
+      },
+      className: "w-8 h-8 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded font-bold text-sm shrink-0 cursor-pointer"
+    }, "-"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: lineItemModalState.itemData.quantity,
+      onChange: e => {
+        const newQty = parseFloat(e.target.value) || 0;
+        setLineItemModalState(prev => {
+          const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+          let calcNet = prev.itemData.netWeight;
+          let calcGross = prev.itemData.grossWeight;
+          if (foundProd) {
+            const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+            const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+            if (uNet > 0) {
+              const netVal = uNet * newQty;
+              calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+            }
+            if (uGross > 0) {
+              const grossVal = uGross * newQty;
+              calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+            }
           }
+          return {
+            ...prev,
+            itemData: {
+              ...prev.itemData,
+              quantity: newQty,
+              netWeight: calcNet,
+              grossWeight: calcGross
+            }
+          };
+        });
+      },
+      className: "w-full text-center bg-white border border-slate-300 rounded py-1.5 text-xs font-bold font-mono"
+    }), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        const newQty = (parseFloat(lineItemModalState.itemData.quantity) || 0) + 1;
+        setLineItemModalState(prev => {
+          const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
+          let calcNet = prev.itemData.netWeight;
+          let calcGross = prev.itemData.grossWeight;
+          if (foundProd) {
+            const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
+            const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
+            if (uNet > 0) {
+              const netVal = uNet * newQty;
+              calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
+            }
+            if (uGross > 0) {
+              const grossVal = uGross * newQty;
+              calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
+            }
+          }
+          return {
+            ...prev,
+            itemData: {
+              ...prev.itemData,
+              quantity: newQty,
+              netWeight: calcNet,
+              grossWeight: calcGross
+            }
+          };
+        });
+      },
+      className: "w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-sm shrink-0 cursor-pointer"
+    }, "+"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "Unit Price (USD $) ", /*#__PURE__*/React.createElement("span", {
+      className: "text-red-500"
+    }, "*")), mode === 'inr' && inrBase > 0 ? /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded font-bold"
+    }, "From INR+GST") : lineItemModalState.itemData.product ? /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold"
+    }, "Auto-Fetched") : null), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "absolute left-3 top-2 text-slate-400 font-bold text-xs"
+    }, "$"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      step: "0.0001",
+      value: lineItemModalState.itemData.price !== undefined ? lineItemModalState.itemData.price : '',
+      onChange: e => setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          price: e.target.value === '' ? '' : parseFloat(e.target.value) || 0
         }
-        return {
-          ...prev,
-          itemData: {
-            ...prev.itemData,
-            quantity: newQty,
-            netWeight: calcNet,
-            grossWeight: calcGross
-          }
-        };
-      });
-    },
-    className: "w-full text-center bg-white border border-slate-300 rounded py-1.5 text-xs font-bold font-mono"
-  }), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => {
-      const newQty = (parseFloat(lineItemModalState.itemData.quantity) || 0) + 1;
-      setLineItemModalState(prev => {
-        const foundProd = masterProducts.find(p => p.name === prev.itemData.product);
-        let calcNet = prev.itemData.netWeight;
-        let calcGross = prev.itemData.grossWeight;
-        if (foundProd) {
-          const uNet = parseFloat(foundProd.netWeightKg !== undefined ? foundProd.netWeightKg : foundProd.netWeight) || 0;
-          const uGross = parseFloat(foundProd.grossWeightKg !== undefined ? foundProd.grossWeightKg : foundProd.grossWeight) || 0;
-          if (uNet > 0) {
-            const netVal = uNet * newQty;
-            calcNet = Number.isInteger(netVal) ? String(netVal) : netVal.toFixed(2);
-          }
-          if (uGross > 0) {
-            const grossVal = uGross * newQty;
-            calcGross = Number.isInteger(grossVal) ? String(grossVal) : grossVal.toFixed(2);
-          }
-        }
-        return {
-          ...prev,
-          itemData: {
-            ...prev.itemData,
-            quantity: newQty,
-            netWeight: calcNet,
-            grossWeight: calcGross
-          }
-        };
-      });
-    },
-    className: "w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-sm shrink-0 cursor-pointer"
-  }, "+"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-  }, /*#__PURE__*/React.createElement("span", null, "Price (USD)"), lineItemModalState.itemData.product ? /*#__PURE__*/React.createElement("span", {
-    className: "text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 rounded font-bold"
-  }, "Auto-Fetched") : null), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "0.01",
-    value: lineItemModalState.itemData.price,
-    onChange: e => setLineItemModalState(prev => ({
-      ...prev,
-      itemData: {
-        ...prev.itemData,
-        price: parseFloat(e.target.value) || 0
-      }
-    })),
-    className: "w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-  }, /*#__PURE__*/React.createElement("span", null, "Total (USD)"), /*#__PURE__*/React.createElement("span", {
-    className: "text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-mono font-bold"
-  }, "Auto")), /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    readOnly: true,
-    value: `$ ${((parseFloat(lineItemModalState.itemData.quantity) || 0) * (parseFloat(lineItemModalState.itemData.price) || 0)).toFixed(2)}`,
-    className: "w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-900"
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      })),
+      className: "w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "Total Amount (USD $)"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-mono font-bold"
+    }, "Auto")), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      readOnly: true,
+      value: `$ ${totalUsdLineAmount}`,
+      className: "w-full bg-emerald-50/80 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-black text-emerald-900"
+    }))));
+  })(), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-slate-700 font-bold mb-1"
   }, "Product Description (Auto-filled from Master)"), /*#__PURE__*/React.createElement("textarea", {
     rows: 2,
