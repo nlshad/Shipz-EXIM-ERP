@@ -19081,13 +19081,16 @@
                                 </span>
                               </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                                {/* 1. BASE PRICE IN INR */}
-                                <div>
-                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                                    <span>Base Cost (INR ₹) <span className="text-red-500">*</span></span>
-                                    <span className="text-[10px] text-slate-400">Unit Cost</span>
-                                  </label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* CARD 1: BASE COST IN INR */}
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-slate-800 font-extrabold text-xs flex items-center space-x-1.5">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-black">1</span>
+                                      <span>Base Cost (INR ₹) <span className="text-red-500">*</span></span>
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-medium">Excl. Profit & Tax</span>
+                                  </div>
                                   <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
                                     <input
@@ -19096,95 +19099,109 @@
                                       placeholder="e.g. 1000.00"
                                       value={lineItemModalState.itemData.priceInr || ''}
                                       onChange={(e) => handleInrPriceChange(e.target.value)}
-                                      className="w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                                      className="w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                                     />
                                   </div>
+                                  <p className="text-[10px] text-slate-400 font-medium">Unit purchase or production cost</p>
                                 </div>
 
-                                {/* 2. OUR PROFIT PERCENTAGE */}
-                                <div>
-                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                                    <span>Profit Margin (%)</span>
-                                    <span className="text-[10px] text-indigo-700 font-mono font-bold">
+                                {/* CARD 2: PROFIT MARGIN */}
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-slate-800 font-extrabold text-xs flex items-center space-x-1.5">
+                                      <span className="w-5 h-5 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black">2</span>
+                                      <span>Profit Margin (%)</span>
+                                    </label>
+                                    <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
                                       +₹{profitAmtInr.toFixed(2)}
                                     </span>
-                                  </label>
-                                  <div className="relative">
-                                    <input
-                                      type="number"
-                                      step="0.1"
-                                      placeholder="e.g. 10"
-                                      value={lineItemModalState.itemData.profitPercent !== undefined ? lineItemModalState.itemData.profitPercent : '10'}
-                                      onChange={(e) => handleProfitPercentChange(e.target.value)}
-                                      className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
-                                    />
-                                    <span className="absolute right-3 top-2.5 text-slate-400 font-bold text-xs">%</span>
                                   </div>
-
-                                  {/* QUICK PROFIT PILLS */}
-                                  <div className="flex items-center space-x-1 mt-1.5">
-                                    {['0', '5', '10', '15', '20', '25'].map(p => (
-                                      <button
-                                        key={p}
-                                        type="button"
-                                        onClick={() => handleProfitPercentChange(p)}
-                                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${
-                                          String(lineItemModalState.itemData.profitPercent) === p
-                                            ? 'bg-indigo-600 text-white font-extrabold'
-                                            : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'
-                                        }`}
-                                      >
-                                        {p}%
-                                      </button>
-                                    ))}
+                                  <div className="flex items-center space-x-2">
+                                    <div className="relative w-28 shrink-0">
+                                      <input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="10"
+                                        value={lineItemModalState.itemData.profitPercent !== undefined ? lineItemModalState.itemData.profitPercent : '10'}
+                                        onChange={(e) => handleProfitPercentChange(e.target.value)}
+                                        className="w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 pr-6 transition-colors"
+                                      />
+                                      <span className="absolute right-2.5 top-2 text-slate-400 font-bold text-xs">%</span>
+                                    </div>
+                                    <div className="flex-1 flex flex-wrap gap-1">
+                                      {['0', '5', '10', '15', '20', '25'].map(p => (
+                                        <button
+                                          key={p}
+                                          type="button"
+                                          onClick={() => handleProfitPercentChange(p)}
+                                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                            String(lineItemModalState.itemData.profitPercent) === p
+                                              ? 'bg-indigo-600 text-white shadow-2xs font-black'
+                                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+                                          }`}
+                                        >
+                                          {p}%
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
+                                  <p className="text-[10px] text-slate-400 font-medium">Subtotal with profit: <span className="font-mono font-bold text-slate-700">₹{priceAfterProfitInr.toFixed(2)}</span></p>
                                 </div>
 
-                                {/* 3. GST PERCENTAGE */}
-                                <div>
-                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                                    <span>GST Percentage (%)</span>
-                                    <span className="text-[10px] text-emerald-700 font-mono font-bold">
+                                {/* CARD 3: GST PERCENTAGE */}
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-slate-800 font-extrabold text-xs flex items-center space-x-1.5">
+                                      <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">3</span>
+                                      <span>GST Rate (%)</span>
+                                    </label>
+                                    <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
                                       +₹{gstAmtInr.toFixed(2)}
                                     </span>
-                                  </label>
-                                  <div className="relative">
-                                    <input
-                                      type="number"
-                                      step="0.1"
-                                      placeholder="e.g. 18"
-                                      value={lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18'}
-                                      onChange={(e) => handleGstPercentChange(e.target.value)}
-                                      className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
-                                    />
-                                    <span className="absolute right-3 top-2.5 text-slate-400 font-bold text-xs">%</span>
                                   </div>
-
-                                  {/* QUICK GST PILLS */}
-                                  <div className="flex items-center space-x-1 mt-1.5">
-                                    {['0', '5', '12', '18', '28'].map(p => (
-                                      <button
-                                        key={p}
-                                        type="button"
-                                        onClick={() => handleGstPercentChange(p)}
-                                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${
-                                          String(lineItemModalState.itemData.gstPercent) === p
-                                            ? 'bg-emerald-600 text-white font-extrabold'
-                                            : 'bg-white hover:bg-emerald-50 text-slate-600 border border-slate-200'
-                                        }`}
-                                      >
-                                        {p}%
-                                      </button>
-                                    ))}
+                                  <div className="flex items-center space-x-2">
+                                    <div className="relative w-28 shrink-0">
+                                      <input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="18"
+                                        value={lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18'}
+                                        onChange={(e) => handleGstPercentChange(e.target.value)}
+                                        className="w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 pr-6 transition-colors"
+                                      />
+                                      <span className="absolute right-2.5 top-2 text-slate-400 font-bold text-xs">%</span>
+                                    </div>
+                                    <div className="flex-1 flex flex-wrap gap-1">
+                                      {['0', '5', '12', '18', '28'].map(p => (
+                                        <button
+                                          key={p}
+                                          type="button"
+                                          onClick={() => handleGstPercentChange(p)}
+                                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                            String(lineItemModalState.itemData.gstPercent) === p
+                                              ? 'bg-emerald-600 text-white shadow-2xs font-black'
+                                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+                                          }`}
+                                        >
+                                          {p === '0' ? '0% LUT' : `${p}%`}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
+                                  <p className="text-[10px] text-slate-400 font-medium">Applied on taxable subtotal (Base + Profit)</p>
                                 </div>
 
-                                {/* 4. USD CONVERSION RATE */}
-                                <div>
-                                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
-                                    <span>USD Rate (1 USD = ₹)</span>
-                                    <span className="text-[10px] text-indigo-600 font-medium">Rate</span>
-                                  </label>
+                                {/* CARD 4: USD CONVERSION RATE */}
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-slate-800 font-extrabold text-xs flex items-center space-x-1.5">
+                                      <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">4</span>
+                                      <span>USD Conversion Rate</span>
+                                    </label>
+                                    <span className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full font-bold">
+                                      1 USD = ₹{convRate}
+                                    </span>
+                                  </div>
                                   <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
                                     <input
@@ -19193,38 +19210,54 @@
                                       placeholder="e.g. 85.0000"
                                       value={lineItemModalState.itemData.conversionRate || ''}
                                       onChange={(e) => handleConversionRateChange(e.target.value)}
-                                      className="w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                                      className="w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                                     />
                                   </div>
-                                  <span className="text-[10px] text-slate-500 mt-1 block">
-                                    Doc rate: <strong>₹{defaultDocRate}</strong>
-                                  </span>
+                                  <p className="text-[10px] text-slate-400 font-medium">
+                                    Doc rate: <strong className="text-slate-700">₹{defaultDocRate}</strong>
+                                  </p>
                                 </div>
                               </div>
 
                               {/* LIVE CALCULATION BREAKDOWN DISPLAY */}
-                              <div className="p-3 bg-white/90 rounded-lg border border-indigo-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs">
-                                <div className="space-y-0.5">
-                                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700">
-                                    <span>Base: ₹{inrBase.toFixed(2)}</span>
-                                    <span className="text-slate-400">+</span>
-                                    <span className="text-indigo-700 font-bold">Profit ({profitPct}%): ₹{profitAmtInr.toFixed(2)}</span>
-                                    <span className="text-slate-400">+</span>
-                                    <span className="text-emerald-700 font-bold">GST ({gstPct}%): ₹{gstAmtInr.toFixed(2)}</span>
-                                    <span className="text-slate-400">=</span>
-                                    <span className="text-slate-900 font-black">Total: ₹{totalInrWithProfitAndGst.toFixed(2)}</span>
-                                    <span className="text-slate-400">&divide;</span>
-                                    <span>₹{convRate}/USD</span>
+                              <div className="p-3.5 bg-white rounded-xl border border-indigo-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                                <div className="space-y-1.5 flex-1 min-w-0">
+                                  <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">
+                                    Live Calculation Flow
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold border border-slate-200">
+                                      Base ₹{inrBase.toFixed(2)}
+                                    </span>
+                                    <span className="text-slate-400 font-bold">+</span>
+                                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+                                      Profit ({profitPct}%): ₹{profitAmtInr.toFixed(2)}
+                                    </span>
+                                    <span className="text-slate-400 font-bold">+</span>
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                                      GST ({gstPct}%): ₹{gstAmtInr.toFixed(2)}
+                                    </span>
+                                    <span className="text-slate-400 font-bold">=</span>
+                                    <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white font-extrabold">
+                                      Total ₹{totalInrWithProfitAndGst.toFixed(2)}
+                                    </span>
+                                    <span className="text-slate-400 font-bold">&divide;</span>
+                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 font-bold border border-amber-200">
+                                      ₹{convRate}/USD
+                                    </span>
                                   </div>
                                   <p className="text-[10px] text-slate-400 font-medium">
-                                    Formula: (Base INR + Profit Margin + GST Amount) &divide; USD Rate = Unit Price (USD)
+                                    Formula: (Base Cost + Profit Margin + GST Amount) &divide; USD Rate = Unit Price (USD)
                                   </p>
                                 </div>
 
-                                <div className="text-right shrink-0 bg-indigo-50/80 px-3 py-1.5 rounded-lg border border-indigo-100">
-                                  <span className="text-[10px] uppercase font-extrabold text-indigo-700 block">Converted Price</span>
-                                  <span className="text-sm font-black text-indigo-950 font-mono">
-                                    ${convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000'} <span className="text-[10px] text-slate-500 font-sans font-bold">/ unit</span>
+                                <div className="text-right shrink-0 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-2.5 rounded-xl shadow-xs">
+                                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-200 block">
+                                    Converted Unit Price
+                                  </span>
+                                  <span className="text-base font-black font-mono">
+                                    ${convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000'}
+                                    <span className="text-[10px] font-sans font-medium text-indigo-200 ml-1">/ unit</span>
                                   </span>
                                 </div>
                               </div>

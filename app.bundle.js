@@ -21287,14 +21287,20 @@ function App() {
     }), /*#__PURE__*/React.createElement("span", null, "INR Base Cost + Profit Margin + GST \u2192 USD Auto-Conversion")), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full font-bold"
     }, "Auto-Converts to USD")), /*#__PURE__*/React.createElement("div", {
-      className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("span", null, "Base Cost (INR \u20B9) ", /*#__PURE__*/React.createElement("span", {
+      className: "grid grid-cols-1 md:grid-cols-2 gap-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-slate-800 font-extrabold text-xs flex items-center space-x-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-black"
+    }, "1"), /*#__PURE__*/React.createElement("span", null, "Base Cost (INR \u20B9) ", /*#__PURE__*/React.createElement("span", {
       className: "text-red-500"
-    }, "*")), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-slate-400"
-    }, "Unit Cost")), /*#__PURE__*/React.createElement("div", {
+    }, "*"))), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Excl. Profit & Tax")), /*#__PURE__*/React.createElement("div", {
       className: "relative"
     }, /*#__PURE__*/React.createElement("span", {
       className: "absolute left-3 top-2.5 text-slate-400 font-bold text-xs"
@@ -21304,56 +21310,86 @@ function App() {
       placeholder: "e.g. 1000.00",
       value: lineItemModalState.itemData.priceInr || '',
       onChange: e => handleInrPriceChange(e.target.value),
-      className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
-    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("span", null, "Profit Margin (%)"), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-indigo-700 font-mono font-bold"
+      className: "w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+    })), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Unit purchase or production cost")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-slate-800 font-extrabold text-xs flex items-center space-x-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black"
+    }, "2"), /*#__PURE__*/React.createElement("span", null, "Profit Margin (%)")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full"
     }, "+\u20B9", profitAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
-      className: "relative"
+      className: "flex items-center space-x-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative w-28 shrink-0"
     }, /*#__PURE__*/React.createElement("input", {
       type: "number",
       step: "0.1",
-      placeholder: "e.g. 10",
+      placeholder: "10",
       value: lineItemModalState.itemData.profitPercent !== undefined ? lineItemModalState.itemData.profitPercent : '10',
       onChange: e => handleProfitPercentChange(e.target.value),
-      className: "w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
+      className: "w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 pr-6 transition-colors"
     }), /*#__PURE__*/React.createElement("span", {
-      className: "absolute right-3 top-2.5 text-slate-400 font-bold text-xs"
+      className: "absolute right-2.5 top-2 text-slate-400 font-bold text-xs"
     }, "%")), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-1 mt-1.5"
+      className: "flex-1 flex flex-wrap gap-1"
     }, ['0', '5', '10', '15', '20', '25'].map(p => /*#__PURE__*/React.createElement("button", {
       key: p,
       type: "button",
       onClick: () => handleProfitPercentChange(p),
-      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.profitPercent) === p ? 'bg-indigo-600 text-white font-extrabold' : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'}`
-    }, p, "%")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("span", null, "GST Percentage (%)"), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-emerald-700 font-mono font-bold"
+      className: `px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${String(lineItemModalState.itemData.profitPercent) === p ? 'bg-indigo-600 text-white shadow-2xs font-black' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'}`
+    }, p, "%")))), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Subtotal with profit: ", /*#__PURE__*/React.createElement("span", {
+      className: "font-mono font-bold text-slate-700"
+    }, "\u20B9", priceAfterProfitInr.toFixed(2)))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-slate-800 font-extrabold text-xs flex items-center space-x-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black"
+    }, "3"), /*#__PURE__*/React.createElement("span", null, "GST Rate (%)")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full"
     }, "+\u20B9", gstAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
-      className: "relative"
+      className: "flex items-center space-x-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative w-28 shrink-0"
     }, /*#__PURE__*/React.createElement("input", {
       type: "number",
       step: "0.1",
-      placeholder: "e.g. 18",
+      placeholder: "18",
       value: lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18',
       onChange: e => handleGstPercentChange(e.target.value),
-      className: "w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
+      className: "w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 pr-6 transition-colors"
     }), /*#__PURE__*/React.createElement("span", {
-      className: "absolute right-3 top-2.5 text-slate-400 font-bold text-xs"
+      className: "absolute right-2.5 top-2 text-slate-400 font-bold text-xs"
     }, "%")), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-1 mt-1.5"
+      className: "flex-1 flex flex-wrap gap-1"
     }, ['0', '5', '12', '18', '28'].map(p => /*#__PURE__*/React.createElement("button", {
       key: p,
       type: "button",
       onClick: () => handleGstPercentChange(p),
-      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-emerald-600 text-white font-extrabold' : 'bg-white hover:bg-emerald-50 text-slate-600 border border-slate-200'}`
-    }, p, "%")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("span", null, "USD Rate (1 USD = \u20B9)"), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-indigo-600 font-medium"
-    }, "Rate")), /*#__PURE__*/React.createElement("div", {
+      className: `px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-emerald-600 text-white shadow-2xs font-black' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'}`
+    }, p === '0' ? '0% LUT' : `${p}%`)))), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Applied on taxable subtotal (Base + Profit)")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-slate-800 font-extrabold text-xs flex items-center space-x-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black"
+    }, "4"), /*#__PURE__*/React.createElement("span", null, "USD Conversion Rate")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full font-bold"
+    }, "1 USD = \u20B9", convRate)), /*#__PURE__*/React.createElement("div", {
       className: "relative"
     }, /*#__PURE__*/React.createElement("span", {
       className: "absolute left-3 top-2.5 text-slate-400 font-bold text-xs"
@@ -21363,39 +21399,47 @@ function App() {
       placeholder: "e.g. 85.0000",
       value: lineItemModalState.itemData.conversionRate || '',
       onChange: e => handleConversionRateChange(e.target.value),
-      className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
-    })), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-slate-500 mt-1 block"
-    }, "Doc rate: ", /*#__PURE__*/React.createElement("strong", null, "\u20B9", defaultDocRate)))), /*#__PURE__*/React.createElement("div", {
-      className: "p-3 bg-white/90 rounded-lg border border-indigo-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "space-y-0.5"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-700"
-    }, /*#__PURE__*/React.createElement("span", null, "Base: \u20B9", inrBase.toFixed(2)), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-400"
-    }, "+"), /*#__PURE__*/React.createElement("span", {
-      className: "text-indigo-700 font-bold"
-    }, "Profit (", profitPct, "%): \u20B9", profitAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-400"
-    }, "+"), /*#__PURE__*/React.createElement("span", {
-      className: "text-emerald-700 font-bold"
-    }, "GST (", gstPct, "%): \u20B9", gstAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-400"
-    }, "="), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-900 font-black"
-    }, "Total: \u20B9", totalInrWithProfitAndGst.toFixed(2)), /*#__PURE__*/React.createElement("span", {
-      className: "text-slate-400"
-    }, "\xF7"), /*#__PURE__*/React.createElement("span", null, "\u20B9", convRate, "/USD")), /*#__PURE__*/React.createElement("p", {
+      className: "w-full bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+    })), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-slate-400 font-medium"
-    }, "Formula: (Base INR + Profit Margin + GST Amount) \xF7 USD Rate = Unit Price (USD)")), /*#__PURE__*/React.createElement("div", {
-      className: "text-right shrink-0 bg-indigo-50/80 px-3 py-1.5 rounded-lg border border-indigo-100"
+    }, "Doc rate: ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-slate-700"
+    }, "\u20B9", defaultDocRate)))), /*#__PURE__*/React.createElement("div", {
+      className: "p-3.5 bg-white rounded-xl border border-indigo-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "space-y-1.5 flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] uppercase font-black tracking-wider text-slate-400"
+    }, "Live Calculation Flow"), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap items-center gap-1.5 text-xs font-mono"
     }, /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] uppercase font-extrabold text-indigo-700 block"
-    }, "Converted Price"), /*#__PURE__*/React.createElement("span", {
-      className: "text-sm font-black text-indigo-950 font-mono"
-    }, "$", convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000', " ", /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] text-slate-500 font-sans font-bold"
+      className: "px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold border border-slate-200"
+    }, "Base \u20B9", inrBase.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400 font-bold"
+    }, "+"), /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
+    }, "Profit (", profitPct, "%): \u20B9", profitAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400 font-bold"
+    }, "+"), /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-200"
+    }, "GST (", gstPct, "%): \u20B9", gstAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400 font-bold"
+    }, "="), /*#__PURE__*/React.createElement("span", {
+      className: "px-2.5 py-0.5 rounded-md bg-slate-900 text-white font-extrabold"
+    }, "Total \u20B9", totalInrWithProfitAndGst.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400 font-bold"
+    }, "\xF7"), /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 font-bold border border-amber-200"
+    }, "\u20B9", convRate, "/USD")), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-400 font-medium"
+    }, "Formula: (Base Cost + Profit Margin + GST Amount) \xF7 USD Rate = Unit Price (USD)")), /*#__PURE__*/React.createElement("div", {
+      className: "text-right shrink-0 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white px-4 py-2.5 rounded-xl shadow-xs"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] uppercase tracking-wider font-extrabold text-indigo-200 block"
+    }, "Converted Unit Price"), /*#__PURE__*/React.createElement("span", {
+      className: "text-base font-black font-mono"
+    }, "$", convertedUsd > 0 ? convertedUsd.toFixed(4) : '0.0000', /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-sans font-medium text-indigo-200 ml-1"
     }, "/ unit"))))), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-1 md:grid-cols-3 gap-4 items-end"
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
