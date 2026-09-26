@@ -15124,7 +15124,6 @@
                             <th className="py-2.5 px-3 text-center">Qty & Unit</th>
                             <th className="py-2.5 px-3 text-right">Price ({qtFormData.currency})</th>
                             <th className="py-2.5 px-3 text-right">Total ({qtFormData.currency})</th>
-                            <th className="py-2.5 px-3">Total CBM</th>
                             <th className="py-2.5 px-3">Packaging & Spec</th>
                             <th className="py-2.5 px-3 text-center w-28">Actions</th>
                           </tr>
@@ -15132,7 +15131,7 @@
                         <tbody className="divide-y divide-slate-200">
                           {qtFormData.lineItems.length === 0 || (qtFormData.lineItems.length === 1 && !qtFormData.lineItems[0].product) ? (
                             <tr>
-                              <td colSpan={8} className="py-8 text-center text-slate-400 bg-slate-50/50">
+                              <td colSpan={7} className="py-8 text-center text-slate-400 bg-slate-50/50">
                                 <i className="fi fi-rr-box-open text-2xl block mb-2 text-slate-300"></i>
                                 <p className="font-semibold text-xs text-slate-600">No product line items added yet.</p>
                                 <button type="button" onClick={() => handleOpenAddLineItemModal('quotation')} className="mt-2 text-xs font-bold text-blue-600 hover:underline">
@@ -15179,10 +15178,6 @@
                                   </td>
                                   <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700">
                                     {totalAmt}
-                                  </td>
-                                  <td className="py-3 px-3">
-                                    <span className="block text-xs font-black text-indigo-950 font-mono">{itemTotalCbm} m³</span>
-                                    <span className="block text-[10px] text-slate-500 font-mono">({unitCbm.toFixed(3)} m³/unit)</span>
                                   </td>
                                   <td className="py-3 px-3 text-slate-600 text-[11px]">
                                     <span className="block font-semibold text-slate-800">{item.packageType || 'N/A'} • {item.packageText || 'N/A'}</span>
@@ -15790,7 +15785,6 @@
                             <th className="py-2.5 px-3 text-center">Qty & Unit</th>
                             <th className="py-2.5 px-3 text-right">Price ({piFormData.currency || 'USD'})</th>
                             <th className="py-2.5 px-3 text-right">Total ({piFormData.currency || 'USD'})</th>
-                            <th className="py-2.5 px-3">Total CBM</th>
                             <th className="py-2.5 px-3">Packaging & Spec</th>
                             <th className="py-2.5 px-3 text-center w-28">Actions</th>
                           </tr>
@@ -15798,7 +15792,7 @@
                         <tbody className="divide-y divide-slate-200">
                           {(!piFormData.lineItems || piFormData.lineItems.length === 0 || (piFormData.lineItems.length === 1 && !piFormData.lineItems[0]?.product)) ? (
                             <tr>
-                              <td colSpan={8} className="py-8 text-center text-slate-400 bg-slate-50/50">
+                              <td colSpan={7} className="py-8 text-center text-slate-400 bg-slate-50/50">
                                 <i className="fi fi-rr-box-open text-2xl block mb-2 text-slate-300"></i>
                                 <p className="font-semibold text-xs text-slate-600">No product line items added yet.</p>
                                 <button type="button" onClick={() => handleOpenAddLineItemModal('proforma')} className="mt-2 text-xs font-bold text-blue-600 hover:underline">
@@ -15845,10 +15839,6 @@
                                   </td>
                                   <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700">
                                     {totalAmt}
-                                  </td>
-                                  <td className="py-3 px-3">
-                                    <span className="block text-xs font-black text-indigo-950 font-mono">{itemTotalCbm} m³</span>
-                                    <span className="block text-[10px] text-slate-500 font-mono">({unitCbm.toFixed(3)} m³/unit)</span>
                                   </td>
                                   <td className="py-3 px-3 text-slate-600 text-[11px]">
                                     <span className="block font-semibold text-slate-800">{item.packageType || 'N/A'} • {item.packageText || 'N/A'}</span>

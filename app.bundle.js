@@ -16887,14 +16887,12 @@ function App() {
     className: "py-2.5 px-3 text-right"
   }, "Total (", qtFormData.currency, ")"), /*#__PURE__*/React.createElement("th", {
     className: "py-2.5 px-3"
-  }, "Total CBM"), /*#__PURE__*/React.createElement("th", {
-    className: "py-2.5 px-3"
   }, "Packaging & Spec"), /*#__PURE__*/React.createElement("th", {
     className: "py-2.5 px-3 text-center w-28"
   }, "Actions"))), /*#__PURE__*/React.createElement("tbody", {
     className: "divide-y divide-slate-200"
   }, qtFormData.lineItems.length === 0 || qtFormData.lineItems.length === 1 && !qtFormData.lineItems[0].product ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
-    colSpan: 8,
+    colSpan: 7,
     className: "py-8 text-center text-slate-400 bg-slate-50/50"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-box-open text-2xl block mb-2 text-slate-300"
@@ -16943,12 +16941,6 @@ function App() {
     }, "\u20B9", Number(item.priceInr).toLocaleString('en-IN'), item.profitPercent ? ` +${item.profitPercent}% pft` : '', item.gstPercent ? ` +${item.gstPercent}% gst` : '') : null), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-bold text-emerald-700"
     }, totalAmt), /*#__PURE__*/React.createElement("td", {
-      className: "py-3 px-3"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "block text-xs font-black text-indigo-950 font-mono"
-    }, itemTotalCbm, " m\xB3"), /*#__PURE__*/React.createElement("span", {
-      className: "block text-[10px] text-slate-500 font-mono"
-    }, "(", unitCbm.toFixed(3), " m\xB3/unit)")), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-slate-600 text-[11px]"
     }, /*#__PURE__*/React.createElement("span", {
       className: "block font-semibold text-slate-800"
@@ -17649,14 +17641,12 @@ function App() {
     className: "py-2.5 px-3 text-right"
   }, "Total (", piFormData.currency || 'USD', ")"), /*#__PURE__*/React.createElement("th", {
     className: "py-2.5 px-3"
-  }, "Total CBM"), /*#__PURE__*/React.createElement("th", {
-    className: "py-2.5 px-3"
   }, "Packaging & Spec"), /*#__PURE__*/React.createElement("th", {
     className: "py-2.5 px-3 text-center w-28"
   }, "Actions"))), /*#__PURE__*/React.createElement("tbody", {
     className: "divide-y divide-slate-200"
   }, !piFormData.lineItems || piFormData.lineItems.length === 0 || piFormData.lineItems.length === 1 && !piFormData.lineItems[0]?.product ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
-    colSpan: 8,
+    colSpan: 7,
     className: "py-8 text-center text-slate-400 bg-slate-50/50"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-box-open text-2xl block mb-2 text-slate-300"
@@ -17705,12 +17695,6 @@ function App() {
     }, "\u20B9", Number(item.priceInr).toLocaleString('en-IN'), item.profitPercent ? ` +${item.profitPercent}% pft` : '', item.gstPercent ? ` +${item.gstPercent}% gst` : '') : null), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-bold text-emerald-700"
     }, totalAmt), /*#__PURE__*/React.createElement("td", {
-      className: "py-3 px-3"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "block text-xs font-black text-indigo-950 font-mono"
-    }, itemTotalCbm, " m\xB3"), /*#__PURE__*/React.createElement("span", {
-      className: "block text-[10px] text-slate-500 font-mono"
-    }, "(", unitCbm.toFixed(3), " m\xB3/unit)")), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-slate-600 text-[11px]"
     }, /*#__PURE__*/React.createElement("span", {
       className: "block font-semibold text-slate-800"
