@@ -4710,6 +4710,482 @@
         }));
       };
 
+      // ==========================================
+      // BULK PRODUCT UPLOAD ENGINE (EXCEL / CSV / PASTE)
+      // ==========================================
+      const [bulkUploadModalState, setBulkUploadModalState] = useState({
+        isOpen: false,
+        targetContext: 'quotation', // 'quotation' | 'proforma'
+        importMode: 'file', // 'file' | 'paste'
+        rawPasteText: '',
+        fileName: '',
+        parsedRows: [],
+        autoRegisterToMaster: true,
+        insertMode: 'append', // 'append' | 'replace'
+        isProcessing: false,
+        errorMsg: ''
+      });
+
+      const handleOpenBulkProductUploadModal = (context = 'quotation') => {
+        setBulkUploadModalState({
+          isOpen: true,
+          targetContext: context,
+          importMode: 'file',
+          rawPasteText: '',
+          fileName: '',
+          parsedRows: [],
+          autoRegisterToMaster: true,
+          insertMode: 'append',
+          isProcessing: false,
+          errorMsg: ''
+        });
+      };
+
+      const handleDownloadBulkProductTemplate = (format = 'csv') => {
+        const headers = [
+          'Product Name',
+          'HSN Code',
+          'Quantity',
+          'Unit',
+          'Price (USD)',
+          'Price in INR',
+          'Profit Margin (%)',
+          'GST Rate (%)',
+          'Package Type',
+          'Total Packages',
+          'Net Weight (KG)',
+          'Gross Weight (KG)',
+          'CBM (m3)',
+          'Product Description'
+        ];
+
+        const sampleRows = [
+          [
+            'Organic Cumin Seeds 25kg',
+            '09093100',
+            '100',
+            'Box',
+            '15.50',
+            '1000',
+            '10',
+            '0.01',
+            'Corrugated Box',
+            '100',
+            '25.00',
+            '26.20',
+            '0.045',
+            'Prime Grade Export Quality Cleaned Spices'
+          ],
+          [
+            'Degaser 200 (Aluminium Degassing)',
+            '38249900',
+            '50',
+            'Drum',
+            '42.00',
+            '3000',
+            '15',
+            '18',
+            'Steel Drum',
+            '50',
+            '40.00',
+            '43.50',
+            '0.080',
+            'Foundry flux degassing chemical agent'
+          ]
+        ];
+
+        if (format === 'xlsx' && window.XLSX) {
+          try {
+            const wb = window.XLSX.utils.book_new();
+            const wsData = [headers, ...sampleRows];
+            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+
+            ws['!cols'] = [
+              { wch: 32 }, // Product Name
+              { wch: 12 }, // HSN Code
+              { wch: 10 }, // Quantity
+              { wch: 10 }, // Unit
+              { wch: 12 }, // Price USD
+              { wch: 15 }, // Price INR
+              { wch: 15 }, // Profit %
+              { wch: 12 }, // GST %
+              { wch: 16 }, // Package Type
+              { wch: 14 }, // Total Packages
+              { wch: 15 }, // Net Weight
+              { wch: 15 }, // Gross Weight
+              { wch: 12 }, // CBM
+              { wch: 40 }  // Description
+            ];
+
+            window.XLSX.utils.book_append_sheet(wb, ws, 'Products Template');
+            window.XLSX.writeFile(wb, 'Shipz_Product_Bulk_Upload_Template.xlsx');
+            return;
+          } catch (e) {
+            console.warn('XLSX export fallback to CSV', e);
+          }
+        }
+
+        const csvContent = [
+          headers.map(h => `"${h}"`).join(','),
+          ...sampleRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'Shipz_Product_Bulk_Upload_Template.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const processExtractedRows = (rawRows, targetCtx) => {
+        if (!Array.isArray(rawRows) || rawRows.length === 0) {
+          setBulkUploadModalState(prev => ({ ...prev, errorMsg: 'No valid data rows found in uploaded file/text.' }));
+          return;
+        }
+
+        const docExchangeRate = targetCtx === 'quotation'
+          ? (parseFloat(qtFormData.conversionRate) || 85.0)
+          : (parseFloat(piFormData.conversionRate) || 85.0);
+
+        const normalizedRows = [];
+
+        rawRows.forEach((row, idx) => {
+          const normObj = {};
+          Object.keys(row).forEach(k => {
+            const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            normObj[cleanKey] = row[k];
+          });
+
+          const pName = normObj.productname || normObj.product || normObj.itemname || normObj.item || normObj.name || normObj.commodity || normObj.description || '';
+          if (!pName || String(pName).trim() === '') return;
+
+          const cleanName = String(pName).trim();
+          const cleanQty = parseFloat(normObj.quantity || normObj.qty || normObj.count || normObj.units || 1) || 1;
+
+          const existingMaster = (masterProductsSettings || []).find(m =>
+            (m.name && m.name.toLowerCase().trim() === cleanName.toLowerCase()) ||
+            (normObj.hsn && m.hsn && String(m.hsn).trim() === String(normObj.hsn).trim())
+          );
+
+          const hsnVal = normObj.hsncode || normObj.hsn || normObj.hsnsac || normObj.tariffcode || (existingMaster ? existingMaster.hsn : '09093100');
+          const unitVal = normObj.unit || normObj.uom || (existingMaster ? existingMaster.unit : 'Box') || 'Box';
+
+          const inrPriceRaw = normObj.priceinrinr || normObj.priceinr || normObj.basecost || normObj.inrcost || normObj.costinr || '';
+          const profitPctRaw = normObj.profitmargin || normObj.profitpercent || normObj.profit || normObj.margin || '10';
+          const gstPctRaw = normObj.gstrate || normObj.gstpercent || normObj.gst || normObj.tax || '0.01';
+
+          let usdPrice = parseFloat(normObj.priceusd || normObj.price || normObj.rate || normObj.unitprice || 0) || 0;
+          let inrPrice = parseFloat(inrPriceRaw) || 0;
+          let profitPct = parseFloat(profitPctRaw) || 10;
+          let gstPct = parseFloat(gstPctRaw) || 0.01;
+
+          if (inrPrice > 0 && usdPrice <= 0) {
+            const pAmt = (inrPrice * profitPct) / 100;
+            const sub = inrPrice + pAmt;
+            const gAmt = (sub * gstPct) / 100;
+            const totInr = sub + gAmt;
+            usdPrice = docExchangeRate > 0 ? parseFloat((totInr / docExchangeRate).toFixed(4)) : 0;
+          } else if (usdPrice > 0 && inrPrice <= 0) {
+            inrPrice = parseFloat((((usdPrice * docExchangeRate) / (1 + (gstPct / 100))) / (1 + (profitPct / 100))).toFixed(2)) || 0;
+          } else if (usdPrice <= 0 && existingMaster) {
+            usdPrice = parseFloat(existingMaster.unitPrice || existingMaster.sellPriceInr || 0);
+          }
+
+          const uNetWeight = parseFloat(normObj.netweightkg || normObj.netweight || (existingMaster ? (existingMaster.netWeightKg || existingMaster.netWeight) : 0)) || 0;
+          const uGrossWeight = parseFloat(normObj.grossweightkg || normObj.grossweight || (existingMaster ? (existingMaster.grossWeightKg || existingMaster.grossWeight) : 0)) || 0;
+
+          const totalNet = uNetWeight > 0 ? (uNetWeight * cleanQty).toFixed(2) : (normObj.netweight ? String(normObj.netweight) : '');
+          const totalGross = uGrossWeight > 0 ? (uGrossWeight * cleanQty).toFixed(2) : (normObj.grossweight ? String(normObj.grossweight) : '');
+
+          const pkgType = normObj.packagetype || normObj.pkgtype || normObj.package || 'Box';
+          const totalPkgs = parseInt(normObj.totalpackages || normObj.packages || normObj.pkgs || cleanQty, 10) || cleanQty;
+          const cbmVal = parseFloat(normObj.cbm || normObj.dimensionm3 || normObj.volume || (existingMaster ? (existingMaster.dimensionM3 || existingMaster.cbm) : 0.045)) || 0.045;
+          const pDesc = normObj.productdescription || normObj.details || normObj.specs || (existingMaster ? existingMaster.description : '') || '';
+
+          normalizedRows.push({
+            id: `bulk-li-${Date.now()}-${idx}`,
+            product: cleanName,
+            productDescription: pDesc,
+            hsn: String(hsnVal),
+            unit: String(unitVal),
+            quantity: cleanQty,
+            price: usdPrice,
+            priceInr: inrPrice > 0 ? String(inrPrice) : '',
+            profitPercent: String(profitPct),
+            gstPercent: String(gstPct),
+            conversionRate: String(docExchangeRate),
+            netWeight: totalNet,
+            grossWeight: totalGross,
+            unitNetWeight: uNetWeight,
+            unitGrossWeight: uGrossWeight,
+            packageType: pkgType,
+            totalPackages: totalPkgs,
+            packageCap: normObj.packagecapacity || `${uNetWeight > 0 ? uNetWeight : '25'} ${unitVal}`,
+            cbm: cbmVal,
+            status: existingMaster ? 'matched' : 'new'
+          });
+        });
+
+        if (normalizedRows.length === 0) {
+          setBulkUploadModalState(prev => ({
+            ...prev,
+            errorMsg: 'Could not detect any valid products. Please ensure columns include "Product Name" and "Quantity".'
+          }));
+          return;
+        }
+
+        setBulkUploadModalState(prev => ({
+          ...prev,
+          parsedRows: normalizedRows,
+          errorMsg: ''
+        }));
+      };
+
+      const handleBulkFileUpload = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        setBulkUploadModalState(prev => ({
+          ...prev,
+          fileName: file.name,
+          isProcessing: true,
+          errorMsg: ''
+        }));
+
+        const fileExt = file.name.split('.').pop().toLowerCase();
+
+        if ((fileExt === 'xlsx' || fileExt === 'xls') && window.XLSX) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            try {
+              const data = new Uint8Array(evt.target.result);
+              const workbook = window.XLSX.read(data, { type: 'array' });
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+              processExtractedRows(jsonData, bulkUploadModalState.targetContext);
+            } catch (err) {
+              console.error('Excel parse error:', err);
+              setBulkUploadModalState(prev => ({ ...prev, errorMsg: 'Failed to parse Excel file. Please check file format.' }));
+            } finally {
+              setBulkUploadModalState(prev => ({ ...prev, isProcessing: false }));
+            }
+          };
+          reader.readAsArrayBuffer(file);
+          return;
+        }
+
+        const textReader = new FileReader();
+        textReader.onload = (evt) => {
+          try {
+            const text = evt.target.result;
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length <= 1) {
+              setBulkUploadModalState(prev => ({ ...prev, errorMsg: 'CSV file is empty or missing data rows.', isProcessing: false }));
+              return;
+            }
+
+            const parseCsvLine = (t) => {
+              const res = [];
+              let cur = '';
+              let inQ = false;
+              for (let i = 0; i < t.length; i++) {
+                const c = t[i];
+                if (c === '"') {
+                  inQ = !inQ;
+                } else if (c === ',' && !inQ) {
+                  res.push(cur.trim().replace(/^"|"$/g, ''));
+                  cur = '';
+                } else {
+                  cur += c;
+                }
+              }
+              res.push(cur.trim().replace(/^"|"$/g, ''));
+              return res;
+            };
+
+            const headers = parseCsvLine(lines[0]);
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+              const cols = parseCsvLine(lines[i]);
+              if (cols.length < 1) continue;
+              const rowObj = {};
+              headers.forEach((h, hIdx) => {
+                rowObj[h] = cols[hIdx] || '';
+              });
+              rows.push(rowObj);
+            }
+            processExtractedRows(rows, bulkUploadModalState.targetContext);
+          } catch (err) {
+            console.error('CSV parse error:', err);
+            setBulkUploadModalState(prev => ({ ...prev, errorMsg: 'Failed to parse CSV file.' }));
+          } finally {
+            setBulkUploadModalState(prev => ({ ...prev, isProcessing: false }));
+          }
+        };
+        textReader.readAsText(file);
+      };
+
+      const handleParsePastedText = () => {
+        const text = bulkUploadModalState.rawPasteText || '';
+        if (!text.trim()) {
+          setBulkUploadModalState(prev => ({ ...prev, errorMsg: 'Please paste table data from Excel or Google Sheets.' }));
+          return;
+        }
+
+        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lines.length === 0) return;
+
+        const firstLine = lines[0];
+        const tabCount = (firstLine.match(/\t/g) || []).length;
+        const commaCount = (firstLine.match(/,/g) || []).length;
+        const delimiter = tabCount >= commaCount && tabCount > 0 ? '\t' : ',';
+
+        const splitLine = (l) => l.split(delimiter).map(cell => cell.trim().replace(/^"|"$/g, ''));
+
+        const rawHeaders = splitLine(lines[0]);
+        const looksLikeHeader = rawHeaders.some(h => {
+          const lower = h.toLowerCase();
+          return lower.includes('product') || lower.includes('name') || lower.includes('item') || lower.includes('qty') || lower.includes('price');
+        });
+
+        let headers = [];
+        let dataStartIndex = 0;
+
+        if (looksLikeHeader) {
+          headers = rawHeaders;
+          dataStartIndex = 1;
+        } else {
+          headers = ['Product Name', 'Quantity', 'Price (USD)', 'Unit', 'HSN Code'];
+          dataStartIndex = 0;
+        }
+
+        const rows = [];
+        for (let i = dataStartIndex; i < lines.length; i++) {
+          const cols = splitLine(lines[i]);
+          if (cols.length === 0 || !cols[0]) continue;
+          const rowObj = {};
+          headers.forEach((h, idx) => {
+            rowObj[h] = cols[idx] || '';
+          });
+          rows.push(rowObj);
+        }
+
+        processExtractedRows(rows, bulkUploadModalState.targetContext);
+      };
+
+      const handleRemoveBulkParsedRow = (index) => {
+        setBulkUploadModalState(prev => ({
+          ...prev,
+          parsedRows: prev.parsedRows.filter((_, i) => i !== index)
+        }));
+      };
+
+      const handleExecuteBulkProductImport = () => {
+        const { parsedRows, targetContext, autoRegisterToMaster, insertMode } = bulkUploadModalState;
+        if (!parsedRows || parsedRows.length === 0) {
+          alert('No items to import.');
+          return;
+        }
+
+        let newProductsAddedToMasterCount = 0;
+
+        if (autoRegisterToMaster) {
+          const newItems = parsedRows.filter(r => r.status === 'new');
+          if (newItems.length > 0) {
+            setMasterProductsSettings(prev => {
+              let updatedMaster = [...prev];
+              newItems.forEach(item => {
+                const exists = updatedMaster.some(m => (m.name || '').toLowerCase() === item.product.toLowerCase());
+                if (!exists) {
+                  const newMasterEntry = {
+                    id: `PROD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                    name: item.product,
+                    sku: `SKU-${item.hsn || Math.floor(1000 + Math.random() * 9000)}`,
+                    hsn: item.hsn || '09093100',
+                    gstRate: String(item.gstPercent || '18'),
+                    imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+                    description: item.productDescription || '',
+                    inventoryType: 'Finished Goods',
+                    productTag: 'Bulk Uploaded',
+                    unit: item.unit || 'Box',
+                    netWeightKg: parseFloat(item.unitNetWeight) || 0,
+                    grossWeightKg: parseFloat(item.unitGrossWeight) || 0,
+                    dimensionM3: parseFloat(item.cbm) || 0.045,
+                    sellPriceInr: parseFloat(item.priceInr) || 0,
+                    unitPrice: parseFloat(item.price) || 0,
+                    schemeType: 'RoDTEP',
+                    schemeUnit: item.unit || 'KG',
+                    schemePercentage: 0,
+                    schemeCapValue: 0,
+                    status: 'Active'
+                  };
+                  updatedMaster.unshift(newMasterEntry);
+                  newProductsAddedToMasterCount++;
+                }
+              });
+              setMasterProducts(updatedMaster);
+              try {
+                localStorage.setItem('shipz_master_products', JSON.stringify(updatedMaster));
+              } catch (e) { }
+              window.dispatchEvent(new CustomEvent('shipz_products_updated', { detail: updatedMaster }));
+              return updatedMaster;
+            });
+          }
+        }
+
+        const formattedItems = parsedRows.map((r, rIdx) => ({
+          id: `li-bulk-${Date.now()}-${rIdx}`,
+          product: r.product,
+          productDescription: r.productDescription || '',
+          hsn: r.hsn || '',
+          unit: r.unit || 'Box',
+          quantity: r.quantity,
+          price: r.price,
+          priceInr: r.priceInr || '',
+          profitPercent: r.profitPercent || '10',
+          gstPercent: r.gstPercent || '0.01',
+          conversionRate: r.conversionRate || '85.0000',
+          netWeight: r.netWeight || '',
+          grossWeight: r.grossWeight || '',
+          packageText: r.packageType || '',
+          packageType: r.packageType || 'Box',
+          packageCap: r.packageCap || '',
+          totalPackages: r.totalPackages || r.quantity,
+          cbmPerPkg: r.cbm || 0.045,
+          imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+          qualitySpec: 'Export Standard',
+          material: 'EXPORT GRADE'
+        }));
+
+        if (targetContext === 'quotation') {
+          setQtFormData(prev => {
+            const currentFiltered = insertMode === 'replace' ? [] : prev.lineItems.filter(i => i && i.product);
+            return {
+              ...prev,
+              lineItems: [...currentFiltered, ...formattedItems]
+            };
+          });
+        } else {
+          setPiFormData(prev => {
+            const currentFiltered = insertMode === 'replace' ? [] : (prev.lineItems || []).filter(i => i && i.product);
+            return {
+              ...prev,
+              lineItems: [...currentFiltered, ...formattedItems]
+            };
+          });
+        }
+
+        setBulkUploadModalState(prev => ({ ...prev, isOpen: false }));
+        setToastNotice(
+          `🎉 Bulk Upload Complete! Added ${formattedItems.length} products to ${targetContext === 'quotation' ? 'Quotation' : 'Proforma Invoice'}${newProductsAddedToMasterCount > 0 ? ` (${newProductsAddedToMasterCount} new products registered in Master Catalog)` : ''}.`
+        );
+        setTimeout(() => setToastNotice(null), 5000);
+      };
+
       const [modalFormData, setModalFormData] = useState({
         invoiceNo: 'INV/02/25-26',
         shippingBillNo: 'SB-8829104',
@@ -14621,10 +15097,21 @@
                           {qtFormData.lineItems.filter(i => i.product).length} {qtFormData.lineItems.filter(i => i.product).length === 1 ? 'Item' : 'Items'}
                         </span>
                       </div>
-                      <button type="button" onClick={() => handleOpenAddLineItemModal('quotation')} className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center space-x-1.5">
-                        <i className="fi fi-rr-plus text-xs"></i>
-                        <span> Add Product Line Item</span>
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenBulkProductUploadModal('quotation')}
+                          className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-lg transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer"
+                          title="Bulk Upload multiple products at once via Excel, CSV, or direct copy-paste"
+                        >
+                          <i className="fi fi-rr-file-spreadsheet text-xs text-indigo-600"></i>
+                          <span>📥 Bulk Upload</span>
+                        </button>
+                        <button type="button" onClick={() => handleOpenAddLineItemModal('quotation')} className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer">
+                          <i className="fi fi-rr-plus text-xs"></i>
+                          <span>+ Add Line Item</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* LINE ITEMS SUMMARY TABLE */}
@@ -15276,10 +15763,21 @@
                           {(piFormData.lineItems || []).filter(i => i && i.product).length} {(piFormData.lineItems || []).filter(i => i && i.product).length === 1 ? 'Item' : 'Items'}
                         </span>
                       </div>
-                      <button type="button" onClick={() => handleOpenAddLineItemModal('proforma')} className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center space-x-1.5">
-                        <i className="fi fi-rr-plus text-xs"></i>
-                        <span>+ Add Product Line Item</span>
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenBulkProductUploadModal('proforma')}
+                          className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-lg transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer"
+                          title="Bulk Upload multiple products at once via Excel, CSV, or direct copy-paste"
+                        >
+                          <i className="fi fi-rr-file-spreadsheet text-xs text-indigo-600"></i>
+                          <span>📥 Bulk Upload</span>
+                        </button>
+                        <button type="button" onClick={() => handleOpenAddLineItemModal('proforma')} className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer">
+                          <i className="fi fi-rr-plus text-xs"></i>
+                          <span>+ Add Line Item</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* LINE ITEMS SUMMARY TABLE */}
@@ -19484,6 +19982,336 @@
                   </button>
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* BULK PRODUCT UPLOAD MODAL (EXCEL / CSV / PASTE) */}
+          {bulkUploadModalState.isOpen && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center z-[90] p-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl flex flex-col max-h-[92vh] overflow-hidden">
+                {/* MODAL HEADER */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-indigo-50 via-slate-50 to-emerald-50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-600/20">
+                      <i className="fi fi-rr-file-spreadsheet text-base"></i>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-base font-black text-slate-900 tracking-tight">
+                          Bulk Upload Products
+                        </h3>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          {bulkUploadModalState.targetContext === 'quotation' ? 'Quotation' : 'Proforma Invoice'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Upload Excel spreadsheet (.xlsx), CSV, or paste directly from clipboard
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBulkUploadModalState(prev => ({ ...prev, isOpen: false }))}
+                    className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1 cursor-pointer transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* MODAL BODY */}
+                <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+                  {/* STEP 1: IMPORT SOURCE SELECTION (TABS) */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <div className="inline-flex p-1 bg-white rounded-lg border border-slate-200 shadow-2xs font-bold text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setBulkUploadModalState(prev => ({ ...prev, importMode: 'file', errorMsg: '' }))}
+                        className={`px-4 py-1.5 rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${
+                          bulkUploadModalState.importMode === 'file'
+                            ? 'bg-indigo-600 text-white shadow-xs font-black'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <i className="fi fi-rr-document text-xs"></i>
+                        <span>Excel / CSV File</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBulkUploadModalState(prev => ({ ...prev, importMode: 'paste', errorMsg: '' }))}
+                        className={`px-4 py-1.5 rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${
+                          bulkUploadModalState.importMode === 'paste'
+                            ? 'bg-indigo-600 text-white shadow-xs font-black'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <i className="fi fi-rr-clipboard text-xs"></i>
+                        <span>Copy-Paste from Excel</span>
+                      </button>
+                    </div>
+
+                    {/* SAMPLE TEMPLATES DOWNLOAD */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">Sample Templates:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadBulkProductTemplate('xlsx')}
+                        className="px-2.5 py-1 bg-white hover:bg-slate-100 text-emerald-700 border border-emerald-300 font-bold text-[11px] rounded-lg shadow-2xs flex items-center space-x-1 transition-all cursor-pointer"
+                        title="Download sample template in Microsoft Excel (.xlsx) format"
+                      >
+                        <i className="fi fi-rr-file-excel text-emerald-600"></i>
+                        <span>Sample .XLSX</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadBulkProductTemplate('csv')}
+                        className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] rounded-lg shadow-2xs flex items-center space-x-1 transition-all cursor-pointer"
+                        title="Download sample template in CSV format"
+                      >
+                        <i className="fi fi-rr-file-csv text-slate-600"></i>
+                        <span>Sample .CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ERROR NOTIFICATION BANNER */}
+                  {bulkUploadModalState.errorMsg && (
+                    <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center space-x-2 text-xs font-medium animate-fadeIn">
+                      <i className="fi fi-rr-triangle-warning text-red-500 text-sm"></i>
+                      <span>{bulkUploadModalState.errorMsg}</span>
+                    </div>
+                  )}
+
+                  {/* MODE 1: FILE UPLOAD DROPZONE */}
+                  {bulkUploadModalState.importMode === 'file' && (
+                    <div className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 hover:bg-indigo-50/70 transition-all rounded-2xl p-6 text-center space-y-3 cursor-pointer relative">
+                      <input
+                        type="file"
+                        accept=".xlsx, .xls, .csv"
+                        onChange={handleBulkFileUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                      <div className="w-12 h-12 mx-auto rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl shadow-xs">
+                        <i className="fi fi-rr-cloud-upload"></i>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800">
+                          {bulkUploadModalState.fileName ? (
+                            <span className="text-indigo-600">📄 {bulkUploadModalState.fileName}</span>
+                          ) : (
+                            'Click to browse or drag and drop your spreadsheet here'
+                          )}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Supports Microsoft Excel (.xlsx, .xls) and Comma-Separated Values (.csv)
+                        </p>
+                      </div>
+                      {bulkUploadModalState.isProcessing && (
+                        <div className="flex items-center justify-center space-x-2 text-indigo-600 font-bold text-xs pt-2">
+                          <span className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+                          <span>Processing spreadsheet...</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MODE 2: DIRECT COPY-PASTE FROM EXCEL */}
+                  {bulkUploadModalState.importMode === 'paste' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                        <span>Copy cells from Excel or Google Sheets and paste (Ctrl+V) directly below:</span>
+                        <span className="text-indigo-600 font-bold">Auto-detects tabs and commas</span>
+                      </div>
+                      <textarea
+                        rows={5}
+                        placeholder={"Product Name\tQuantity\tPrice USD\tUnit\tHSN\nOrganic Cumin Seeds 25kg\t100\t15.50\tBox\t09093100\nDegaser 200 (Aluminium Degassing)\t50\t42.00\tDrum\t38249900"}
+                        value={bulkUploadModalState.rawPasteText}
+                        onChange={(e) => setBulkUploadModalState(prev => ({ ...prev, rawPasteText: e.target.value }))}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-mono text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                      ></textarea>
+                      <button
+                        type="button"
+                        onClick={handleParsePastedText}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <i className="fi fi-rr-play text-xs"></i>
+                        <span>Parse Pasted Data</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* STEP 2: PARSED PREVIEW & VALIDATION TABLE */}
+                  {bulkUploadModalState.parsedRows.length > 0 && (
+                    <div className="space-y-3.5 pt-2 border-t border-slate-200 animate-fadeIn">
+                      {/* STATS HEADER */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Items</span>
+                          <span className="text-base font-black text-slate-900 font-mono">
+                            {bulkUploadModalState.parsedRows.length}
+                          </span>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5">
+                          <span className="text-[10px] uppercase font-bold text-emerald-600 block">In Master Catalog</span>
+                          <span className="text-base font-black text-emerald-900 font-mono">
+                            {bulkUploadModalState.parsedRows.filter(r => r.status === 'matched').length}
+                          </span>
+                        </div>
+                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-2.5">
+                          <span className="text-[10px] uppercase font-bold text-indigo-600 block">New (Will Save)</span>
+                          <span className="text-base font-black text-indigo-900 font-mono">
+                            {bulkUploadModalState.parsedRows.filter(r => r.status === 'new').length}
+                          </span>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                          <span className="text-[10px] uppercase font-bold text-amber-700 block">Est. Total (USD)</span>
+                          <span className="text-base font-black text-amber-950 font-mono">
+                            ${bulkUploadModalState.parsedRows.reduce((acc, r) => acc + ((parseFloat(r.quantity) || 0) * (parseFloat(r.price) || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* DATA PREVIEW TABLE */}
+                      <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs max-h-56 overflow-y-auto bg-white">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold text-[11px] z-10">
+                            <tr>
+                              <th className="py-2 px-2.5 text-center w-8">#</th>
+                              <th className="py-2 px-2.5">Status</th>
+                              <th className="py-2 px-2.5">Product Name</th>
+                              <th className="py-2 px-2.5">HSN</th>
+                              <th className="py-2 px-2.5 text-center">Qty & Unit</th>
+                              <th className="py-2 px-2.5 text-right">Price (USD)</th>
+                              <th className="py-2 px-2.5 text-right">Total (USD)</th>
+                              <th className="py-2 px-2.5 text-center w-10"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {bulkUploadModalState.parsedRows.map((row, idx) => {
+                              const lineTotal = ((parseFloat(row.quantity) || 0) * (parseFloat(row.price) || 0)).toFixed(2);
+                              return (
+                                <tr key={row.id || idx} className="hover:bg-slate-50 transition-colors">
+                                  <td className="py-2 px-2.5 text-center font-bold text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                                  <td className="py-2 px-2.5">
+                                    {row.status === 'matched' ? (
+                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        In Master
+                                      </span>
+                                    ) : (
+                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                        + New to Master
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-2.5 font-bold text-slate-900 max-w-[200px] truncate" title={row.product}>
+                                    {row.product}
+                                    {row.productDescription ? (
+                                      <span className="block text-[10px] text-slate-400 font-normal truncate">{row.productDescription}</span>
+                                    ) : null}
+                                  </td>
+                                  <td className="py-2 px-2.5 font-mono text-slate-600">{row.hsn || '-'}</td>
+                                  <td className="py-2 px-2.5 text-center font-mono font-semibold text-slate-700">
+                                    {row.quantity} {row.unit}
+                                  </td>
+                                  <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-800">
+                                    ${Number(row.price || 0).toFixed(2)}
+                                  </td>
+                                  <td className="py-2 px-2.5 text-right font-mono font-black text-emerald-700">
+                                    ${lineTotal}
+                                  </td>
+                                  <td className="py-2 px-2.5 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveBulkParsedRow(idx)}
+                                      className="text-slate-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                                      title="Remove from import"
+                                    >
+                                      ✕
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* IMPORT OPTIONS */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold text-slate-800">
+                          <input
+                            type="checkbox"
+                            checked={bulkUploadModalState.autoRegisterToMaster}
+                            onChange={(e) => setBulkUploadModalState(prev => ({ ...prev, autoRegisterToMaster: e.target.checked }))}
+                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                          />
+                          <span>Automatically register new products into Product Master catalog</span>
+                        </label>
+
+                        <div className="flex items-center space-x-3 text-slate-700 font-medium">
+                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="bulkInsertMode"
+                              checked={bulkUploadModalState.insertMode === 'append'}
+                              onChange={() => setBulkUploadModalState(prev => ({ ...prev, insertMode: 'append' }))}
+                              className="text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span>Append to existing items</span>
+                          </label>
+                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="bulkInsertMode"
+                              checked={bulkUploadModalState.insertMode === 'replace'}
+                              onChange={() => setBulkUploadModalState(prev => ({ ...prev, insertMode: 'replace' }))}
+                              className="text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span>Replace current items</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* MODAL FOOTER */}
+                <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setBulkUploadModalState(prev => ({ ...prev, isOpen: false }))}
+                    className="px-4 py-2 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <div className="flex items-center space-x-2">
+                    {bulkUploadModalState.parsedRows.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setBulkUploadModalState(prev => ({ ...prev, parsedRows: [], fileName: '', rawPasteText: '' }))}
+                        className="px-3.5 py-2 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+                      >
+                        Reset / New File
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={bulkUploadModalState.parsedRows.length === 0}
+                      onClick={handleExecuteBulkProductImport}
+                      className={`px-5 py-2 font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer ${
+                        bulkUploadModalState.parsedRows.length > 0
+                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-emerald-600/20'
+                          : 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      <i className="fi fi-rr-check text-xs"></i>
+                      <span>
+                        Import {bulkUploadModalState.parsedRows.length > 0 ? `${bulkUploadModalState.parsedRows.length} Products` : 'Products'} into {bulkUploadModalState.targetContext === 'quotation' ? 'Quotation' : 'Proforma Invoice'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
