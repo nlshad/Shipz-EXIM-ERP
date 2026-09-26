@@ -5898,6 +5898,7 @@ function App() {
       quantity: '',
       price: '',
       priceInr: '',
+      profitPercent: '10',
       gstPercent: '18',
       conversionRate: '85.0000',
       priceInputMode: 'direct',
@@ -5927,6 +5928,7 @@ function App() {
         quantity: '',
         price: '',
         priceInr: '',
+        profitPercent: '10',
         gstPercent: '18',
         conversionRate: String(defaultConv),
         priceInputMode: 'direct',
@@ -5953,6 +5955,7 @@ function App() {
       parentType: parentType,
       itemData: {
         priceInr: itemToEdit.priceInr || '',
+        profitPercent: itemToEdit.profitPercent !== undefined ? String(itemToEdit.profitPercent) : '10',
         gstPercent: itemToEdit.gstPercent !== undefined ? String(itemToEdit.gstPercent) : '18',
         conversionRate: itemToEdit.conversionRate ? String(itemToEdit.conversionRate) : String(defaultConv),
         priceInputMode: itemToEdit.priceInr ? 'inr' : 'direct',
@@ -16474,7 +16477,10 @@ function App() {
       className: "font-bold text-indigo-900 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded font-mono"
     }, item.quantity || 0, " ", item.unit || 'Units')), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-semibold text-slate-700"
-    }, item.price ? Number(item.price).toFixed(2) : '0.00'), /*#__PURE__*/React.createElement("td", {
+    }, /*#__PURE__*/React.createElement("div", null, "$", item.price ? Number(item.price).toFixed(2) : '0.00'), item.priceInr ? /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-slate-400 font-sans font-medium",
+      title: `Base: ₹${item.priceInr}, Profit: ${item.profitPercent || 0}%, GST: ${item.gstPercent || 0}%`
+    }, "\u20B9", Number(item.priceInr).toLocaleString('en-IN'), item.profitPercent ? ` +${item.profitPercent}% pft` : '', item.gstPercent ? ` +${item.gstPercent}% gst` : '') : null), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-bold text-emerald-700"
     }, totalAmt), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3"
@@ -17224,7 +17230,10 @@ function App() {
       className: "font-bold text-indigo-900 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded font-mono"
     }, item.quantity || 0, " ", item.unit || 'Units')), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-semibold text-slate-700"
-    }, item.price ? Number(item.price).toFixed(2) : '0.00'), /*#__PURE__*/React.createElement("td", {
+    }, /*#__PURE__*/React.createElement("div", null, "$", item.price ? Number(item.price).toFixed(2) : '0.00'), item.priceInr ? /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-slate-400 font-sans font-medium",
+      title: `Base: ₹${item.priceInr}, Profit: ${item.profitPercent || 0}%, GST: ${item.gstPercent || 0}%`
+    }, "\u20B9", Number(item.priceInr).toLocaleString('en-IN'), item.profitPercent ? ` +${item.profitPercent}% pft` : '', item.gstPercent ? ` +${item.gstPercent}% gst` : '') : null), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 text-right font-mono font-bold text-emerald-700"
     }, totalAmt), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3"
@@ -21155,19 +21164,33 @@ function App() {
     const mode = lineItemModalState.itemData.priceInputMode || 'direct';
     const defaultDocRate = lineItemModalState.parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
     const inrBase = parseFloat(lineItemModalState.itemData.priceInr) || 0;
-    const gstPct = parseFloat(lineItemModalState.itemData.gstPercent) || 0;
+    const profitPct = parseFloat(lineItemModalState.itemData.profitPercent !== undefined ? lineItemModalState.itemData.profitPercent : '10') || 0;
+    const gstPct = parseFloat(lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18') || 0;
     const convRate = parseFloat(lineItemModalState.itemData.conversionRate) || defaultDocRate;
-    const gstAmtInr = inrBase * gstPct / 100;
-    const totalInrWithGst = inrBase + gstAmtInr;
-    const convertedUsd = convRate > 0 ? totalInrWithGst / convRate : 0;
+
+    // Profit calculation
+    const profitAmtInr = inrBase * profitPct / 100;
+    const priceAfterProfitInr = inrBase + profitAmtInr;
+
+    // GST calculation on price after profit (commercial taxable value)
+    const gstAmtInr = priceAfterProfitInr * gstPct / 100;
+    const totalInrWithProfitAndGst = priceAfterProfitInr + gstAmtInr;
+
+    // USD conversion
+    const convertedUsd = convRate > 0 ? totalInrWithProfitAndGst / convRate : 0;
     const currentUsdPrice = parseFloat(lineItemModalState.itemData.price) || 0;
     const currentQty = parseFloat(lineItemModalState.itemData.quantity) || 0;
     const totalUsdLineAmount = (currentQty * currentUsdPrice).toFixed(2);
+    const recalcUsd = (inr, profit, gst, rate) => {
+      const pAmt = inr * profit / 100;
+      const sub = inr + pAmt;
+      const gAmt = sub * gst / 100;
+      const tot = sub + gAmt;
+      return rate > 0 ? parseFloat((tot / rate).toFixed(4)) : 0;
+    };
     const handleInrPriceChange = valStr => {
       const inr = parseFloat(valStr) || 0;
-      const calcGst = inr * gstPct / 100;
-      const calcTotal = inr + calcGst;
-      const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+      const calcUsd = recalcUsd(inr, profitPct, gstPct, convRate);
       setLineItemModalState(prev => ({
         ...prev,
         itemData: {
@@ -21177,11 +21200,21 @@ function App() {
         }
       }));
     };
+    const handleProfitPercentChange = valStr => {
+      const profit = parseFloat(valStr) || 0;
+      const calcUsd = recalcUsd(inrBase, profit, gstPct, convRate);
+      setLineItemModalState(prev => ({
+        ...prev,
+        itemData: {
+          ...prev.itemData,
+          profitPercent: valStr,
+          price: inrBase > 0 ? calcUsd : prev.itemData.price
+        }
+      }));
+    };
     const handleGstPercentChange = valStr => {
       const gst = parseFloat(valStr) || 0;
-      const calcGst = inrBase * gst / 100;
-      const calcTotal = inrBase + calcGst;
-      const calcUsd = convRate > 0 ? parseFloat((calcTotal / convRate).toFixed(4)) : 0;
+      const calcUsd = recalcUsd(inrBase, profitPct, gst, convRate);
       setLineItemModalState(prev => ({
         ...prev,
         itemData: {
@@ -21193,7 +21226,7 @@ function App() {
     };
     const handleConversionRateChange = valStr => {
       const rate = parseFloat(valStr) || 0;
-      const calcUsd = rate > 0 ? parseFloat((totalInrWithGst / rate).toFixed(4)) : 0;
+      const calcUsd = recalcUsd(inrBase, profitPct, gstPct, rate);
       setLineItemModalState(prev => ({
         ...prev,
         itemData: {
@@ -21228,7 +21261,7 @@ function App() {
       onClick: () => {
         let initialInr = lineItemModalState.itemData.priceInr;
         if (!initialInr && currentUsdPrice > 0) {
-          const estimatedInr = currentUsdPrice * convRate / (1 + gstPct / 100);
+          const estimatedInr = currentUsdPrice * convRate / (1 + gstPct / 100) / (1 + profitPct / 100);
           initialInr = estimatedInr.toFixed(2);
         }
         setLineItemModalState(prev => ({
@@ -21241,7 +21274,7 @@ function App() {
         }));
       },
       className: `px-3 py-1 rounded-md transition-all cursor-pointer flex items-center space-x-1.5 ${mode === 'inr' ? 'bg-indigo-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`
-    }, /*#__PURE__*/React.createElement("span", null, "INR \u2192 USD (+ GST)"), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "INR \u2192 USD (+ Profit & GST)"), /*#__PURE__*/React.createElement("span", {
       className: `px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${mode === 'inr' ? 'bg-amber-400 text-slate-950' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}`
     }, "Calculator")))), mode === 'inr' && /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-br from-indigo-50/70 via-slate-50 to-blue-50/60 p-4 rounded-xl border border-indigo-200 shadow-2xs space-y-3.5"
@@ -21251,17 +21284,17 @@ function App() {
       className: "font-extrabold text-indigo-950 text-xs flex items-center space-x-1.5"
     }, /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-calculator text-indigo-600"
-    }), /*#__PURE__*/React.createElement("span", null, "INR Unit Price + GST \u2192 USD Auto-Conversion")), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", null, "INR Base Cost + Profit Margin + GST \u2192 USD Auto-Conversion")), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full font-bold"
     }, "Auto-Converts to USD")), /*#__PURE__*/React.createElement("div", {
-      className: "grid grid-cols-1 sm:grid-cols-3 gap-3.5"
+      className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
       className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("span", null, "Price in INR (\u20B9) ", /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "Base Cost (INR \u20B9) ", /*#__PURE__*/React.createElement("span", {
       className: "text-red-500"
     }, "*")), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-slate-400"
-    }, "Base Cost")), /*#__PURE__*/React.createElement("div", {
+    }, "Unit Cost")), /*#__PURE__*/React.createElement("div", {
       className: "relative"
     }, /*#__PURE__*/React.createElement("span", {
       className: "absolute left-3 top-2.5 text-slate-400 font-bold text-xs"
@@ -21273,6 +21306,28 @@ function App() {
       onChange: e => handleInrPriceChange(e.target.value),
       className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
     }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", null, "Profit Margin (%)"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-indigo-700 font-mono font-bold"
+    }, "+\u20B9", profitAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      step: "0.1",
+      placeholder: "e.g. 10",
+      value: lineItemModalState.itemData.profitPercent !== undefined ? lineItemModalState.itemData.profitPercent : '10',
+      onChange: e => handleProfitPercentChange(e.target.value),
+      className: "w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs pr-7"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "absolute right-3 top-2.5 text-slate-400 font-bold text-xs"
+    }, "%")), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center space-x-1 mt-1.5"
+    }, ['0', '5', '10', '15', '20', '25'].map(p => /*#__PURE__*/React.createElement("button", {
+      key: p,
+      type: "button",
+      onClick: () => handleProfitPercentChange(p),
+      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.profitPercent) === p ? 'bg-indigo-600 text-white font-extrabold' : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'}`
+    }, p, "%")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
       className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
     }, /*#__PURE__*/React.createElement("span", null, "GST Percentage (%)"), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-emerald-700 font-mono font-bold"
@@ -21293,7 +21348,7 @@ function App() {
       key: p,
       type: "button",
       onClick: () => handleGstPercentChange(p),
-      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-indigo-600 text-white font-extrabold' : 'bg-white hover:bg-indigo-50 text-slate-600 border border-slate-200'}`
+      className: `px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-emerald-600 text-white font-extrabold' : 'bg-white hover:bg-emerald-50 text-slate-600 border border-slate-200'}`
     }, p, "%")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
       className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
     }, /*#__PURE__*/React.createElement("span", null, "USD Rate (1 USD = \u20B9)"), /*#__PURE__*/React.createElement("span", {
@@ -21311,7 +21366,7 @@ function App() {
       className: "w-full bg-white border border-indigo-200 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
     })), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-slate-500 mt-1 block"
-    }, "Document rate: ", /*#__PURE__*/React.createElement("strong", null, "\u20B9", defaultDocRate)))), /*#__PURE__*/React.createElement("div", {
+    }, "Doc rate: ", /*#__PURE__*/React.createElement("strong", null, "\u20B9", defaultDocRate)))), /*#__PURE__*/React.createElement("div", {
       className: "p-3 bg-white/90 rounded-lg border border-indigo-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs"
     }, /*#__PURE__*/React.createElement("div", {
       className: "space-y-0.5"
@@ -21320,16 +21375,20 @@ function App() {
     }, /*#__PURE__*/React.createElement("span", null, "Base: \u20B9", inrBase.toFixed(2)), /*#__PURE__*/React.createElement("span", {
       className: "text-slate-400"
     }, "+"), /*#__PURE__*/React.createElement("span", {
+      className: "text-indigo-700 font-bold"
+    }, "Profit (", profitPct, "%): \u20B9", profitAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-400"
+    }, "+"), /*#__PURE__*/React.createElement("span", {
       className: "text-emerald-700 font-bold"
     }, "GST (", gstPct, "%): \u20B9", gstAmtInr.toFixed(2)), /*#__PURE__*/React.createElement("span", {
       className: "text-slate-400"
     }, "="), /*#__PURE__*/React.createElement("span", {
-      className: "text-indigo-900 font-bold"
-    }, "Total: \u20B9", totalInrWithGst.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+      className: "text-slate-900 font-black"
+    }, "Total: \u20B9", totalInrWithProfitAndGst.toFixed(2)), /*#__PURE__*/React.createElement("span", {
       className: "text-slate-400"
     }, "\xF7"), /*#__PURE__*/React.createElement("span", null, "\u20B9", convRate, "/USD")), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-slate-400 font-medium"
-    }, "Formula: (Price in INR + GST Amount) \xF7 USD Conversion Rate = Unit Price (USD)")), /*#__PURE__*/React.createElement("div", {
+    }, "Formula: (Base INR + Profit Margin + GST Amount) \xF7 USD Rate = Unit Price (USD)")), /*#__PURE__*/React.createElement("div", {
       className: "text-right shrink-0 bg-indigo-50/80 px-3 py-1.5 rounded-lg border border-indigo-100"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] uppercase font-extrabold text-indigo-700 block"
