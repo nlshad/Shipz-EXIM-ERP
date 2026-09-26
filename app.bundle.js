@@ -5948,18 +5948,32 @@ function App() {
     const itemToEdit = sourceItems[index];
     if (!itemToEdit) return;
     const defaultConv = parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
+    const convRate = itemToEdit.conversionRate ? parseFloat(itemToEdit.conversionRate) || defaultConv : defaultConv;
+    const inrBase = parseFloat(itemToEdit.priceInr) || 0;
+    const profit = parseFloat(itemToEdit.profitPercent !== undefined ? itemToEdit.profitPercent : '10') || 10;
+    const gst = parseFloat(itemToEdit.gstPercent !== undefined ? itemToEdit.gstPercent : '18') || 18;
+    let editPrice = parseFloat(itemToEdit.price) || 0;
+    // If price was erroneously stored as the INR base (e.g. editPrice === inrBase), recalculate converted USD!
+    if (inrBase > 0 && (editPrice === inrBase || editPrice <= 0 || itemToEdit.priceInputMode === 'inr')) {
+      const pAmt = inrBase * profit / 100;
+      const sub = inrBase + pAmt;
+      const gAmt = sub * gst / 100;
+      const tot = sub + gAmt;
+      editPrice = convRate > 0 ? parseFloat((tot / convRate).toFixed(4)) : editPrice;
+    }
     setLineItemModalState({
       isOpen: true,
       mode: 'edit',
       targetIndex: index,
       parentType: parentType,
       itemData: {
+        ...itemToEdit,
+        price: editPrice,
         priceInr: itemToEdit.priceInr || '',
         profitPercent: itemToEdit.profitPercent !== undefined ? String(itemToEdit.profitPercent) : '10',
         gstPercent: itemToEdit.gstPercent !== undefined ? String(itemToEdit.gstPercent) : '18',
-        conversionRate: itemToEdit.conversionRate ? String(itemToEdit.conversionRate) : String(defaultConv),
-        priceInputMode: itemToEdit.priceInr ? 'inr' : 'direct',
-        ...itemToEdit
+        conversionRate: String(convRate),
+        priceInputMode: itemToEdit.priceInr ? 'inr' : 'direct'
       }
     });
   };
@@ -6056,19 +6070,38 @@ function App() {
       alert('Please select a product.');
       return;
     }
+
+    // Ensure price is always the Converted USD Price when in INR mode
+    let finalPrice = parseFloat(itemData.price) || 0;
+    if (itemData.priceInputMode === 'inr' && parseFloat(itemData.priceInr) > 0) {
+      const inr = parseFloat(itemData.priceInr) || 0;
+      const profit = parseFloat(itemData.profitPercent) || 10;
+      const gst = parseFloat(itemData.gstPercent) || 18;
+      const defaultConv = parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
+      const rate = parseFloat(itemData.conversionRate) || defaultConv;
+      const pAmt = inr * profit / 100;
+      const sub = inr + pAmt;
+      const gAmt = sub * gst / 100;
+      const tot = sub + gAmt;
+      finalPrice = rate > 0 ? parseFloat((tot / rate).toFixed(4)) : finalPrice;
+    }
+    const itemToSave = {
+      ...itemData,
+      price: finalPrice
+    };
     if (parentType === 'quotation') {
       setQtFormData(prev => {
         const updatedItems = [...prev.lineItems];
         if (mode === 'add') {
           if (updatedItems.length === 1 && !updatedItems[0].product) {
-            updatedItems[0] = itemData;
+            updatedItems[0] = itemToSave;
           } else {
-            updatedItems.push(itemData);
+            updatedItems.push(itemToSave);
           }
         } else if (targetIndex !== null && targetIndex >= 0 && targetIndex < updatedItems.length) {
-          updatedItems[targetIndex] = itemData;
+          updatedItems[targetIndex] = itemToSave;
         } else {
-          updatedItems.push(itemData);
+          updatedItems.push(itemToSave);
         }
         return {
           ...prev,
@@ -6080,14 +6113,14 @@ function App() {
         const updatedItems = [...(prev.lineItems || [])];
         if (mode === 'add') {
           if (updatedItems.length === 1 && !updatedItems[0].product) {
-            updatedItems[0] = itemData;
+            updatedItems[0] = itemToSave;
           } else {
-            updatedItems.push(itemData);
+            updatedItems.push(itemToSave);
           }
         } else if (targetIndex !== null && targetIndex >= 0 && targetIndex < updatedItems.length) {
-          updatedItems[targetIndex] = itemData;
+          updatedItems[targetIndex] = itemToSave;
         } else {
-          updatedItems.push(itemData);
+          updatedItems.push(itemToSave);
         }
         return {
           ...prev,
@@ -6104,7 +6137,32 @@ function App() {
     const foundProduct = masterProducts.find(p => p.name === prodName);
     setLineItemModalState(prev => {
       const currentQty = parseFloat(prev.itemData.quantity) || 1;
-      const fetchedPrice = foundProduct ? getProductMasterUnitPrice(foundProduct, currentQty) : parseFloat(prev.itemData.price) || 0;
+      const defaultConv = prev.parentType === 'quotation' ? parseFloat(qtFormData.conversionRate) || 85.0 : parseFloat(piFormData.conversionRate) || 85.0;
+      const currentRate = parseFloat(prev.itemData.conversionRate) || defaultConv;
+      const profit = parseFloat(prev.itemData.profitPercent !== undefined ? prev.itemData.profitPercent : '10') || 10;
+      const gst = parseFloat(foundProduct && foundProduct.gstRate !== undefined ? foundProduct.gstRate : prev.itemData.gstPercent !== undefined ? prev.itemData.gstPercent : '18') || 18;
+
+      // Check if product has INR base cost
+      const prodInr = foundProduct ? parseFloat(foundProduct.sellPriceInr || foundProduct.priceInr || foundProduct.baseCost) || 0 : 0;
+      const prodUsdDirect = foundProduct ? parseFloat(foundProduct.sellPriceUsd || foundProduct.unitPriceUsd) || 0 : 0;
+      let finalUsd = 0;
+      let finalInr = prev.itemData.priceInr;
+      let inputMode = prev.itemData.priceInputMode;
+      if (prodInr > 0) {
+        finalInr = String(prodInr);
+        inputMode = 'inr';
+        const pAmt = prodInr * profit / 100;
+        const sub = prodInr + pAmt;
+        const gAmt = sub * gst / 100;
+        const totInr = sub + gAmt;
+        finalUsd = currentRate > 0 ? parseFloat((totInr / currentRate).toFixed(4)) : 0;
+      } else if (prodUsdDirect > 0) {
+        finalUsd = prodUsdDirect;
+      } else if (foundProduct) {
+        finalUsd = getProductMasterUnitPrice(foundProduct, currentQty);
+      } else {
+        finalUsd = parseFloat(prev.itemData.price) || 0;
+      }
       let calcNet = prev.itemData.netWeight;
       let calcGross = prev.itemData.grossWeight;
       if (foundProduct) {
@@ -6126,7 +6184,11 @@ function App() {
           product: prodName,
           productDescription: foundProduct ? foundProduct.description || foundProduct.desc || '' : prev.itemData.productDescription,
           unit: foundProduct ? foundProduct.unit || prev.itemData.unit || 'Box' : prev.itemData.unit,
-          price: fetchedPrice,
+          price: finalUsd,
+          priceInr: finalInr,
+          priceInputMode: inputMode,
+          profitPercent: String(profit),
+          gstPercent: String(gst),
           quantity: currentQty,
           netWeight: calcNet,
           grossWeight: calcGross,
@@ -6468,7 +6530,17 @@ function App() {
       } else if (usdPrice > 0 && inrPrice <= 0) {
         inrPrice = parseFloat((usdPrice * docExchangeRate / (1 + gstPct / 100) / (1 + profitPct / 100)).toFixed(2)) || 0;
       } else if (usdPrice <= 0 && existingMaster) {
-        usdPrice = cleanNumber(existingMaster.unitPrice || existingMaster.sellPriceInr || existingMaster.price || existingMaster.rate || 0);
+        const mInr = cleanNumber(existingMaster.sellPriceInr || existingMaster.priceInr || existingMaster.baseCost);
+        if (mInr > 0) {
+          const pAmt = mInr * profitPct / 100;
+          const sub = mInr + pAmt;
+          const gAmt = sub * gstPct / 100;
+          const totInr = sub + gAmt;
+          usdPrice = docExchangeRate > 0 ? parseFloat((totInr / docExchangeRate).toFixed(4)) : 0;
+          if (!inrPrice) inrPrice = mInr;
+        } else {
+          usdPrice = cleanNumber(existingMaster.sellPriceUsd || existingMaster.unitPriceUsd || existingMaster.price || existingMaster.rate || 0);
+        }
       }
       const uNetWeight = cleanNumber(findField(normObj, ['netweightkg', 'netweight', 'netwt', 'nw', 'weightnet'])) || (existingMaster ? cleanNumber(existingMaster.netWeightKg || existingMaster.netWeight) : 0);
       const uGrossWeight = cleanNumber(findField(normObj, ['grossweightkg', 'grossweight', 'grosswt', 'gw', 'weightgross'])) || (existingMaster ? cleanNumber(existingMaster.grossWeightKg || existingMaster.grossWeight) : 0);
@@ -8142,6 +8214,7 @@ function App() {
 
       // Auto-select into active Quotation or Proforma Invoice line item if index is active
       if (activeLineItemIdx !== null) {
+        const convertedPrice = newPrd.sellPriceUsd ? String(newPrd.sellPriceUsd) : newPrd.sellPriceInr ? (parseFloat(newPrd.sellPriceInr) / 85).toFixed(4) : '';
         if (lineItemModalState.parentType === 'proforma' || isCreatePiModalOpen) {
           const updated = [...piFormData.lineItems];
           if (updated[activeLineItemIdx]) {
@@ -8151,7 +8224,8 @@ function App() {
             updated[activeLineItemIdx].unit = newPrd.unit;
             if (newPrd.netWeightKg) updated[activeLineItemIdx].netWeight = `${newPrd.netWeightKg}`;
             if (newPrd.grossWeightKg) updated[activeLineItemIdx].grossWeight = `${newPrd.grossWeightKg}`;
-            if (newPrd.sellPriceInr) updated[activeLineItemIdx].price = `${newPrd.sellPriceInr}`;
+            if (convertedPrice) updated[activeLineItemIdx].price = `${convertedPrice}`;
+            if (newPrd.sellPriceInr) updated[activeLineItemIdx].priceInr = `${newPrd.sellPriceInr}`;
             updated[activeLineItemIdx].imgUrl = newPrd.imgUrl;
             setPiFormData(prev => ({
               ...prev,
@@ -8167,7 +8241,8 @@ function App() {
             updated[activeLineItemIdx].unit = newPrd.unit;
             if (newPrd.netWeightKg) updated[activeLineItemIdx].netWeight = `${newPrd.netWeightKg}`;
             if (newPrd.grossWeightKg) updated[activeLineItemIdx].grossWeight = `${newPrd.grossWeightKg}`;
-            if (newPrd.sellPriceInr) updated[activeLineItemIdx].price = `${newPrd.sellPriceInr}`;
+            if (convertedPrice) updated[activeLineItemIdx].price = `${convertedPrice}`;
+            if (newPrd.sellPriceInr) updated[activeLineItemIdx].priceInr = `${newPrd.sellPriceInr}`;
             updated[activeLineItemIdx].imgUrl = newPrd.imgUrl;
             setQtFormData(prev => ({
               ...prev,
@@ -21669,7 +21744,7 @@ function App() {
 
     // USD conversion
     const convertedUsd = convRate > 0 ? totalInrWithProfitAndGst / convRate : 0;
-    const currentUsdPrice = parseFloat(lineItemModalState.itemData.price) || 0;
+    const currentUsdPrice = mode === 'inr' && inrBase > 0 ? convertedUsd : parseFloat(lineItemModalState.itemData.price) || 0;
     const currentQty = parseFloat(lineItemModalState.itemData.quantity) || 0;
     const totalUsdLineAmount = (currentQty * currentUsdPrice).toFixed(2);
     const recalcUsd = (inr, profit, gst, rate) => {
@@ -22040,7 +22115,7 @@ function App() {
       className: "text-red-500"
     }, "*")), mode === 'inr' && inrBase > 0 ? /*#__PURE__*/React.createElement("span", {
       className: "text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded font-bold"
-    }, "From INR+GST") : lineItemModalState.itemData.product ? /*#__PURE__*/React.createElement("span", {
+    }, "Converted from INR") : lineItemModalState.itemData.product ? /*#__PURE__*/React.createElement("span", {
       className: "text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold"
     }, "Auto-Fetched") : null), /*#__PURE__*/React.createElement("div", {
       className: "relative"
@@ -22049,14 +22124,18 @@ function App() {
     }, "$"), /*#__PURE__*/React.createElement("input", {
       type: "number",
       step: "0.0001",
-      value: lineItemModalState.itemData.price !== undefined ? lineItemModalState.itemData.price : '',
-      onChange: e => setLineItemModalState(prev => ({
-        ...prev,
-        itemData: {
-          ...prev.itemData,
-          price: e.target.value === '' ? '' : parseFloat(e.target.value) || 0
-        }
-      })),
+      value: mode === 'inr' && inrBase > 0 ? convertedUsd > 0 ? convertedUsd.toFixed(4) : lineItemModalState.itemData.price || '0.0000' : lineItemModalState.itemData.price !== undefined ? lineItemModalState.itemData.price : '',
+      onChange: e => {
+        const val = e.target.value === '' ? '' : parseFloat(e.target.value) || 0;
+        setLineItemModalState(prev => ({
+          ...prev,
+          itemData: {
+            ...prev.itemData,
+            price: val,
+            priceInputMode: 'direct'
+          }
+        }));
+      },
       className: "w-full bg-white border border-slate-300 rounded-lg pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
     }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
       className: "block text-slate-700 font-bold mb-1 flex items-center justify-between"
