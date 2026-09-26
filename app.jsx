@@ -4792,6 +4792,9 @@
         rawPasteText: '',
         fileName: '',
         parsedRows: [],
+        rawExtractedRows: [],
+        sourceCurrency: 'INR', // 'INR' | 'USD'
+        conversionRate: '85.00',
         autoRegisterToMaster: true,
         insertMode: 'append', // 'append' | 'replace'
         isProcessing: false,
@@ -4799,6 +4802,10 @@
       });
 
       const handleOpenBulkProductUploadModal = (context = 'quotation') => {
+        const defaultConv = context === 'quotation'
+          ? (parseFloat(qtFormData.conversionRate) || 85.0)
+          : (parseFloat(piFormData.conversionRate) || 85.0);
+
         setBulkUploadModalState({
           isOpen: true,
           targetContext: context,
@@ -4806,6 +4813,9 @@
           rawPasteText: '',
           fileName: '',
           parsedRows: [],
+          rawExtractedRows: [],
+          sourceCurrency: 'INR',
+          conversionRate: String(defaultConv),
           autoRegisterToMaster: true,
           insertMode: 'append',
           isProcessing: false,
@@ -4973,53 +4983,72 @@
           const hsnVal = findField(normObj, ['hsncode', 'hsnsac', 'hsn', 'tariffcode', 'itccode', 'itc', 'code']) || (existingMaster ? existingMaster.hsn : '09093100');
           const unitVal = findField(normObj, ['unit', 'uom', 'unittype', 'type']) || (existingMaster ? existingMaster.unit : 'Box') || 'Box';
 
-          const rawUsdPrice = findField(normObj, [
+          const rawExplicitUsdPrice = findField(normObj, [
             'priceusd', 'usdprice', 'priceinusd', 'rateusd', 'usdrate', 'rateinusd',
-            'unitpriceusd', 'unitprice', 'price', 'rate', 'fobprice', 'fobrate',
-            'sellprice', 'sellingprice', 'unitrate', 'itemprice', 'priceperunit', 'rateperunit'
+            'unitpriceusd'
           ]);
 
-          const rawInrPrice = findField(normObj, [
+          const rawExplicitInrPrice = findField(normObj, [
             'priceininr', 'priceinr', 'inrprice', 'basecost', 'inrcost', 'costinr',
             'inrrate', 'rateinr', 'inr', 'cost', 'baseprice'
+          ]);
+
+          const rawGenericPrice = findField(normObj, [
+            'price', 'rate', 'unitprice', 'fobprice', 'fobrate', 'sellprice',
+            'sellingprice', 'unitrate', 'itemprice', 'priceperunit', 'rateperunit'
           ]);
 
           const rawTotalAmt = findField(normObj, [
             'totalusd', 'totalamount', 'linetotal', 'totalprice', 'total', 'amount', 'itemtotal', 'subtotal'
           ]);
 
-          const profitPctRaw = findField(normObj, ['profitmargin', 'profitpercent', 'profitpct', 'profit', 'margin', 'markup']) || '10';
-          const gstPctRaw = findField(normObj, ['gstrate', 'gstpercent', 'gstpct', 'gst', 'taxrate', 'tax']) || '0.01';
+          let usdPrice = 0;
+          let inrPrice = 0;
 
-          let usdPrice = cleanNumber(rawUsdPrice);
-          let inrPrice = cleanNumber(rawInrPrice);
-          let totalAmt = cleanNumber(rawTotalAmt);
-          let profitPct = cleanNumber(profitPctRaw) || 10;
-          let gstPct = cleanNumber(gstPctRaw);
-          if (gstPctRaw === '' || isNaN(gstPct)) gstPct = 0.01;
+          const activeConvRate = parseFloat(bulkUploadModalState.conversionRate) || docExchangeRate || 85.0;
+          const sourceCurrency = bulkUploadModalState.sourceCurrency || 'INR';
 
-          // Smart Price Fallbacks & Conversions:
-          if (usdPrice <= 0 && totalAmt > 0 && cleanQty > 0) {
-            usdPrice = parseFloat((totalAmt / cleanQty).toFixed(4));
-          } else if (inrPrice > 0 && usdPrice <= 0) {
-            const pAmt = (inrPrice * profitPct) / 100;
-            const sub = inrPrice + pAmt;
-            const gAmt = (sub * gstPct) / 100;
-            const totInr = sub + gAmt;
-            usdPrice = docExchangeRate > 0 ? parseFloat((totInr / docExchangeRate).toFixed(4)) : 0;
-          } else if (usdPrice > 0 && inrPrice <= 0) {
-            inrPrice = parseFloat((((usdPrice * docExchangeRate) / (1 + (gstPct / 100))) / (1 + (profitPct / 100))).toFixed(2)) || 0;
-          } else if (usdPrice <= 0 && existingMaster) {
-            const mInr = cleanNumber(existingMaster.sellPriceInr || existingMaster.priceInr || existingMaster.baseCost);
-            if (mInr > 0) {
-              const pAmt = (mInr * profitPct) / 100;
-              const sub = mInr + pAmt;
-              const gAmt = (sub * gstPct) / 100;
-              const totInr = sub + gAmt;
-              usdPrice = docExchangeRate > 0 ? parseFloat((totInr / docExchangeRate).toFixed(4)) : 0;
-              if (!inrPrice) inrPrice = mInr;
+          if (rawExplicitUsdPrice && sourceCurrency !== 'INR') {
+            usdPrice = cleanNumber(rawExplicitUsdPrice);
+            inrPrice = cleanNumber(rawExplicitInrPrice) || parseFloat((usdPrice * activeConvRate).toFixed(2));
+          } else if (rawExplicitInrPrice) {
+            inrPrice = cleanNumber(rawExplicitInrPrice);
+            // Formula: Price in INR ÷ Conversion Rate (without adding extra profit % or GST %)
+            usdPrice = activeConvRate > 0 ? parseFloat((inrPrice / activeConvRate).toFixed(4)) : 0;
+          } else if (rawGenericPrice) {
+            const genericVal = cleanNumber(rawGenericPrice);
+            if (sourceCurrency === 'USD') {
+              usdPrice = genericVal;
+              inrPrice = parseFloat((usdPrice * activeConvRate).toFixed(2));
             } else {
-              usdPrice = cleanNumber(existingMaster.sellPriceUsd || existingMaster.unitPriceUsd || existingMaster.price || existingMaster.rate || 0);
+              // Default is INR: Price in INR ÷ Conversion Rate
+              inrPrice = genericVal;
+              usdPrice = activeConvRate > 0 ? parseFloat((inrPrice / activeConvRate).toFixed(4)) : 0;
+            }
+          } else if (rawExplicitUsdPrice) {
+            usdPrice = cleanNumber(rawExplicitUsdPrice);
+            inrPrice = parseFloat((usdPrice * activeConvRate).toFixed(2));
+          } else if (cleanNumber(rawTotalAmt) > 0 && cleanQty > 0) {
+            const totalVal = cleanNumber(rawTotalAmt);
+            if (sourceCurrency === 'USD') {
+              usdPrice = parseFloat((totalVal / cleanQty).toFixed(4));
+              inrPrice = parseFloat((usdPrice * activeConvRate).toFixed(2));
+            } else {
+              inrPrice = parseFloat((totalVal / cleanQty).toFixed(2));
+              usdPrice = activeConvRate > 0 ? parseFloat((inrPrice / activeConvRate).toFixed(4)) : 0;
+            }
+          } else if (existingMaster) {
+            const mInr = cleanNumber(existingMaster.sellPriceInr || existingMaster.priceInr || existingMaster.baseCost);
+            const mUsd = cleanNumber(existingMaster.sellPriceUsd || existingMaster.unitPriceUsd);
+            if (mInr > 0) {
+              inrPrice = mInr;
+              usdPrice = activeConvRate > 0 ? parseFloat((mInr / activeConvRate).toFixed(4)) : 0;
+            } else if (mUsd > 0) {
+              usdPrice = mUsd;
+              inrPrice = parseFloat((usdPrice * activeConvRate).toFixed(2));
+            } else {
+              usdPrice = cleanNumber(existingMaster.price || existingMaster.rate || 0);
+              inrPrice = parseFloat((usdPrice * activeConvRate).toFixed(2));
             }
           }
 
@@ -5074,6 +5103,7 @@
         setBulkUploadModalState(prev => ({
           ...prev,
           parsedRows: normalizedRows,
+          rawExtractedRows: rawRows,
           errorMsg: ''
         }));
       };
@@ -5245,6 +5275,53 @@
           return {
             ...prev,
             parsedRows: updated
+          };
+        });
+      };
+
+      const handleBulkUploadCurrencyChange = (newCurrency) => {
+        setBulkUploadModalState(prev => {
+          const rate = parseFloat(prev.conversionRate) || 85.0;
+          const updatedRows = (prev.parsedRows || []).map(r => {
+            let uPrice = r.price;
+            let iPrice = r.priceInr ? parseFloat(r.priceInr) : 0;
+            if (newCurrency === 'INR' && iPrice > 0) {
+              uPrice = rate > 0 ? parseFloat((iPrice / rate).toFixed(4)) : 0;
+            } else if (newCurrency === 'USD' && iPrice > 0) {
+              uPrice = iPrice;
+            }
+            return {
+              ...r,
+              price: uPrice
+            };
+          });
+          return {
+            ...prev,
+            sourceCurrency: newCurrency,
+            parsedRows: updatedRows
+          };
+        });
+      };
+
+      const handleBulkUploadRateChange = (newRateStr) => {
+        setBulkUploadModalState(prev => {
+          const rate = parseFloat(newRateStr) || 0;
+          const updatedRows = (prev.parsedRows || []).map(r => {
+            const iPrice = r.priceInr ? parseFloat(r.priceInr) : 0;
+            let uPrice = r.price;
+            if (prev.sourceCurrency === 'INR' && iPrice > 0 && rate > 0) {
+              uPrice = parseFloat((iPrice / rate).toFixed(4));
+            }
+            return {
+              ...r,
+              conversionRate: newRateStr,
+              price: uPrice
+            };
+          });
+          return {
+            ...prev,
+            conversionRate: newRateStr,
+            parsedRows: updatedRows
           };
         });
       };
@@ -20222,6 +20299,52 @@
                         <i className="fi fi-rr-file-csv text-slate-600"></i>
                         <span>Sample .CSV</span>
                       </button>
+                    </div>
+                  </div>
+
+                  {/* CURRENCY & CONVERSION RATE BAR */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/70 p-3 rounded-xl border border-indigo-200">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-extrabold text-indigo-950 text-xs">Spreadsheet Price Currency:</span>
+                      <div className="inline-flex p-0.5 bg-white rounded-lg border border-indigo-200 shadow-2xs text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => handleBulkUploadCurrencyChange('INR')}
+                          className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                            bulkUploadModalState.sourceCurrency === 'INR'
+                              ? 'bg-indigo-600 text-white shadow-xs font-black'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇮🇳 INR (₹) &rarr; Converts as ₹ ÷ Rate
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleBulkUploadCurrencyChange('USD')}
+                          className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                            bulkUploadModalState.sourceCurrency === 'USD'
+                              ? 'bg-indigo-600 text-white shadow-xs font-black'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇺🇸 USD ($) &rarr; Direct Import
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[11px] font-bold text-slate-700">Conversion Rate:</span>
+                      <div className="relative w-28">
+                        <span className="absolute left-2.5 top-1.5 text-slate-400 font-bold text-xs">₹</span>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          value={bulkUploadModalState.conversionRate}
+                          onChange={(e) => handleBulkUploadRateChange(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg pl-6 pr-2 py-1 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium">/ USD</span>
                     </div>
                   </div>
 
