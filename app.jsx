@@ -4850,6 +4850,32 @@
           ? (parseFloat(qtFormData.conversionRate) || 85.0)
           : (parseFloat(piFormData.conversionRate) || 85.0);
 
+        const cleanNumber = (val) => {
+          if (val === null || val === undefined) return 0;
+          if (typeof val === 'number') return isNaN(val) ? 0 : val;
+          const str = String(val).trim().replace(/,/g, '').replace(/[^0-9.-]/g, '');
+          const num = parseFloat(str);
+          return isNaN(num) ? 0 : num;
+        };
+
+        const findField = (rowObj, candidatePatterns) => {
+          for (const pat of candidatePatterns) {
+            const cleanPat = pat.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (rowObj[cleanPat] !== undefined && String(rowObj[cleanPat]).trim() !== '') {
+              return rowObj[cleanPat];
+            }
+          }
+          const allKeys = Object.keys(rowObj);
+          for (const pat of candidatePatterns) {
+            const cleanPat = pat.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const matchedKey = allKeys.find(k => k.includes(cleanPat) && rowObj[k] !== undefined && String(rowObj[k]).trim() !== '');
+            if (matchedKey) {
+              return rowObj[matchedKey];
+            }
+          }
+          return '';
+        };
+
         const normalizedRows = [];
 
         rawRows.forEach((row, idx) => {
@@ -4859,30 +4885,51 @@
             normObj[cleanKey] = row[k];
           });
 
-          const pName = normObj.productname || normObj.product || normObj.itemname || normObj.item || normObj.name || normObj.commodity || normObj.description || '';
+          const pName = findField(normObj, ['productname', 'product', 'itemname', 'item', 'description', 'particulars', 'commodity', 'goods', 'name', 'title']);
           if (!pName || String(pName).trim() === '') return;
 
           const cleanName = String(pName).trim();
-          const cleanQty = parseFloat(normObj.quantity || normObj.qty || normObj.count || normObj.units || 1) || 1;
+
+          const rawQty = findField(normObj, ['quantity', 'qty', 'units', 'count', 'no', 'pieces', 'pcs', 'pkgs', 'boxes']);
+          const cleanQty = cleanNumber(rawQty) || 1;
 
           const existingMaster = (masterProductsSettings || []).find(m =>
             (m.name && m.name.toLowerCase().trim() === cleanName.toLowerCase()) ||
             (normObj.hsn && m.hsn && String(m.hsn).trim() === String(normObj.hsn).trim())
           );
 
-          const hsnVal = normObj.hsncode || normObj.hsn || normObj.hsnsac || normObj.tariffcode || (existingMaster ? existingMaster.hsn : '09093100');
-          const unitVal = normObj.unit || normObj.uom || (existingMaster ? existingMaster.unit : 'Box') || 'Box';
+          const hsnVal = findField(normObj, ['hsncode', 'hsnsac', 'hsn', 'tariffcode', 'itccode', 'itc', 'code']) || (existingMaster ? existingMaster.hsn : '09093100');
+          const unitVal = findField(normObj, ['unit', 'uom', 'unittype', 'type']) || (existingMaster ? existingMaster.unit : 'Box') || 'Box';
 
-          const inrPriceRaw = normObj.priceinrinr || normObj.priceinr || normObj.basecost || normObj.inrcost || normObj.costinr || '';
-          const profitPctRaw = normObj.profitmargin || normObj.profitpercent || normObj.profit || normObj.margin || '10';
-          const gstPctRaw = normObj.gstrate || normObj.gstpercent || normObj.gst || normObj.tax || '0.01';
+          const rawUsdPrice = findField(normObj, [
+            'priceusd', 'usdprice', 'priceinusd', 'rateusd', 'usdrate', 'rateinusd',
+            'unitpriceusd', 'unitprice', 'price', 'rate', 'fobprice', 'fobrate',
+            'sellprice', 'sellingprice', 'unitrate', 'itemprice', 'priceperunit', 'rateperunit'
+          ]);
 
-          let usdPrice = parseFloat(normObj.priceusd || normObj.price || normObj.rate || normObj.unitprice || 0) || 0;
-          let inrPrice = parseFloat(inrPriceRaw) || 0;
-          let profitPct = parseFloat(profitPctRaw) || 10;
-          let gstPct = parseFloat(gstPctRaw) || 0.01;
+          const rawInrPrice = findField(normObj, [
+            'priceininr', 'priceinr', 'inrprice', 'basecost', 'inrcost', 'costinr',
+            'inrrate', 'rateinr', 'inr', 'cost', 'baseprice'
+          ]);
 
-          if (inrPrice > 0 && usdPrice <= 0) {
+          const rawTotalAmt = findField(normObj, [
+            'totalusd', 'totalamount', 'linetotal', 'totalprice', 'total', 'amount', 'itemtotal', 'subtotal'
+          ]);
+
+          const profitPctRaw = findField(normObj, ['profitmargin', 'profitpercent', 'profitpct', 'profit', 'margin', 'markup']) || '10';
+          const gstPctRaw = findField(normObj, ['gstrate', 'gstpercent', 'gstpct', 'gst', 'taxrate', 'tax']) || '0.01';
+
+          let usdPrice = cleanNumber(rawUsdPrice);
+          let inrPrice = cleanNumber(rawInrPrice);
+          let totalAmt = cleanNumber(rawTotalAmt);
+          let profitPct = cleanNumber(profitPctRaw) || 10;
+          let gstPct = cleanNumber(gstPctRaw);
+          if (gstPctRaw === '' || isNaN(gstPct)) gstPct = 0.01;
+
+          // Smart Price Fallbacks & Conversions:
+          if (usdPrice <= 0 && totalAmt > 0 && cleanQty > 0) {
+            usdPrice = parseFloat((totalAmt / cleanQty).toFixed(4));
+          } else if (inrPrice > 0 && usdPrice <= 0) {
             const pAmt = (inrPrice * profitPct) / 100;
             const sub = inrPrice + pAmt;
             const gAmt = (sub * gstPct) / 100;
@@ -4891,19 +4938,24 @@
           } else if (usdPrice > 0 && inrPrice <= 0) {
             inrPrice = parseFloat((((usdPrice * docExchangeRate) / (1 + (gstPct / 100))) / (1 + (profitPct / 100))).toFixed(2)) || 0;
           } else if (usdPrice <= 0 && existingMaster) {
-            usdPrice = parseFloat(existingMaster.unitPrice || existingMaster.sellPriceInr || 0);
+            usdPrice = cleanNumber(existingMaster.unitPrice || existingMaster.sellPriceInr || existingMaster.price || existingMaster.rate || 0);
           }
 
-          const uNetWeight = parseFloat(normObj.netweightkg || normObj.netweight || (existingMaster ? (existingMaster.netWeightKg || existingMaster.netWeight) : 0)) || 0;
-          const uGrossWeight = parseFloat(normObj.grossweightkg || normObj.grossweight || (existingMaster ? (existingMaster.grossWeightKg || existingMaster.grossWeight) : 0)) || 0;
+          const uNetWeight = cleanNumber(findField(normObj, ['netweightkg', 'netweight', 'netwt', 'nw', 'weightnet'])) ||
+            (existingMaster ? cleanNumber(existingMaster.netWeightKg || existingMaster.netWeight) : 0);
 
-          const totalNet = uNetWeight > 0 ? (uNetWeight * cleanQty).toFixed(2) : (normObj.netweight ? String(normObj.netweight) : '');
-          const totalGross = uGrossWeight > 0 ? (uGrossWeight * cleanQty).toFixed(2) : (normObj.grossweight ? String(normObj.grossweight) : '');
+          const uGrossWeight = cleanNumber(findField(normObj, ['grossweightkg', 'grossweight', 'grosswt', 'gw', 'weightgross'])) ||
+            (existingMaster ? cleanNumber(existingMaster.grossWeightKg || existingMaster.grossWeight) : 0);
 
-          const pkgType = normObj.packagetype || normObj.pkgtype || normObj.package || 'Box';
-          const totalPkgs = parseInt(normObj.totalpackages || normObj.packages || normObj.pkgs || cleanQty, 10) || cleanQty;
-          const cbmVal = parseFloat(normObj.cbm || normObj.dimensionm3 || normObj.volume || (existingMaster ? (existingMaster.dimensionM3 || existingMaster.cbm) : 0.045)) || 0.045;
-          const pDesc = normObj.productdescription || normObj.details || normObj.specs || (existingMaster ? existingMaster.description : '') || '';
+          const totalNet = uNetWeight > 0 ? (uNetWeight * cleanQty).toFixed(2) : '';
+          const totalGross = uGrossWeight > 0 ? (uGrossWeight * cleanQty).toFixed(2) : '';
+
+          const pkgType = findField(normObj, ['packagetype', 'pkgtype', 'packaging', 'packing', 'package', 'packtype']) || 'Box';
+          const totalPkgs = parseInt(findField(normObj, ['totalpackages', 'totalpkgs', 'packages', 'pkgs', 'boxes']), 10) || cleanQty;
+          const cbmVal = cleanNumber(findField(normObj, ['cbm', 'dimensionm3', 'volumem3', 'volume', 'dimension'])) ||
+            (existingMaster ? cleanNumber(existingMaster.dimensionM3 || existingMaster.cbm) : 0.045) || 0.045;
+
+          const pDesc = findField(normObj, ['productdescription', 'description', 'details', 'specs', 'specification']) || (existingMaster ? existingMaster.description : '') || '';
 
           normalizedRows.push({
             id: `bulk-li-${Date.now()}-${idx}`,
@@ -4923,7 +4975,7 @@
             unitGrossWeight: uGrossWeight,
             packageType: pkgType,
             totalPackages: totalPkgs,
-            packageCap: normObj.packagecapacity || `${uNetWeight > 0 ? uNetWeight : '25'} ${unitVal}`,
+            packageCap: findField(normObj, ['packagecapacity', 'packagecap']) || `${uNetWeight > 0 ? uNetWeight : '25'} ${unitVal}`,
             cbm: cbmVal,
             status: existingMaster ? 'matched' : 'new'
           });
@@ -4965,7 +5017,7 @@
               const workbook = window.XLSX.read(data, { type: 'array' });
               const firstSheetName = workbook.SheetNames[0];
               const worksheet = workbook.Sheets[firstSheetName];
-              const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+              const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
               processExtractedRows(jsonData, bulkUploadModalState.targetContext);
             } catch (err) {
               console.error('Excel parse error:', err);
@@ -5048,8 +5100,11 @@
 
         const rawHeaders = splitLine(lines[0]);
         const looksLikeHeader = rawHeaders.some(h => {
-          const lower = h.toLowerCase();
-          return lower.includes('product') || lower.includes('name') || lower.includes('item') || lower.includes('qty') || lower.includes('price');
+          const lower = (h || '').toLowerCase();
+          return lower.includes('product') || lower.includes('name') || lower.includes('item') ||
+                 lower.includes('qty') || lower.includes('quantity') || lower.includes('price') ||
+                 lower.includes('rate') || lower.includes('hsn') || lower.includes('unit') ||
+                 lower.includes('amount') || lower.includes('total') || lower.includes('desc');
         });
 
         let headers = [];
@@ -5059,7 +5114,13 @@
           headers = rawHeaders;
           dataStartIndex = 1;
         } else {
-          headers = ['Product Name', 'Quantity', 'Price (USD)', 'Unit', 'HSN Code'];
+          // If first column has 6-8 digits (HSN), use template order, else use simple order
+          const col1 = (splitLine(lines[0])[1] || '').trim();
+          if (/^\d{6,8}$/.test(col1)) {
+            headers = ['Product Name', 'HSN Code', 'Quantity', 'Unit', 'Price (USD)', 'Price in INR', 'Profit Margin (%)', 'GST Rate (%)'];
+          } else {
+            headers = ['Product Name', 'Quantity', 'Price (USD)', 'Unit', 'HSN Code'];
+          }
           dataStartIndex = 0;
         }
 
@@ -5075,6 +5136,35 @@
         }
 
         processExtractedRows(rows, bulkUploadModalState.targetContext);
+      };
+
+      const handleUpdateBulkParsedRow = (index, field, value) => {
+        setBulkUploadModalState(prev => {
+          const updated = [...prev.parsedRows];
+          if (!updated[index]) return prev;
+          const cleanNum = (val) => {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            const str = String(val).trim().replace(/,/g, '').replace(/[^0-9.-]/g, '');
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+          };
+          if (field === 'price' || field === 'quantity') {
+            updated[index] = {
+              ...updated[index],
+              [field]: cleanNum(value)
+            };
+          } else {
+            updated[index] = {
+              ...updated[index],
+              [field]: value
+            };
+          }
+          return {
+            ...prev,
+            parsedRows: updated
+          };
+        });
       };
 
       const handleRemoveBulkParsedRow = (index) => {
@@ -20170,11 +20260,31 @@
                                     ) : null}
                                   </td>
                                   <td className="py-2 px-2.5 font-mono text-slate-600">{row.hsn || '-'}</td>
-                                  <td className="py-2 px-2.5 text-center font-mono font-semibold text-slate-700">
-                                    {row.quantity} {row.unit}
+                                  <td className="py-2 px-2 text-center font-mono">
+                                    <div className="inline-flex items-center space-x-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        value={row.quantity}
+                                        onChange={(e) => handleUpdateBulkParsedRow(idx, 'quantity', e.target.value)}
+                                        className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono text-center text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none"
+                                      />
+                                      <span className="text-[10px] text-slate-500 font-bold">{row.unit}</span>
+                                    </div>
                                   </td>
-                                  <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-800">
-                                    ${Number(row.price || 0).toFixed(2)}
+                                  <td className="py-2 px-2 text-right font-mono">
+                                    <div className="inline-flex items-center justify-end space-x-0.5">
+                                      <span className="text-slate-400 font-bold text-xs">$</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.0001"
+                                        value={row.price}
+                                        onChange={(e) => handleUpdateBulkParsedRow(idx, 'price', e.target.value)}
+                                        className="w-20 px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono text-right text-xs font-black text-slate-900 focus:border-indigo-500 focus:outline-none"
+                                      />
+                                    </div>
                                   </td>
                                   <td className="py-2 px-2.5 text-right font-mono font-black text-emerald-700">
                                     ${lineTotal}
