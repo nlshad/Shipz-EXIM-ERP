@@ -21357,13 +21357,13 @@ function App() {
       className: "w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black"
     }, "3"), /*#__PURE__*/React.createElement("span", null, "GST Rate (%)")), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full"
-    }, "+\u20B9", gstAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
+    }, "+\u20B9", gstAmtInr > 0 && gstAmtInr < 0.01 ? gstAmtInr.toFixed(4) : gstAmtInr.toFixed(2))), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2"
     }, /*#__PURE__*/React.createElement("div", {
       className: "relative w-28 shrink-0"
     }, /*#__PURE__*/React.createElement("input", {
       type: "number",
-      step: "0.1",
+      step: "0.01",
       placeholder: "18",
       value: lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18',
       onChange: e => handleGstPercentChange(e.target.value),
@@ -21372,12 +21372,12 @@ function App() {
       className: "absolute right-2.5 top-2 text-slate-400 font-bold text-xs"
     }, "%")), /*#__PURE__*/React.createElement("div", {
       className: "flex-1 flex flex-wrap gap-1"
-    }, ['0', '5', '12', '18', '28'].map(p => /*#__PURE__*/React.createElement("button", {
+    }, ['0.01', '0', '5', '12', '18', '28'].map(p => /*#__PURE__*/React.createElement("button", {
       key: p,
       type: "button",
       onClick: () => handleGstPercentChange(p),
       className: `px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${String(lineItemModalState.itemData.gstPercent) === p ? 'bg-emerald-600 text-white shadow-2xs font-black' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'}`
-    }, p === '0' ? '0% LUT' : `${p}%`)))), /*#__PURE__*/React.createElement("p", {
+    }, p === '0.01' ? '0.01% LUT' : `${p}%`)))), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-slate-400 font-medium"
     }, "Applied on taxable subtotal (Base + Profit)")), /*#__PURE__*/React.createElement("div", {
       className: "bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 flex flex-col justify-between"

@@ -19156,14 +19156,14 @@
                                       <span>GST Rate (%)</span>
                                     </label>
                                     <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-                                      +₹{gstAmtInr.toFixed(2)}
+                                      +₹{gstAmtInr > 0 && gstAmtInr < 0.01 ? gstAmtInr.toFixed(4) : gstAmtInr.toFixed(2)}
                                     </span>
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     <div className="relative w-28 shrink-0">
                                       <input
                                         type="number"
-                                        step="0.1"
+                                        step="0.01"
                                         placeholder="18"
                                         value={lineItemModalState.itemData.gstPercent !== undefined ? lineItemModalState.itemData.gstPercent : '18'}
                                         onChange={(e) => handleGstPercentChange(e.target.value)}
@@ -19172,7 +19172,7 @@
                                       <span className="absolute right-2.5 top-2 text-slate-400 font-bold text-xs">%</span>
                                     </div>
                                     <div className="flex-1 flex flex-wrap gap-1">
-                                      {['0', '5', '12', '18', '28'].map(p => (
+                                      {['0.01', '0', '5', '12', '18', '28'].map(p => (
                                         <button
                                           key={p}
                                           type="button"
@@ -19183,7 +19183,7 @@
                                               : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
                                           }`}
                                         >
-                                          {p === '0' ? '0% LUT' : `${p}%`}
+                                          {p === '0.01' ? '0.01% LUT' : `${p}%`}
                                         </button>
                                       ))}
                                     </div>
