@@ -14209,29 +14209,14 @@ function App() {
     value: "2025-2026"
   }, "2025-2026"), /*#__PURE__*/React.createElement("option", {
     value: "2024-2025"
-  }, "2024-2025"))), /*#__PURE__*/React.createElement("div", {
-    className: "flex bg-slate-100 p-1 rounded-xl border border-slate-200 font-bold"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPiViewMode('grid'),
-    className: `px-3 py-1 rounded-lg text-[11px] transition-all flex items-center ${piViewMode === 'grid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`
+  }, "2024-2025"))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setActiveEngine('settings'),
+    title: "Master Settings Portal",
+    className: `p-2 hover:bg-slate-100 rounded-xl text-slate-600 font-bold transition-all flex items-center justify-center cursor-pointer ${activeEngine === 'settings' ? 'bg-indigo-100 text-indigo-700' : ''}`
   }, /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-table text-xs mr-1.5"
-  }), /*#__PURE__*/React.createElement("span", null, "Data Grid")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPiViewMode('split'),
-    className: `px-3 py-1 rounded-lg text-[11px] transition-all flex items-center ${piViewMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-layout-fluid text-xs mr-1.5"
-  }), /*#__PURE__*/React.createElement("span", null, "Canvas View"))), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-2 pl-2 border-l border-slate-200"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
-    alt: "Avatar",
-    className: "w-8 h-8 rounded-full border border-indigo-500 object-cover"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "font-bold text-slate-800 flex items-center space-x-1"
-  }, /*#__PURE__*/React.createElement("span", null, "Admin User"), /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-angle-small-down text-xs text-slate-500 ml-1"
-  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "fi fi-rr-settings text-sm"
+  })), renderNotificationsBell())), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-3"

@@ -12701,25 +12701,16 @@
                       </select>
                     </div>
 
-                    {/* VIEW MODE TOGGLE */}
-                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 font-bold">
-                      <button onClick={() => setPiViewMode('grid')} className={`px-3 py-1 rounded-lg text-[11px] transition-all flex items-center ${piViewMode === 'grid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-                        <i className="fi fi-rr-table text-xs mr-1.5"></i>
-                        <span>Data Grid</span>
-                      </button>
-                      <button onClick={() => setPiViewMode('split')} className={`px-3 py-1 rounded-lg text-[11px] transition-all flex items-center ${piViewMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-                        <i className="fi fi-rr-layout-fluid text-xs mr-1.5"></i>
-                        <span>Canvas View</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveEngine('settings')}
+                      title="Master Settings Portal"
+                      className={`p-2 hover:bg-slate-100 rounded-xl text-slate-600 font-bold transition-all flex items-center justify-center cursor-pointer ${activeEngine === 'settings' ? 'bg-indigo-100 text-indigo-700' : ''}`}
+                    >
+                      <i className="fi fi-rr-settings text-sm"></i>
+                    </button>
 
-                    <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" className="w-8 h-8 rounded-full border border-indigo-500 object-cover" />
-                      <span className="font-bold text-slate-800 flex items-center space-x-1">
-                        <span>Admin User</span>
-                        <i className="fi fi-rr-angle-small-down text-xs text-slate-500 ml-1"></i>
-                      </span>
-                    </div>
+                    {renderNotificationsBell()}
                   </div>
                 </div>
 
