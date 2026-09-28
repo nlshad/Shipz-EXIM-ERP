@@ -14545,6 +14545,7 @@ function App() {
   }, activeEngine === 'invoices' ? 'Convert a Proforma Invoice to Commercial Invoice to list it here.' : 'Click + Add New to generate a new Proforma Invoice.')))), filteredAndSortedPi.map((pi, idx) => {
     const rowKey = `pi-${pi.id || 'id'}-${idx}`;
     const isActionOpen = openActionMenuId === rowKey;
+    const isDocOpen = openDocMenuId === `doc-${rowKey}`;
     return /*#__PURE__*/React.createElement(React.Fragment, {
       key: rowKey
     }, /*#__PURE__*/React.createElement("tr", {
@@ -14562,7 +14563,7 @@ function App() {
         setOpenActionMenuId(isActionOpen ? null : rowKey);
         setOpenDocMenuId(null);
       },
-      className: "px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"
+      className: "px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 shadow-2xs transition-colors"
     }, /*#__PURE__*/React.createElement("span", null, "Action"), /*#__PURE__*/React.createElement("span", null, "\u25BC")), isActionOpen && /*#__PURE__*/React.createElement("div", {
       className: "absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate"
     }, /*#__PURE__*/React.createElement("button", {
@@ -14571,43 +14572,57 @@ function App() {
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC41\uFE0F"), /*#__PURE__*/React.createElement("span", null, "View Details")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-eye text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "View Details")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         handleEditPi(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-700 font-bold"
-    }, /*#__PURE__*/React.createElement("span", null, "\u270F\uFE0F"), /*#__PURE__*/React.createElement("span", null, activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI')), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-edit text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI')), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         handleDirectPrintPi(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Direct Print")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-print text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Direct Print")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         handleOpenPiPdf(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCE5"), /*#__PURE__*/React.createElement("span", null, "Download PDF")), activeEngine === 'invoices' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-document text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Download PDF")), activeEngine === 'invoices' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setActiveEngine('ewayBill');
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-emerald-600"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDE9B"), /*#__PURE__*/React.createElement("span", null, "Generate E-Way Bill")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-truck-side text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Generate E-Way Bill")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setActiveEngine('eInvoice');
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-amber-600"
-    }, /*#__PURE__*/React.createElement("span", null, "\u26A1"), /*#__PURE__*/React.createElement("span", null, "Generate E-Invoice")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-bolt text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Generate E-Invoice")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setShareModalPi(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\u2709\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Send Email")), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-envelope text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Send Email")), /*#__PURE__*/React.createElement("div", {
       className: "border-t border-slate-100 my-1"
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
@@ -14615,19 +14630,25 @@ function App() {
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD1\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Delete Invoice"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-trash text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Delete Invoice"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         handleConvertToCommercialInvoice(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD04"), /*#__PURE__*/React.createElement("span", null, "Convert to Commercial Invoice")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-refresh text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Convert to Commercial Invoice")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setShareModalPi(pi);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\u2709\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Send Email")), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-envelope text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Send Email")), /*#__PURE__*/React.createElement("div", {
       className: "border-t border-slate-100 my-1"
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
@@ -14635,14 +14656,46 @@ function App() {
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD1\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Delete Record"))))), /*#__PURE__*/React.createElement("td", {
-      className: "py-3 px-3"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-trash text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Delete Record"))))), /*#__PURE__*/React.createElement("td", {
+      className: `py-3 px-3 relative ${isDocOpen ? 'z-50' : 'z-10'}`
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => handleOpenPiPdf(pi),
-      className: "p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"
+      onClick: e => {
+        e.stopPropagation();
+        setOpenDocMenuId(isDocOpen ? null : `doc-${rowKey}`);
+        setOpenActionMenuId(null);
+      },
+      className: "p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1 hover:bg-amber-100 transition-colors"
     }, /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-document text-xs"
-    }), /*#__PURE__*/React.createElement("span", null, "\u25BC"))), /*#__PURE__*/React.createElement("td", {
+    }), /*#__PURE__*/React.createElement("span", null, "\u25BC")), isDocOpen && /*#__PURE__*/React.createElement("div", {
+      className: "absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        handleOpenPiPdf(pi);
+        setOpenDocMenuId(null);
+      },
+      className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-sky-700"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-download text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Download PDF")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        handleOpenPiPdf(pi);
+        setOpenDocMenuId(null);
+      },
+      className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-eye text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, activeEngine === 'invoices' ? 'Preview Invoice PDF' : 'Preview PI PDF')), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setShareModalPi(pi);
+        setOpenDocMenuId(null);
+      },
+      className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-envelope text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Send via Email / WhatsApp")))), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3 font-mono font-bold text-indigo-600"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setSelectedPiView(pi),
@@ -15344,26 +15397,34 @@ function App() {
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC41\uFE0F"), /*#__PURE__*/React.createElement("span", null, "View Details")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-eye text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "View Details")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setSelectedPklPdf(p);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Direct Print")), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-print text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Direct Print")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setSelectedPklPdf(p);
         setOpenActionMenuId(null);
       },
-      className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCE5"), /*#__PURE__*/React.createElement("span", null, "Download PDF")), /*#__PURE__*/React.createElement("button", {
+      className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-document text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Download PDF")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setPklFormData(p);
         setIsCreatePklModalOpen(true);
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
-    }, /*#__PURE__*/React.createElement("span", null, "\u270F\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Edit Packing List")), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-edit text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Edit Packing List")), /*#__PURE__*/React.createElement("div", {
       className: "border-t border-slate-100 my-1"
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
@@ -15371,7 +15432,9 @@ function App() {
         setOpenActionMenuId(null);
       },
       className: "w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"
-    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD1\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Delete")))), /*#__PURE__*/React.createElement("td", {
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-trash text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, "Delete")))), /*#__PURE__*/React.createElement("td", {
       className: "py-3 px-3"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => window.print(),

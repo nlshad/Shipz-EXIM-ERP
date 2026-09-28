@@ -12977,6 +12977,7 @@
                           {filteredAndSortedPi.map((pi, idx) => {
                             const rowKey = `pi-${pi.id || 'id'}-${idx}`;
                             const isActionOpen = openActionMenuId === rowKey;
+                            const isDocOpen = openDocMenuId === `doc-${rowKey}`;
 
                             return (
                               <React.Fragment key={rowKey}>
@@ -12988,31 +12989,64 @@
 
                                   {/* 2. row_actions */}
                                   <td className={`py-3 px-3 relative ${isActionOpen ? 'z-50' : 'z-10'}`}>
-                                    <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors">
+                                    <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 shadow-2xs transition-colors">
                                       <span>Action</span>
                                       <span>▼</span>
                                     </button>
 
                                     {isActionOpen && (
                                       <div className="absolute left-3 top-10 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
-                                        <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
-                                        <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-700 font-bold"><span>✏️</span><span>{activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI'}</span></button>
-                                        <button onClick={() => { handleDirectPrintPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
-                                        <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold"><span>📥</span><span>Download PDF</span></button>
+                                        <button onClick={() => { setSelectedPiView(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold">
+                                          <i className="fi fi-rr-eye text-xs"></i>
+                                          <span>View Details</span>
+                                        </button>
+                                        <button onClick={() => { handleEditPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-700 font-bold">
+                                          <i className="fi fi-rr-edit text-xs"></i>
+                                          <span>{activeEngine === 'invoices' ? 'Edit Invoice' : 'Update PI'}</span>
+                                        </button>
+                                        <button onClick={() => { handleDirectPrintPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700">
+                                          <i className="fi fi-rr-print text-xs"></i>
+                                          <span>Direct Print</span>
+                                        </button>
+                                        <button onClick={() => { handleOpenPiPdf(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-sky-700 font-bold">
+                                          <i className="fi fi-rr-document text-xs"></i>
+                                          <span>Download PDF</span>
+                                        </button>
                                         {activeEngine === 'invoices' ? (
                                           <>
-                                            <button onClick={() => { setActiveEngine('ewayBill'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-emerald-600"><span>🚛</span><span>Generate E-Way Bill</span></button>
-                                            <button onClick={() => { setActiveEngine('eInvoice'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-amber-600"><span>⚡</span><span>Generate E-Invoice</span></button>
-                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
+                                            <button onClick={() => { setActiveEngine('ewayBill'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-emerald-600">
+                                              <i className="fi fi-rr-truck-side text-xs"></i>
+                                              <span>Generate E-Way Bill</span>
+                                            </button>
+                                            <button onClick={() => { setActiveEngine('eInvoice'); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-amber-600">
+                                              <i className="fi fi-rr-bolt text-xs"></i>
+                                              <span>Generate E-Invoice</span>
+                                            </button>
+                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold">
+                                              <i className="fi fi-rr-envelope text-xs"></i>
+                                              <span>Send Email</span>
+                                            </button>
                                             <div className="border-t border-slate-100 my-1"></div>
-                                            <button onClick={() => { handleDeleteCommercialInvoice(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Invoice</span></button>
+                                            <button onClick={() => { handleDeleteCommercialInvoice(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover">
+                                              <i className="fi fi-rr-trash text-xs"></i>
+                                              <span>Delete Invoice</span>
+                                            </button>
                                           </>
                                         ) : (
                                           <>
-                                            <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600"><span>🔄</span><span>Convert to Commercial Invoice</span></button>
-                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✉️</span><span>Send Email</span></button>
+                                            <button onClick={() => { handleConvertToCommercialInvoice(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold text-indigo-600">
+                                              <i className="fi fi-rr-refresh text-xs"></i>
+                                              <span>Convert to Commercial Invoice</span>
+                                            </button>
+                                            <button onClick={() => { setShareModalPi(pi); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold">
+                                              <i className="fi fi-rr-envelope text-xs"></i>
+                                              <span>Send Email</span>
+                                            </button>
                                             <div className="border-t border-slate-100 my-1"></div>
-                                            <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete Record</span></button>
+                                            <button onClick={() => { handleDeletePi(pi.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover">
+                                              <i className="fi fi-rr-trash text-xs"></i>
+                                              <span>Delete Record</span>
+                                            </button>
                                           </>
                                         )}
                                       </div>
@@ -13020,8 +13054,27 @@
                                   </td>
 
                                   {/* 3. doc_preview */}
-                                  <td className="py-3 px-3">
-                                    <button onClick={() => handleOpenPiPdf(pi)} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1"><i className="fi fi-rr-document text-xs"></i><span>▼</span></button>
+                                  <td className={`py-3 px-3 relative ${isDocOpen ? 'z-50' : 'z-10'}`}>
+                                    <button onClick={(e) => { e.stopPropagation(); setOpenDocMenuId(isDocOpen ? null : `doc-${rowKey}`); setOpenActionMenuId(null); }} className="p-1.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md font-bold text-xs flex items-center space-x-1 hover:bg-amber-100 transition-colors">
+                                      <i className="fi fi-rr-document text-xs"></i>
+                                      <span>▼</span>
+                                    </button>
+                                    {isDocOpen && (
+                                      <div className="absolute left-3 top-10 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
+                                        <button onClick={() => { handleOpenPiPdf(pi); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-sky-700">
+                                          <i className="fi fi-rr-download text-xs"></i>
+                                          <span>Download PDF</span>
+                                        </button>
+                                        <button onClick={() => { handleOpenPiPdf(pi); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold">
+                                          <i className="fi fi-rr-eye text-xs"></i>
+                                          <span>{activeEngine === 'invoices' ? 'Preview Invoice PDF' : 'Preview PI PDF'}</span>
+                                        </button>
+                                        <button onClick={() => { setShareModalPi(pi); setOpenDocMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold">
+                                          <i className="fi fi-rr-envelope text-xs"></i>
+                                          <span>Send via Email / WhatsApp</span>
+                                        </button>
+                                      </div>
+                                    )}
                                   </td>
 
                                   {/* 4. pi_number */}
@@ -13656,12 +13709,12 @@
                                   <button onClick={(e) => { e.stopPropagation(); setOpenActionMenuId(isActionOpen ? null : rowKey); setOpenDocMenuId(null); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"><span>Action</span><span>▼</span></button>
                                   {isActionOpen && (
                                     <div className="absolute left-3 top-10 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 py-2 text-xs text-slate-700 space-y-0.5 dropdown-animate">
-                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>👁️</span><span>View Details</span></button>
-                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><span>🖨️</span><span>Direct Print</span></button>
-                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>📥</span><span>Download PDF</span></button>
-                                      <button onClick={() => { setPklFormData(p); setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><span>✏️</span><span>Edit Packing List</span></button>
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-eye text-xs"></i><span>View Details</span></button>
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold text-emerald-700"><i className="fi fi-rr-print text-xs"></i><span>Direct Print</span></button>
+                                      <button onClick={() => { setSelectedPklPdf(p); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold font-bold text-sky-700"><i className="fi fi-rr-document text-xs"></i><span>Download PDF</span></button>
+                                      <button onClick={() => { setPklFormData(p); setIsCreatePklModalOpen(true); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"><i className="fi fi-rr-edit text-xs"></i><span>Edit Packing List</span></button>
                                       <div className="border-t border-slate-100 my-1"></div>
-                                      <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><span>🗑️</span><span>Delete</span></button>
+                                      <button onClick={() => { handleDeletePkl(p.id); setOpenActionMenuId(null); }} className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 font-semibold btn-delete-hover"><i className="fi fi-rr-trash text-xs"></i><span>Delete</span></button>
                                     </div>
                                   )}
                                 </td>
