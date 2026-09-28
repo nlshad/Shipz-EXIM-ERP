@@ -140,17 +140,9 @@
       const foundInMaster = (masterProductsList || []).find(m =>
         m.name && (clean.includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(clean))
       );
-      if (foundInMaster && foundInMaster.imgUrl) {
+      if (foundInMaster && foundInMaster.imgUrl && !foundInMaster.imgUrl.includes('images.unsplash.com')) {
         return foundInMaster.imgUrl;
       }
-
-      if (clean.includes('cola')) return 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('orznzo') || clean.includes('orange')) return 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('pino') || clean.includes('pineapple') || clean.includes('citrus')) return 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('mixed fruits') || clean.includes('fruit')) return 'https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('mango')) return 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('degaser') || clean.includes('chemical') || clean.includes('benzoate') || clean.includes('acid')) return 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=150&q=80';
-      if (clean.includes('cumin') || clean.includes('jeera') || clean.includes('seed') || clean.includes('fennel')) return 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=150&q=80';
 
       return null;
     };
@@ -158,7 +150,9 @@
     const ProductImageOrIcon = ({ src, alt = "Product", className = "w-10 h-10 rounded-lg", iconClass = "fa-solid fa-box-open text-base" }) => {
       const [imgFailed, setImgFailed] = useState(false);
 
-      if (src && !imgFailed) {
+      const isPlaceholder = !src || typeof src !== 'string' || src.trim() === '' || src.includes('images.unsplash.com') || src.includes('photo-1584308666744');
+
+      if (!isPlaceholder && !imgFailed) {
         return (
           <img
             src={src}
@@ -1952,7 +1946,7 @@
           sku: 'SKU-CUM-001',
           hsn: '09093100',
           gstRate: '18',
-          imgUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
+          imgUrl: '',
           description: 'Premium Machine Cleaned Organic Cumin Seeds (Jeera), Purity 99.5%, Moisture 8% max.',
           inventoryType: 'Finished Goods',
           productTag: 'Spices, Organic, Grade A',
@@ -1973,7 +1967,7 @@
           sku: 'SKU-FEN-002',
           hsn: '09095000',
           gstRate: '18',
-          imgUrl: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&w=400&q=80',
+          imgUrl: '',
           description: 'Export Grade Green Fennel Seeds (Saunf), Bold Size, Sortex Cleaned.',
           inventoryType: 'Finished Goods',
           productTag: 'Spices, Green Bold',
@@ -1994,7 +1988,7 @@
           sku: 'SKU-TUR-003',
           hsn: '09103030',
           gstRate: '5',
-          imgUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80',
+          imgUrl: '',
           description: 'High Curcumin Pure Indian Turmeric Powder, Free from Chromate & Aflatoxin.',
           inventoryType: 'Finished Goods',
           productTag: 'Spices, High Curcumin',
@@ -5914,7 +5908,7 @@
           packageCap: r.packageCap || '',
           totalPackages: r.totalPackages || r.quantity,
           cbmPerPkg: r.cbm || 0.045,
-          imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+          imgUrl: r.imgUrl || '',
           qualitySpec: 'Export Standard',
           material: 'EXPORT GRADE'
         }));
