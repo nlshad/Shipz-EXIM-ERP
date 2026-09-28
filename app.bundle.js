@@ -4117,60 +4117,26 @@ function App() {
     otherNotifyParty: 'Apex Customs Brokerage'
   });
 
-  // Packing List Form Data
+  // Packing List Form Data (Starts completely blank without dummy sample items)
   const [pklFormData, setPklFormData] = useState({
-    piInvoiceNo: 'PI/6/25-26 (INV/02/25-26)',
+    piInvoiceNo: '',
     ciInvoiceNo: '',
-    pklNo: 'PKL/03/25-26',
-    date: '2025-06-21',
-    companyUnit: 'Andhra Pradesh Unit',
-    consignee: 'Global Trade Partners LLC',
-    consigneeAddress: '789 Logistics Way, Suite 400, Los Angeles, CA 90001',
-    containerNo: 'MSKU-8820194',
-    sealNo: 'SL-MDR-9921',
-    shippingLineVessel: 'Maersk Line / MAERSK MC-KINNEY V.05A',
-    descriptionOfService: 'SEA FREIGHT LCL',
-    portOfLoading: 'NHAVA SHEVA, MUMBAI',
-    portOfDestination: 'PORT VICTORIA, SEYCHELLES',
-    noOfPkgs: '60 DRUMS',
-    shippingMarks: 'MGLOBAL/TORONTO/01-60',
-    totalCbm: '18.00',
-    containers: [{
-      id: 'cntr-default-1',
-      containerNo: 'MSKU-8820194',
-      sealNo: 'SL-MDR-9921',
-      containerType: '20FT FCL (Dry Van)',
-      items: [{
-        id: 'pkli-new-1',
-        boxRange: 'Box 01 - 60',
-        product: 'Degaser 200 (Aluminium Degassing)',
-        packageType: 'MS Drum (200L)',
-        qtyPerPkg: 60,
-        unit: 'Drum',
-        netWtPerPkg: 200,
-        grossWtPerPkg: 215,
-        dimensions: '58 x 58 x 88 cm',
-        cbmPerPkg: 0.30,
-        totalNetWt: '12000.00',
-        totalGrossWt: '12900.00',
-        totalCbm: '18.00'
-      }]
-    }],
-    items: [{
-      id: 'pkli-new-1',
-      boxRange: 'Box 01 - 60',
-      product: 'Degaser 200 (Aluminium Degassing)',
-      packageType: 'MS Drum (200L)',
-      qtyPerPkg: 60,
-      unit: 'Drum',
-      netWtPerPkg: 200,
-      grossWtPerPkg: 215,
-      dimensions: '58 x 58 x 88 cm',
-      cbmPerPkg: 0.30,
-      totalNetWt: '12000.00',
-      totalGrossWt: '12900.00',
-      totalCbm: '18.00'
-    }]
+    pklNo: '',
+    date: new Date().toISOString().split('T')[0],
+    companyUnit: '',
+    consignee: '',
+    consigneeAddress: '',
+    containerNo: '',
+    sealNo: '',
+    shippingLineVessel: '',
+    descriptionOfService: '',
+    portOfLoading: '',
+    portOfDestination: '',
+    noOfPkgs: '',
+    shippingMarks: '',
+    totalCbm: '',
+    containers: [],
+    items: []
   });
 
   // Create Quotation Form Data (Cleared default values on create)
@@ -6694,18 +6660,18 @@ function App() {
       remarks: '',
       lineItems: [{
         id: `pili-${Date.now()}`,
-        product: masterProducts[0]?.name || 'Degaser 200 (Aluminium Degassing)',
-        productDescription: masterProducts[0]?.description || 'High purity aluminium degassing chemical',
-        hsn: masterProducts[0]?.hsn || '090931',
-        unit: masterProducts[0]?.unit || 'KG',
-        quantity: 100,
-        price: masterProducts[0]?.unitPrice || masterProducts[0]?.rate || 50,
-        netWeight: '2000',
-        grossWeight: '2200',
-        packageText: '20.000',
-        totalPackages: '20',
-        qualitySpec: 'Export Standard',
-        material: 'EXPORT GRADE'
+        product: '',
+        productDescription: '',
+        hsn: '',
+        unit: 'KG',
+        quantity: '',
+        price: '',
+        netWeight: '',
+        grossWeight: '',
+        packageText: '',
+        totalPackages: '',
+        qualitySpec: '',
+        material: ''
       }]
     });
   };
@@ -8412,21 +8378,45 @@ function App() {
       };
     });
   };
+  const handleResetPklFormData = () => {
+    const defaultCompany = masterCompanyAddresses[0]?.name || masterAddresses[0]?.companyName || '';
+    const defaultPklNo = generateDynamicDocNumber('pkl', defaultCompany) || `PKL/${(packingLists || []).length + 1}/25-26`;
+    setPklFormData({
+      piInvoiceNo: '',
+      ciInvoiceNo: '',
+      pklNo: defaultPklNo,
+      date: new Date().toISOString().split('T')[0],
+      companyUnit: defaultCompany,
+      consignee: '',
+      consigneeAddress: '',
+      containerNo: '',
+      sealNo: '',
+      shippingLineVessel: '',
+      descriptionOfService: '',
+      portOfLoading: '',
+      portOfDestination: '',
+      noOfPkgs: '',
+      shippingMarks: '',
+      totalCbm: '',
+      containers: [],
+      items: []
+    });
+  };
   const handleSavePkl = (status = 'Finalized') => {
     if (!pklFormData.consignee) {
       alert('Please select or specify a Consignee.');
       return;
     }
-    const containers = pklFormData.containers || [{
+    const containers = pklFormData.containers && pklFormData.containers.length > 0 ? pklFormData.containers : pklFormData.items && pklFormData.items.length > 0 ? [{
       id: `cntr-${Date.now()}`,
-      containerNo: pklFormData.containerNo || 'MSKU-8820194',
-      sealNo: pklFormData.sealNo || 'SL-MDR-9921',
+      containerNo: pklFormData.containerNo || '',
+      sealNo: pklFormData.sealNo || '',
       containerType: '20FT FCL (Dry Van)',
       items: pklFormData.items || []
-    }];
+    }] : [];
     const allFlatItems = containers.flatMap(c => c.items || []);
-    const containerNoSummary = containers.map(c => c.containerNo).filter(Boolean).join(', ') || pklFormData.containerNo || 'MSKU-8820194';
-    const sealNoSummary = containers.map(c => c.sealNo).filter(Boolean).join(', ') || pklFormData.sealNo || 'SL-MDR-9921';
+    const containerNoSummary = containers.map(c => c.containerNo).filter(Boolean).join(', ') || pklFormData.containerNo || '';
+    const sealNoSummary = containers.map(c => c.sealNo).filter(Boolean).join(', ') || pklFormData.sealNo || '';
     let activeAuthor = 'Admin User';
     try {
       const savedUid = localStorage.getItem('shipz_active_user_id') || 'usr-003';
@@ -9448,19 +9438,19 @@ function App() {
         qualitySpec: p.qualitySpec || 'Export Standard',
         material: p.material || 'EXPORT GRADE'
       })) : [{
-        id: `pili-edit-default`,
-        product: 'Degaser 200 (Aluminium Degassing)',
-        productDescription: 'High purity degassing chemical',
-        hsn: '090931',
+        id: `pili-edit-${Date.now()}`,
+        product: '',
+        productDescription: '',
+        hsn: '',
         unit: 'KG',
-        quantity: 100,
-        price: 50,
-        netWeight: '2000',
-        grossWeight: '2200',
-        packageText: '20.000',
-        totalPackages: '20',
-        qualitySpec: 'Export Standard',
-        material: 'EXPORT GRADE'
+        quantity: '',
+        price: '',
+        netWeight: '',
+        grossWeight: '',
+        packageText: '',
+        totalPackages: '',
+        qualitySpec: '',
+        material: ''
       }]
     });
     setIsCreatePiModalOpen(true);
@@ -9468,22 +9458,8 @@ function App() {
   };
   const handleSavePi = status => {
     const rawLineItems = piFormData.lineItems || [];
-    const validItems = rawLineItems.filter(i => i.product || i.quantity || i.price);
-    const lineItems = validItems.length > 0 ? validItems : [{
-      id: `pili-def-${Date.now()}`,
-      product: masterProducts[0]?.name || 'Degaser 200 (Aluminium Degassing)',
-      productDescription: masterProducts[0]?.description || 'High purity aluminium degassing chemical',
-      hsn: masterProducts[0]?.hsn || '090931',
-      unit: masterProducts[0]?.unit || 'KG',
-      quantity: 100,
-      price: masterProducts[0]?.unitPrice || masterProducts[0]?.rate || 50,
-      netWeight: '2000',
-      grossWeight: '2200',
-      packageText: '20.000',
-      totalPackages: '20',
-      qualitySpec: 'Export Standard',
-      material: 'EXPORT GRADE'
-    }];
+    const validItems = rawLineItems.filter(i => i.product && i.product.trim() || i.quantity || i.price);
+    const lineItems = validItems;
     const totalAmountSum = lineItems.reduce((acc, item) => acc + (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0), 0);
     const convRateNum = parseFloat(piFormData.conversionRate) || 85.0;
     const spContact = resolveSalespersonContact(piFormData.salesperson) || {};
@@ -11060,7 +11036,10 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-document text-emerald-600 text-lg"
   }), /*#__PURE__*/React.createElement("span", null, "+ New PI")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setIsCreatePklModalOpen(true),
+    onClick: () => {
+      handleResetPklFormData();
+      setIsCreatePklModalOpen(true);
+    },
     className: "p-4 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl flex flex-col justify-between items-start space-y-2 transition-colors cursor-pointer"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-box-alt text-amber-600 text-lg"
@@ -15146,7 +15125,10 @@ function App() {
   }, "Manage export packing lists, box breakdown, net/gross weights, and container CBM volume.")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-3"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setIsCreatePklModalOpen(true),
+    onClick: () => {
+      handleResetPklFormData();
+      setIsCreatePklModalOpen(true);
+    },
     className: "px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg"
   }, /*#__PURE__*/React.createElement("span", null, "+ Create Packing List")))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
@@ -15177,7 +15159,10 @@ function App() {
     placeholder: "Filter packing lists...",
     className: "bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
   })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setIsCreatePklModalOpen(true),
+    onClick: () => {
+      handleResetPklFormData();
+      setIsCreatePklModalOpen(true);
+    },
     className: "px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1"
   }, /*#__PURE__*/React.createElement("span", null, "+ Add New")))), /*#__PURE__*/React.createElement("div", {
     className: "overflow-visible min-h-[380px]"
@@ -15252,6 +15237,7 @@ function App() {
       className: "w-full text-left px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-semibold"
     }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCE5"), /*#__PURE__*/React.createElement("span", null, "Download PDF")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
+        setPklFormData(p);
         setIsCreatePklModalOpen(true);
         setOpenActionMenuId(null);
       },
@@ -19406,13 +19392,23 @@ function App() {
     type: "button",
     onClick: handleOpenAddContainerModal,
     className: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center space-x-2 transition-all cursor-pointer self-start sm:self-auto"
-  }, /*#__PURE__*/React.createElement("span", null, "+ Add Container (Popup Modal)"))), (pklFormData.containers && pklFormData.containers.length > 0 ? pklFormData.containers : [{
-    id: 'cntr-default-1',
-    containerNo: pklFormData.containerNo || 'MSKU-8820194',
-    sealNo: pklFormData.sealNo || 'SL-MDR-9921',
-    containerType: '20FT FCL (Dry Van)',
-    items: pklFormData.items || []
-  }]).map((cntr, cntrIdx) => {
+  }, /*#__PURE__*/React.createElement("span", null, "+ Add Container (Popup Modal)"))), !pklFormData.containers || pklFormData.containers.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "py-10 text-center text-slate-400 bg-slate-50/80 rounded-2xl border-2 border-dashed border-slate-200 space-y-3 p-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-lg border border-indigo-100"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-box"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold text-slate-700"
+  }, "No Containers or Package Items Listed"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400 mt-0.5"
+  }, "Click below to add a container and specify its items and weight breakdown.")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleOpenAddContainerModal,
+    className: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center space-x-1.5 transition-all cursor-pointer"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-plus text-[10px]"
+  }), /*#__PURE__*/React.createElement("span", null, "Add Container & Package Items"))) : pklFormData.containers.map((cntr, cntrIdx) => {
     const cntrItems = cntr.items || [];
     const cntrTotalNet = cntrItems.reduce((sum, i) => sum + (parseFloat(i.totalNetWt) || parseFloat(i.netWtPerPkg) * (parseFloat(i.qtyPerPkg) || 1) || 0), 0).toFixed(2);
     const cntrTotalGross = cntrItems.reduce((sum, i) => sum + (parseFloat(i.totalGrossWt) || parseFloat(i.grossWtPerPkg) * (parseFloat(i.qtyPerPkg) || 1) || 0), 0).toFixed(2);
