@@ -1340,6 +1340,417 @@
         return () => clearInterval(interval);
       }, []);
 
+      // ==========================================
+      // ACTIVE SYSTEM NOTIFICATIONS ENGINE
+      // ==========================================
+      const [dismissedNotifIds, setDismissedNotifIds] = useState(() => {
+        try {
+          const saved = localStorage.getItem('mglobal_dismissed_notif_ids');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      const [readNotifIds, setReadNotifIds] = useState(() => {
+        try {
+          const saved = localStorage.getItem('mglobal_read_notif_ids');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      const [notifFilterTab, setNotifFilterTab] = useState('all'); // 'all' | 'unread' | 'deadlines' | 'system'
+
+      // Real-time calculation of active operational ERP notifications
+      const activeNotifications = React.useMemo(() => {
+        const notifs = [];
+        const now = new Date();
+
+        // 1. Certificate Expiry Alerts (Scans preShipmentCertificates)
+        (preShipmentCertificates || []).forEach(cert => {
+          if (!cert.expiryDate) return;
+          const expDate = new Date(cert.expiryDate);
+          const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+
+          if (diffDays < 0) {
+            notifs.push({
+              id: `cert-expired-${cert.id}`,
+              type: 'critical',
+              category: 'deadlines',
+              icon: 'fi fi-rr-shield-exclamation',
+              iconColor: 'text-rose-600 bg-rose-50 border-rose-200',
+              title: `Certificate Expired: ${cert.certName}`,
+              message: `Pre-shipment certificate expired ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'} ago on ${cert.expiryDate}. Urgent renewal required!`,
+              timeAgo: 'Overdue',
+              actionText: 'View Certificates →',
+              actionTarget: 'preShipment',
+              targetCertId: cert.id
+            });
+          } else if (diffDays <= 30) {
+            notifs.push({
+              id: `cert-expiring-${cert.id}`,
+              type: 'warning',
+              category: 'deadlines',
+              icon: 'fi fi-rr-time-forward',
+              iconColor: 'text-amber-600 bg-amber-50 border-amber-200',
+              title: `Expiry in ${diffDays} Day${diffDays === 1 ? '' : 's'}: ${cert.certName}`,
+              message: `Pre-shipment certificate expires on ${cert.expiryDate}. Plan renewal before export customs clearance.`,
+              timeAgo: `${diffDays}d left`,
+              actionText: 'Inspect Certificate →',
+              actionTarget: 'preShipment',
+              targetCertId: cert.id
+            });
+          }
+        });
+
+        // 2. Export Documents Workflow (Pending CI for Confirmed PIs)
+        (activeInvoicesList || []).forEach(pi => {
+          if (pi.status === 'Confirmed' && pi.invNumber && pi.invNumber.toUpperCase().startsWith('PI/')) {
+            notifs.push({
+              id: `pi-pending-ci-${pi.id}`,
+              type: 'info',
+              category: 'orders',
+              icon: 'fi fi-rr-document-signed',
+              iconColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+              title: `Order Confirmed: ${pi.invNumber}`,
+              message: `Proforma Invoice ${pi.invNumber} (${pi.consignee || 'Customer'}) is confirmed. Commercial Invoice & Packing List can be processed.`,
+              timeAgo: pi.date || 'Recent',
+              actionText: 'Open Proforma →',
+              actionTarget: 'proforma',
+              docId: pi.id
+            });
+          }
+        });
+
+        // 3. Database Connection Alerts
+        if (!dbConnectionStatus.connected) {
+          notifs.push({
+            id: 'system-db-disconnected',
+            type: 'critical',
+            category: 'system',
+            icon: 'fi fi-rr-database',
+            iconColor: 'text-rose-600 bg-rose-50 border-rose-200',
+            title: 'Live MySQL Disconnected',
+            message: 'Database connection is unreachable. Document updates are being cached in LocalStorage.',
+            timeAgo: 'Action Required',
+            actionText: 'Configure DB →',
+            actionTarget: 'db_config'
+          });
+        }
+
+        // 4. Backup Safety Protocol
+        const lastBackupTime = localStorage.getItem('shipz_last_backup_timestamp');
+        let needsBackup = false;
+        if (!lastBackupTime) {
+          needsBackup = true;
+        } else {
+          const daysSinceBackup = (Date.now() - new Date(lastBackupTime).getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSinceBackup >= 7) needsBackup = true;
+        }
+
+        if (needsBackup) {
+          notifs.push({
+            id: 'system-backup-reminder',
+            type: 'warning',
+            category: 'system',
+            icon: 'fi fi-rr-disk',
+            iconColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+            title: 'Weekly Backup Recommended',
+            message: 'Protect all EXIM contracts and masters. Generate a full JSON backup snapshot.',
+            timeAgo: 'Data Safety',
+            actionText: 'Open Backup Center →',
+            actionTarget: 'backup_restore'
+          });
+        }
+
+        // 5. Recent System Activities as Live Alerts (top 3 newest)
+        if (recentActivities && recentActivities.length > 0) {
+          recentActivities.slice(0, 3).forEach(act => {
+            notifs.push({
+              id: `act-${act.id}`,
+              type: 'info',
+              category: 'system',
+              icon: act.iconClass || 'fi fi-rr-bell',
+              iconColor: 'text-slate-600 bg-slate-50 border-slate-200',
+              title: act.title,
+              message: act.description,
+              timeAgo: act.timeAgo || 'Recent',
+              actionText: act.actionText || 'View Details →',
+              actionTarget: act.targetEngine || 'dashboard',
+              docId: act.docId
+            });
+          });
+        }
+
+        // Filter out user-dismissed notifications
+        return notifs.filter(n => !dismissedNotifIds.includes(n.id));
+      }, [preShipmentCertificates, activeInvoicesList, dbConnectionStatus, recentActivities, dismissedNotifIds]);
+
+      const unreadNotifCount = React.useMemo(() => {
+        return activeNotifications.filter(n => !readNotifIds.includes(n.id)).length;
+      }, [activeNotifications, readNotifIds]);
+
+      const deadlinesCount = React.useMemo(() => {
+        return activeNotifications.filter(n => n.category === 'deadlines').length;
+      }, [activeNotifications]);
+
+      const filteredNotifications = React.useMemo(() => {
+        if (notifFilterTab === 'unread') {
+          return activeNotifications.filter(n => !readNotifIds.includes(n.id));
+        }
+        if (notifFilterTab === 'deadlines') {
+          return activeNotifications.filter(n => n.category === 'deadlines');
+        }
+        if (notifFilterTab === 'system') {
+          return activeNotifications.filter(n => n.category === 'system' || n.category === 'orders');
+        }
+        return activeNotifications;
+      }, [activeNotifications, notifFilterTab, readNotifIds]);
+
+      const handleMarkNotifAsRead = (id, e) => {
+        if (e) e.stopPropagation();
+        if (!readNotifIds.includes(id)) {
+          const updated = [...readNotifIds, id];
+          setReadNotifIds(updated);
+          localStorage.setItem('mglobal_read_notif_ids', JSON.stringify(updated));
+        }
+      };
+
+      const handleMarkAllNotifsAsRead = () => {
+        const allIds = activeNotifications.map(n => n.id);
+        const updated = Array.from(new Set([...readNotifIds, ...allIds]));
+        setReadNotifIds(updated);
+        localStorage.setItem('mglobal_read_notif_ids', JSON.stringify(updated));
+        setToastNotice('All notifications marked as read');
+      };
+
+      const handleDismissNotif = (id, e) => {
+        if (e) e.stopPropagation();
+        const updated = [...dismissedNotifIds, id];
+        setDismissedNotifIds(updated);
+        localStorage.setItem('mglobal_dismissed_notif_ids', JSON.stringify(updated));
+      };
+
+      const handleClearAllNotifs = () => {
+        const allIds = activeNotifications.map(n => n.id);
+        const updated = Array.from(new Set([...dismissedNotifIds, ...allIds]));
+        setDismissedNotifIds(updated);
+        localStorage.setItem('mglobal_dismissed_notif_ids', JSON.stringify(updated));
+        setToastNotice('All notifications cleared');
+      };
+
+      const handleNotificationItemClick = (notif) => {
+        handleMarkNotifAsRead(notif.id);
+        setShowDashboardNotifs(false);
+
+        if (notif.actionTarget === 'preShipment') {
+          setActiveEngine('preShipment');
+        } else if (notif.actionTarget === 'backup_restore') {
+          setActiveEngine('settings');
+          setActiveSettingsSubMenu('backupRestore');
+        } else if (notif.actionTarget === 'db_config') {
+          setIsDbConfigModalOpen(true);
+        } else if (notif.actionTarget === 'proforma') {
+          setActiveEngine('proforma');
+          if (notif.docId) setSelectedPiId(notif.docId);
+        } else if (notif.actionTarget === 'quotations') {
+          setActiveEngine('quotations');
+        } else if (notif.actionTarget === 'commercial') {
+          setActiveEngine('commercial');
+        } else if (notif.actionTarget) {
+          setActiveEngine(notif.actionTarget);
+        }
+      };
+
+      const renderNotificationsBell = (customClass = '') => {
+        return (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowDashboardNotifs(!showDashboardNotifs)}
+              title="System Notifications"
+              className={`p-2 hover:bg-slate-100 rounded-xl text-slate-600 relative flex items-center justify-center transition-colors cursor-pointer ${customClass}`}
+            >
+              <i className="fi fi-rr-bell text-sm"></i>
+              {unreadNotifCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white font-black text-[9px] rounded-full flex items-center justify-center shadow-xs animate-pulse font-mono">
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                </span>
+              )}
+            </button>
+
+            {showDashboardNotifs && (
+              <>
+                {/* INVISIBLE CLICK OUTSIDE BACKDROP */}
+                <div
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setShowDashboardNotifs(false)}
+                />
+
+                {/* NOTIFICATION FLOATING DRAWER */}
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl p-4 z-50 shadow-2xl border border-slate-200 max-h-[520px] flex flex-col text-left animate-fadeIn">
+                  {/* HEADER */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i className="fi fi-rr-bell text-xs"></i>
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                          System Notifications
+                        </h3>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {unreadNotifCount > 0 ? `${unreadNotifCount} unread alert${unreadNotifCount === 1 ? '' : 's'}` : 'All caught up'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {unreadNotifCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllNotifsAsRead}
+                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* FILTER TABS */}
+                  <div className="flex items-center space-x-1 py-2 border-b border-slate-100 text-[11px] font-bold shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilterTab('all')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${notifFilterTab === 'all' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                    >
+                      All ({activeNotifications.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilterTab('unread')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center space-x-1 ${notifFilterTab === 'unread' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                    >
+                      <span>Unread</span>
+                      {unreadNotifCount > 0 && (
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${notifFilterTab === 'unread' ? 'bg-white text-indigo-700' : 'bg-rose-500 text-white'}`}>
+                          {unreadNotifCount}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilterTab('deadlines')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${notifFilterTab === 'deadlines' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                    >
+                      Deadlines ({deadlinesCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilterTab('system')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${notifFilterTab === 'system' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                    >
+                      System
+                    </button>
+                  </div>
+
+                  {/* NOTIFICATIONS LIST (SCROLLABLE) */}
+                  <div className="flex-1 overflow-y-auto space-y-2 py-2 pr-1 scrollbar-thin my-1">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-base">
+                          ✓
+                        </div>
+                        <p className="text-xs font-bold text-slate-600">No notifications in this view</p>
+                        <p className="text-[10px] text-slate-400">You're completely up to date with all operations.</p>
+                      </div>
+                    ) : (
+                      filteredNotifications.map((notif) => {
+                        const isRead = readNotifIds.includes(notif.id);
+                        return (
+                          <div
+                            key={notif.id}
+                            onClick={() => handleNotificationItemClick(notif)}
+                            className={`p-3 rounded-xl border transition-all cursor-pointer group relative ${
+                              isRead
+                                ? 'bg-white hover:bg-slate-50 border-slate-200/80 opacity-75'
+                                : 'bg-indigo-50/40 hover:bg-indigo-50/70 border-indigo-200/80 shadow-2xs'
+                            }`}
+                          >
+                            <div className="flex items-start space-x-2.5">
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${notif.iconColor || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                <i className={`${notif.icon || 'fi fi-rr-bell'} text-xs`}></i>
+                              </div>
+                              <div className="flex-1 min-w-0 pr-4">
+                                <div className="flex items-center justify-between gap-1">
+                                  <h4 className={`text-xs font-bold truncate ${isRead ? 'text-slate-700' : 'text-slate-900 font-black'}`}>
+                                    {notif.title}
+                                  </h4>
+                                  <span className="text-[9.5px] text-slate-400 whitespace-nowrap shrink-0 font-mono">
+                                    {notif.timeAgo}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">
+                                  {notif.message}
+                                </p>
+                                <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-black/5">
+                                  <span className="text-[10px] font-extrabold text-indigo-600 group-hover:underline flex items-center space-x-1">
+                                    <span>{notif.actionText || 'Take Action →'}</span>
+                                  </span>
+                                  {!isRead && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleMarkNotifAsRead(notif.id, e)}
+                                      title="Mark as read"
+                                      className="text-[9.5px] font-bold text-slate-400 hover:text-slate-700 p-0.5 hover:bg-slate-200/60 rounded"
+                                    >
+                                      Mark read
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              {/* DISMISS BUTTON */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleDismissNotif(notif.id, e)}
+                                title="Dismiss notification"
+                                className="absolute top-2.5 right-2.5 text-slate-400 hover:text-rose-500 p-1 rounded-lg text-xs leading-none transition-colors"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* FOOTER */}
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleClearAllNotifs}
+                      className="text-slate-400 hover:text-rose-600 font-bold transition-colors cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowDashboardNotifs(false); setActiveEngine('settings'); }}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold transition-colors cursor-pointer flex items-center space-x-1"
+                    >
+                      <span>System Settings</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      };
+
       // Pre-Shipment Certificates UI States
       const [isUploadCertModalOpen, setIsUploadCertModalOpen] = useState(false);
       const [previewCertModalData, setPreviewCertModalData] = useState(null);
@@ -9028,49 +9439,8 @@
                       )}
                     </button>
 
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowDashboardNotifs(!showDashboardNotifs)}
-                        title="Notifications"
-                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 relative flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <i className="fi fi-rr-bell text-sm"></i>
-                        <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center">3</span>
-                      </button>
-
-                      {showDashboardNotifs && (
-                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl p-4 z-50 shadow-2xl border border-slate-200">
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-800">System Notifications</h3>
-                            <span className="text-[10px] bg-rose-50 text-rose-600 font-extrabold px-2 py-0.5 rounded-full border border-rose-200">3 New</span>
-                          </div>
-                          <div className="space-y-2 mt-3 text-left">
-                            <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
-                              <div className="flex justify-between items-start">
-                                <h4 className="text-xs font-bold text-slate-800">Container CFS Arrival</h4>
-                                <span className="text-[10px] text-slate-400">12m ago</span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 mt-1">MSKU-882190-4 reached Mundra SEZ CFS.</p>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
-                              <div className="flex justify-between items-start">
-                                <h4 className="text-xs font-bold text-slate-800">eBRC Realization Completed</h4>
-                                <span className="text-[10px] text-slate-400">1h ago</span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 mt-1">₹2,64,027 credited for EXP/CI/2026/089.</p>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-all cursor-pointer">
-                              <div className="flex justify-between items-start">
-                                <h4 className="text-xs font-bold text-slate-800">Loading Due Warning</h4>
-                                <span className="text-[10px] text-slate-400">3h ago</span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 mt-1">MEDU-901244-1 factory loading due in 3 days.</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    {/* ACTIVE SYSTEM NOTIFICATIONS BELL */}
+                    {renderNotificationsBell()}
                   </div>
                 </div>
 
@@ -11991,11 +12361,7 @@
                     <button title="Share" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 flex items-center justify-center transition-colors">
                       <i className="fi fi-rr-link text-sm"></i>
                     </button>
-                    <button title="Notifications" className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 relative flex items-center justify-center transition-colors">
-                      <i className="fi fi-rr-bell text-sm"></i>
-                      <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center">3</span>
-                    </button>
-
+                    {renderNotificationsBell()}
                   </div>
                 </div>
 
