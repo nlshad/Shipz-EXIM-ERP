@@ -4296,6 +4296,22 @@
       const [activeLineItemIdx, setActiveLineItemIdx] = useState(null);
       const [toastNotice, setToastNotice] = useState(null);
       const [confirmCloseModal, setConfirmCloseModal] = useState(false);
+      const [themeAlertModal, setThemeAlertModal] = useState(null);
+
+      const showThemeAlert = useCallback(({ type = 'info', title = 'Notice', message, subtitle = '', badge = '', confirmText = 'OK', onConfirm = null, cancelText = '', onCancel = null }) => {
+        setThemeAlertModal({
+          isOpen: true,
+          type,
+          title,
+          message,
+          subtitle,
+          badge,
+          confirmText,
+          onConfirm,
+          cancelText,
+          onCancel
+        });
+      }, []);
 
       // ShipzyDrive Assets State & Drive Image Picker Modal State
       const [isDrivePickerOpen, setIsDrivePickerOpen] = useState(false);
@@ -6352,8 +6368,17 @@
           docId: newCommercialInvoice.id
         });
 
-        alert(`Successfully converted ${pi.invNumber} to Commercial Invoice (${newCiNumber})!\n\nDirecting you to the Invoices engine...`);
-        setActiveEngine('invoices');
+        showThemeAlert({
+          type: 'success',
+          title: 'Commercial Invoice Created!',
+          badge: newCiNumber,
+          message: `Successfully converted ${pi.invNumber} to Commercial Invoice (${newCiNumber})!`,
+          subtitle: 'All line items, cargo weights, and trade terms are now available in the Invoices register.',
+          confirmText: 'Go to Invoices Engine →',
+          onConfirm: () => {
+            setActiveEngine('invoices');
+          }
+        });
       };
 
       const handleDeleteCommercialInvoice = (id) => {
@@ -23685,6 +23710,89 @@
                       Close Log
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* THEME NATIVE ALERT & CONFIRMATION MODAL */}
+          {themeAlertModal && themeAlertModal.isOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-150">
+              <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm p-6 text-center space-y-4 relative transform transition-all scale-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (themeAlertModal.onCancel) themeAlertModal.onCancel();
+                    setThemeAlertModal(null);
+                  }}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+
+                <div className="pt-2">
+                  {themeAlertModal.type === 'success' ? (
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-3xl shadow-sm">
+                      <i className="fi fi-rr-check-circle"></i>
+                    </div>
+                  ) : themeAlertModal.type === 'error' ? (
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center text-3xl shadow-sm">
+                      <i className="fi fi-rr-cross-circle"></i>
+                    </div>
+                  ) : themeAlertModal.type === 'warning' ? (
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-3xl shadow-sm">
+                      <i className="fi fi-rr-exclamation"></i>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center text-3xl shadow-sm">
+                      <i className="fi fi-rr-info"></i>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    {themeAlertModal.title || 'Notification'}
+                  </h3>
+                  {themeAlertModal.badge && (
+                    <div className="inline-block px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full font-mono text-xs font-black text-indigo-700">
+                      {themeAlertModal.badge}
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed px-2 whitespace-pre-line">
+                    {themeAlertModal.message}
+                  </p>
+                  {themeAlertModal.subtitle && (
+                    <p className="text-[11px] text-slate-400 font-medium italic pt-1">
+                      {themeAlertModal.subtitle}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 flex flex-col space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fn = themeAlertModal.onConfirm;
+                      setThemeAlertModal(null);
+                      if (fn) fn();
+                    }}
+                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                  >
+                    <span>{themeAlertModal.confirmText || 'OK'}</span>
+                  </button>
+                  {themeAlertModal.onCancel && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        themeAlertModal.onCancel();
+                        setThemeAlertModal(null);
+                      }}
+                      className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                      {themeAlertModal.cancelText || 'Cancel'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
