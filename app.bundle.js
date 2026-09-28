@@ -1506,6 +1506,73 @@ function App() {
   const [showDashboardNotifs, setShowDashboardNotifs] = useState(false);
   const [dashboardCopyToast, setDashboardCopyToast] = useState(false);
 
+  // ==========================================
+  // LIVE CURRENCY EXCHANGE RATES (FOREX API)
+  // ==========================================
+  const [liveExchangeRates, setLiveExchangeRates] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mglobal_live_exchange_rates');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return {
+      USD_INR: 95.92,
+      EUR_INR: 109.13,
+      GBP_INR: 126.86,
+      AED_INR: 26.12,
+      SAR_INR: 25.58,
+      CNY_INR: 13.52,
+      lastUpdated: 'Live Feed',
+      source: 'Open Forex API'
+    };
+  });
+  const [isRatesLoading, setIsRatesLoading] = useState(false);
+  const [ratesError, setRatesError] = useState(null);
+  const fetchLiveExchangeRates = async (isManual = false) => {
+    setIsRatesLoading(true);
+    setRatesError(null);
+    try {
+      let res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (!res.ok) {
+        res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      }
+      const data = await res.json();
+      if (data && data.rates && data.rates.INR) {
+        const inr = data.rates.INR;
+        const eur = data.rates.EUR;
+        const gbp = data.rates.GBP;
+        const aed = data.rates.AED;
+        const sar = data.rates.SAR;
+        const cny = data.rates.CNY;
+        const updatedRates = {
+          USD_INR: parseFloat(inr.toFixed(2)),
+          EUR_INR: eur ? parseFloat((inr / eur).toFixed(2)) : 109.13,
+          GBP_INR: gbp ? parseFloat((inr / gbp).toFixed(2)) : 126.86,
+          AED_INR: aed ? parseFloat((inr / aed).toFixed(2)) : 26.12,
+          SAR_INR: sar ? parseFloat((inr / sar).toFixed(2)) : 25.58,
+          CNY_INR: cny ? parseFloat((inr / cny).toFixed(2)) : 13.52,
+          lastUpdated: new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          source: 'Live Bank Feed'
+        };
+        setLiveExchangeRates(updatedRates);
+        localStorage.setItem('mglobal_live_exchange_rates', JSON.stringify(updatedRates));
+        if (isManual) setToastNotice('Live exchange rates refreshed successfully!');
+      }
+    } catch (err) {
+      console.warn('Currency API fetch notice:', err);
+      setRatesError('Offline - using cached rates');
+    } finally {
+      setIsRatesLoading(false);
+    }
+  };
+  React.useEffect(() => {
+    fetchLiveExchangeRates(false);
+    const interval = setInterval(() => fetchLiveExchangeRates(false), 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Pre-Shipment Certificates UI States
   const [isUploadCertModalOpen, setIsUploadCertModalOpen] = useState(false);
   const [previewCertModalData, setPreviewCertModalData] = useState(null);
@@ -10477,48 +10544,156 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-settings text-sm"
   }), /*#__PURE__*/React.createElement("span", null, "Configure Live DB Credentials \u2192"))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center justify-between gap-2 px-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-coins text-indigo-600"
+  }), /*#__PURE__*/React.createElement("span", null, "Live Currency Exchange Rates (INR)")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-cloud-check text-[9px]"
+  }), /*#__PURE__*/React.createElement("span", null, isRatesLoading ? 'Fetching Live Rates...' : ratesError || 'Live Forex API'))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 text-xs"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 font-medium"
+  }, "Last synced: ", /*#__PURE__*/React.createElement("span", {
+    className: "font-mono font-bold text-slate-600"
+  }, liveExchangeRates.lastUpdated || 'Today')), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => fetchLiveExchangeRates(true),
+    disabled: isRatesLoading,
+    className: "p-1 px-3 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-2xs hover:border-indigo-300 transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50",
+    title: "Click to refresh latest live bank forex rates"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: `fi fi-rr-refresh text-xs text-indigo-600 ${isRatesLoading ? 'animate-spin' : ''}`
+  }), /*#__PURE__*/React.createElement("span", null, "Refresh Rates")))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2"
+    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-indigo-300 hover:shadow-md transition-all group"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-center text-xs text-slate-500 font-medium"
-  }, /*#__PURE__*/React.createElement("span", null, "Total Annual Sales"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
-  }, "+18.4%")), /*#__PURE__*/React.createElement("div", {
-    className: "text-2xl font-bold text-slate-900 font-mono"
-  }, "$1,840,000"), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-slate-400"
-  }, "\u20B915.64 Cr Equivalent")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2"
+    className: "flex justify-between items-center text-xs"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-center text-xs text-slate-500 font-medium"
-  }, /*#__PURE__*/React.createElement("span", null, "Gross Export Profit"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
-  }, "+22.1%")), /*#__PURE__*/React.createElement("div", {
-    className: "text-2xl font-bold text-indigo-600 font-mono"
-  }, "$412,000"), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-slate-400"
-  }, "Margin: 22.4%")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2"
+    className: "flex items-center space-x-2 font-bold text-slate-800"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-lg leading-none"
+  }, "\uD83C\uDDFA\uD83C\uDDF8"), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-extrabold tracking-tight"
+  }, "USD / INR")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100"
+  }, "US Dollar")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline space-x-2 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-slate-900 font-mono tracking-tight"
+  }, "\u20B9", liveExchangeRates.USD_INR?.toFixed(2) || '95.92'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 font-mono"
+  }, "/ 1 USD")), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "Primary Export Currency"), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-emerald-600 font-bold"
+  }, "$1.00 = \u20B9", liveExchangeRates.USD_INR?.toFixed(2) || '95.92'))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-blue-300 hover:shadow-md transition-all group"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-center text-xs text-slate-500 font-medium"
-  }, /*#__PURE__*/React.createElement("span", null, "Logistics & Freight"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"
-  }, "-4.2%")), /*#__PURE__*/React.createElement("div", {
-    className: "text-2xl font-bold text-slate-900 font-mono"
-  }, "$86,000"), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-slate-400"
-  }, "Freight & Port Fees")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2"
+    className: "flex justify-between items-center text-xs"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-center text-xs text-slate-500 font-medium"
-  }, /*#__PURE__*/React.createElement("span", null, "Active Containers"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"
-  }, "5 Due")), /*#__PURE__*/React.createElement("div", {
-    className: "text-2xl font-bold text-slate-900 font-mono"
-  }, "14 Units"), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-slate-400"
-  }, "Container Fleet"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 font-bold text-slate-800"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-lg leading-none"
+  }, "\uD83C\uDDEA\uD83C\uDDFA"), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-extrabold tracking-tight"
+  }, "EUR / INR")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100"
+  }, "Euro")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline space-x-2 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-slate-900 font-mono tracking-tight"
+  }, "\u20B9", liveExchangeRates.EUR_INR?.toFixed(2) || '109.13'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 font-mono"
+  }, "/ 1 EUR")), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "EU Buyers & Ports"), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-emerald-600 font-bold"
+  }, "\u20AC1.00 = \u20B9", liveExchangeRates.EUR_INR?.toFixed(2) || '109.13'))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-purple-300 hover:shadow-md transition-all group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 font-bold text-slate-800"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-lg leading-none"
+  }, "\uD83C\uDDEC\uD83C\uDDE7"), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-extrabold tracking-tight"
+  }, "GBP / INR")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100"
+  }, "British Pound")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline space-x-2 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-slate-900 font-mono tracking-tight"
+  }, "\u20B9", liveExchangeRates.GBP_INR?.toFixed(2) || '126.86'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 font-mono"
+  }, "/ 1 GBP")), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "UK Commercial Contracts"), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-emerald-600 font-bold"
+  }, "\xA31.00 = \u20B9", liveExchangeRates.GBP_INR?.toFixed(2) || '126.86'))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-amber-300 hover:shadow-md transition-all group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 font-bold text-slate-800"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-lg leading-none"
+  }, "\uD83C\uDDE6\uD83C\uDDEA"), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-extrabold tracking-tight"
+  }, "AED / INR")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100"
+  }, "UAE Dirham")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline space-x-2 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-slate-900 font-mono tracking-tight"
+  }, "\u20B9", liveExchangeRates.AED_INR?.toFixed(2) || '26.12'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 font-mono"
+  }, "/ 1 AED")), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "Middle East Trade"), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-emerald-600 font-bold"
+  }, "1 AED = \u20B9", liveExchangeRates.AED_INR?.toFixed(2) || '26.12')))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center justify-between text-xs bg-slate-100/70 border border-slate-200 px-4 py-2 rounded-xl text-slate-600 gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 font-bold text-[11px] text-slate-700"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-exchange text-xs text-indigo-600"
+  }), /*#__PURE__*/React.createElement("span", null, "Other Trade Currencies:")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center flex-wrap gap-4 text-[11px]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center space-x-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDDF8\uD83C\uDDE6 SAR (Saudi Riyal):"), /*#__PURE__*/React.createElement("strong", {
+    className: "font-mono text-slate-900"
+  }, "\u20B9", liveExchangeRates.SAR_INR?.toFixed(2) || '25.58')), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-300"
+  }, "\u2022"), /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center space-x-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDDE8\uD83C\uDDF3 CNY (Chinese Yuan):"), /*#__PURE__*/React.createElement("strong", {
+    className: "font-mono text-slate-900"
+  }, "\u20B9", liveExchangeRates.CNY_INR?.toFixed(2) || '13.52')), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-300"
+  }, "\u2022"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400"
+  }, "Auto-refreshed every 30m via Forex Open API")))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 lg:grid-cols-12 gap-6"
   }, /*#__PURE__*/React.createElement("div", {
     className: "lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"

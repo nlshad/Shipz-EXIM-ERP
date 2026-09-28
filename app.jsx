@@ -1273,6 +1273,73 @@
       const [showDashboardNotifs, setShowDashboardNotifs] = useState(false);
       const [dashboardCopyToast, setDashboardCopyToast] = useState(false);
 
+      // ==========================================
+      // LIVE CURRENCY EXCHANGE RATES (FOREX API)
+      // ==========================================
+      const [liveExchangeRates, setLiveExchangeRates] = useState(() => {
+        try {
+          const cached = localStorage.getItem('mglobal_live_exchange_rates');
+          if (cached) return JSON.parse(cached);
+        } catch (e) {}
+        return {
+          USD_INR: 95.92,
+          EUR_INR: 109.13,
+          GBP_INR: 126.86,
+          AED_INR: 26.12,
+          SAR_INR: 25.58,
+          CNY_INR: 13.52,
+          lastUpdated: 'Live Feed',
+          source: 'Open Forex API'
+        };
+      });
+      const [isRatesLoading, setIsRatesLoading] = useState(false);
+      const [ratesError, setRatesError] = useState(null);
+
+      const fetchLiveExchangeRates = async (isManual = false) => {
+        setIsRatesLoading(true);
+        setRatesError(null);
+        try {
+          let res = await fetch('https://open.er-api.com/v6/latest/USD');
+          if (!res.ok) {
+            res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+          }
+          const data = await res.json();
+          if (data && data.rates && data.rates.INR) {
+            const inr = data.rates.INR;
+            const eur = data.rates.EUR;
+            const gbp = data.rates.GBP;
+            const aed = data.rates.AED;
+            const sar = data.rates.SAR;
+            const cny = data.rates.CNY;
+
+            const updatedRates = {
+              USD_INR: parseFloat(inr.toFixed(2)),
+              EUR_INR: eur ? parseFloat((inr / eur).toFixed(2)) : 109.13,
+              GBP_INR: gbp ? parseFloat((inr / gbp).toFixed(2)) : 126.86,
+              AED_INR: aed ? parseFloat((inr / aed).toFixed(2)) : 26.12,
+              SAR_INR: sar ? parseFloat((inr / sar).toFixed(2)) : 25.58,
+              CNY_INR: cny ? parseFloat((inr / cny).toFixed(2)) : 13.52,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              source: 'Live Bank Feed'
+            };
+            setLiveExchangeRates(updatedRates);
+            localStorage.setItem('mglobal_live_exchange_rates', JSON.stringify(updatedRates));
+            if (isManual) setToastNotice('Live exchange rates refreshed successfully!');
+          }
+        } catch (err) {
+          console.warn('Currency API fetch notice:', err);
+          setRatesError('Offline - using cached rates');
+        } finally {
+          setIsRatesLoading(false);
+        }
+      };
+
+      React.useEffect(() => {
+        fetchLiveExchangeRates(false);
+        const interval = setInterval(() => fetchLiveExchangeRates(false), 30 * 60 * 1000);
+        return () => clearInterval(interval);
+      }, []);
+
       // Pre-Shipment Certificates UI States
       const [isUploadCertModalOpen, setIsUploadCertModalOpen] = useState(false);
       const [previewCertModalData, setPreviewCertModalData] = useState(null);
@@ -9056,42 +9123,135 @@
                   </div>
                 )}
 
-                {/* ZONE 1: 4 SIMPLE METRIC CARDS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                    <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
-                      <span>Total Annual Sales</span>
-                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+18.4%</span>
+                {/* ZONE 1: LIVE CURRENCY EXCHANGE RATES (FOREX API) */}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <i className="fi fi-rr-coins text-indigo-600"></i>
+                        <span>Live Currency Exchange Rates (INR)</span>
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
+                        <i className="fi fi-rr-cloud-check text-[9px]"></i>
+                        <span>{isRatesLoading ? 'Fetching Live Rates...' : (ratesError || 'Live Forex API')}</span>
+                      </span>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 font-mono">$1,840,000</div>
-                    <div className="text-xs text-slate-400">₹15.64 Cr Equivalent</div>
+
+                    <div className="flex items-center space-x-2 text-xs">
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        Last synced: <span className="font-mono font-bold text-slate-600">{liveExchangeRates.lastUpdated || 'Today'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => fetchLiveExchangeRates(true)}
+                        disabled={isRatesLoading}
+                        className="p-1 px-3 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-2xs hover:border-indigo-300 transition-all flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                        title="Click to refresh latest live bank forex rates"
+                      >
+                        <i className={`fi fi-rr-refresh text-xs text-indigo-600 ${isRatesLoading ? 'animate-spin' : ''}`}></i>
+                        <span>Refresh Rates</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                    <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
-                      <span>Gross Export Profit</span>
-                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+22.1%</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* CARD 1: USD / INR */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-indigo-300 hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center space-x-2 font-bold text-slate-800">
+                          <span className="text-lg leading-none">🇺🇸</span>
+                          <span className="text-sm font-extrabold tracking-tight">USD / INR</span>
+                        </div>
+                        <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">US Dollar</span>
+                      </div>
+                      <div className="flex items-baseline space-x-2 pt-1">
+                        <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{liveExchangeRates.USD_INR?.toFixed(2) || '95.92'}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">/ 1 USD</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                        <span className="text-slate-400">Primary Export Currency</span>
+                        <span className="font-mono text-emerald-600 font-bold">$1.00 = ₹{liveExchangeRates.USD_INR?.toFixed(2) || '95.92'}</span>
+                      </div>
                     </div>
-                    <div className="text-2xl font-bold text-indigo-600 font-mono">$412,000</div>
-                    <div className="text-xs text-slate-400">Margin: 22.4%</div>
+
+                    {/* CARD 2: EUR / INR */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-blue-300 hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center space-x-2 font-bold text-slate-800">
+                          <span className="text-lg leading-none">🇪🇺</span>
+                          <span className="text-sm font-extrabold tracking-tight">EUR / INR</span>
+                        </div>
+                        <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Euro</span>
+                      </div>
+                      <div className="flex items-baseline space-x-2 pt-1">
+                        <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{liveExchangeRates.EUR_INR?.toFixed(2) || '109.13'}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">/ 1 EUR</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                        <span className="text-slate-400">EU Buyers & Ports</span>
+                        <span className="font-mono text-emerald-600 font-bold">€1.00 = ₹{liveExchangeRates.EUR_INR?.toFixed(2) || '109.13'}</span>
+                      </div>
+                    </div>
+
+                    {/* CARD 3: GBP / INR */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-purple-300 hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center space-x-2 font-bold text-slate-800">
+                          <span className="text-lg leading-none">🇬🇧</span>
+                          <span className="text-sm font-extrabold tracking-tight">GBP / INR</span>
+                        </div>
+                        <span className="text-[10px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">British Pound</span>
+                      </div>
+                      <div className="flex items-baseline space-x-2 pt-1">
+                        <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{liveExchangeRates.GBP_INR?.toFixed(2) || '126.86'}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">/ 1 GBP</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                        <span className="text-slate-400">UK Commercial Contracts</span>
+                        <span className="font-mono text-emerald-600 font-bold">£1.00 = ₹{liveExchangeRates.GBP_INR?.toFixed(2) || '126.86'}</span>
+                      </div>
+                    </div>
+
+                    {/* CARD 4: AED / INR */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2 hover:border-amber-300 hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center space-x-2 font-bold text-slate-800">
+                          <span className="text-lg leading-none">🇦🇪</span>
+                          <span className="text-sm font-extrabold tracking-tight">AED / INR</span>
+                        </div>
+                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">UAE Dirham</span>
+                      </div>
+                      <div className="flex items-baseline space-x-2 pt-1">
+                        <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{liveExchangeRates.AED_INR?.toFixed(2) || '26.12'}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">/ 1 AED</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                        <span className="text-slate-400">Middle East Trade</span>
+                        <span className="font-mono text-emerald-600 font-bold">1 AED = ₹{liveExchangeRates.AED_INR?.toFixed(2) || '26.12'}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                    <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
-                      <span>Logistics & Freight</span>
-                      <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">-4.2%</span>
+                  {/* QUICK CONVERSION STRIP FOR OTHER TRADE CURRENCIES */}
+                  <div className="flex flex-wrap items-center justify-between text-xs bg-slate-100/70 border border-slate-200 px-4 py-2 rounded-xl text-slate-600 gap-2">
+                    <div className="flex items-center space-x-2 font-bold text-[11px] text-slate-700">
+                      <i className="fi fi-rr-exchange text-xs text-indigo-600"></i>
+                      <span>Other Trade Currencies:</span>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 font-mono">$86,000</div>
-                    <div className="text-xs text-slate-400">Freight & Port Fees</div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-                    <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
-                      <span>Active Containers</span>
-                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">5 Due</span>
+                    <div className="flex items-center flex-wrap gap-4 text-[11px]">
+                      <span className="flex items-center space-x-1">
+                        <span>🇸🇦 SAR (Saudi Riyal):</span>
+                        <strong className="font-mono text-slate-900">₹{liveExchangeRates.SAR_INR?.toFixed(2) || '25.58'}</strong>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="flex items-center space-x-1">
+                        <span>🇨🇳 CNY (Chinese Yuan):</span>
+                        <strong className="font-mono text-slate-900">₹{liveExchangeRates.CNY_INR?.toFixed(2) || '13.52'}</strong>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-[10px] text-slate-400">Auto-refreshed every 30m via Forex Open API</span>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 font-mono">14 Units</div>
-                    <div className="text-xs text-slate-400">Container Fleet</div>
                   </div>
                 </div>
 
