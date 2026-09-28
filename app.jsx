@@ -155,6 +155,27 @@
       return null;
     };
 
+    const ProductImageOrIcon = ({ src, alt = "Product", className = "w-10 h-10 rounded-lg", iconClass = "fa-solid fa-box-open text-base" }) => {
+      const [imgFailed, setImgFailed] = useState(false);
+
+      if (src && !imgFailed) {
+        return (
+          <img
+            src={src}
+            alt={alt}
+            className={`${className} object-cover border border-slate-200 shadow-2xs shrink-0 bg-white`}
+            onError={() => setImgFailed(true)}
+          />
+        );
+      }
+
+      return (
+        <div className={`${className} bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shadow-2xs shrink-0`}>
+          <i className={iconClass}></i>
+        </div>
+      );
+    };
+
     const ProductThumbnailsList = ({ products, masterProductsList = [] }) => {
       if (!products) return <span className="text-slate-400 font-mono text-[11px]">N/A</span>;
 
@@ -181,17 +202,12 @@
 
             return (
               <div key={idx} className="group relative" title={cleanTitle}>
-                {img ? (
-                  <img
-                    src={img}
-                    alt={cleanTitle}
-                    className="w-7 h-7 rounded-lg object-cover border border-slate-200 shadow-2xs group-hover:scale-110 transition-transform bg-white shrink-0"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[9px] group-hover:scale-110 transition-transform shadow-2xs shrink-0 uppercase tracking-tighter">
-                    {cleanTitle.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
+                <ProductImageOrIcon
+                  src={img}
+                  alt={cleanTitle}
+                  className="w-7 h-7 rounded-lg group-hover:scale-110 transition-transform"
+                  iconClass="fa-solid fa-box-open text-[10px]"
+                />
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md whitespace-nowrap z-50 shadow-lg pointer-events-none">
                   {cleanTitle}
                 </div>
@@ -5099,7 +5115,7 @@
               netWeight: calcNet,
               grossWeight: calcGross,
               packageCap: foundProduct ? (foundProduct.packageCapacity || foundProduct.pkgCap || prev.itemData.packageCap) : prev.itemData.packageCap,
-              imgUrl: foundProduct ? (foundProduct.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80') : (prev.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80')
+              imgUrl: foundProduct ? (foundProduct.imgUrl || '') : (prev.itemData.imgUrl || '')
             }
           };
         });
@@ -5849,7 +5865,7 @@
                     sku: `SKU-${item.hsn || Math.floor(1000 + Math.random() * 9000)}`,
                     hsn: item.hsn || '09093100',
                     gstRate: String(item.gstPercent || '18'),
-                    imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+                    imgUrl: '',
                     description: item.productDescription || '',
                     inventoryType: 'Finished Goods',
                     productTag: 'Bulk Uploaded',
@@ -6473,7 +6489,7 @@
             unit: item.unit || 'KG',
             rate: Number(item.price || 0),
             total: Number(item.quantity || 0) * Number(item.price || 0),
-            imgUrl: item.imgUrl || item.img || findImg(item.product) || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'
+            imgUrl: item.imgUrl || item.img || findImg(item.product) || ''
           }));
         }
 
@@ -6509,7 +6525,7 @@
             unit: 'TON',
             rate: 5000,
             total: 500000,
-            imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'
+            imgUrl: ''
           }
         ];
       };
@@ -10844,13 +10860,12 @@
                                     <td className="p-3"><input type="checkbox" /></td>
                                     <td className="p-3">
                                       <div className="flex items-center space-x-2">
-                                        {r.imgUrl ? (
-                                          <img src={r.imgUrl} alt={r.name} className="w-10 h-10 rounded-lg object-cover border border-slate-300 shadow-xs cursor-pointer hover:scale-105 transition-transform" onClick={() => setDriveLightboxAsset({ title: r.name, url: r.imgUrl, category: 'Product Photo' })} />
-                                        ) : (
-                                          <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
-                                            <i className="fi fi-rr-picture text-base"></i>
-                                          </div>
-                                        )}
+                                        <ProductImageOrIcon
+                                          src={r.imgUrl}
+                                          alt={r.name}
+                                          className="w-10 h-10 rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                                          iconClass="fa-solid fa-box-open text-base"
+                                        />
                                         <button onClick={() => { setMasterFormData(r); setEditingRecord(r); setDriveTargetContext('product_settings'); setIsDrivePickerOpen(true); }} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded text-[10px] flex items-center space-x-1 cursor-pointer">
                                           <i className="fi fi-rr-cloud-upload text-[10px]"></i>
                                           <span>Drive</span>
@@ -15588,11 +15603,12 @@
                                 <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-400">{idx + 1}</td>
                                 <td className="py-2.5 px-3">
                                   <div className="flex items-center space-x-3">
-                                    {item.imgUrl ? (
-                                      <img src={item.imgUrl} alt={item.name} className="w-9 h-9 rounded-md object-cover border border-slate-200 shrink-0" />
-                                    ) : (
-                                      <div className="w-9 h-9 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0">📦</div>
-                                    )}
+                                    <ProductImageOrIcon
+                                      src={item.imgUrl}
+                                      alt={item.name}
+                                      className="w-9 h-9 rounded-md"
+                                      iconClass="fa-solid fa-box-open text-xs"
+                                    />
                                     <div>
                                       <p className="font-extrabold text-slate-900">{item.name}</p>
                                       <p className="text-[10px] text-slate-500 italic mt-0.5">{item.desc}</p>
@@ -16326,11 +16342,11 @@
                                   <td className="py-3 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
                                   <td className="py-3 px-3">
                                     <div className="flex items-center space-x-3">
-                                      <img
-                                        src={item.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'}
+                                      <ProductImageOrIcon
+                                        src={item.imgUrl}
                                         alt={item.product || 'Product'}
-                                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs shrink-0 bg-slate-50"
-                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'; }}
+                                        className="w-10 h-10 rounded-lg"
+                                        iconClass="fa-solid fa-box-open text-base"
                                       />
                                       <div>
                                         <span className="font-bold text-slate-900 block">{item.product || 'Unspecified Product'}</span>
@@ -16987,11 +17003,11 @@
                                   <td className="py-3 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
                                   <td className="py-3 px-3">
                                     <div className="flex items-center space-x-3">
-                                      <img
-                                        src={item.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'}
+                                      <ProductImageOrIcon
+                                        src={item.imgUrl}
                                         alt={item.product || 'Product'}
-                                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs shrink-0 bg-slate-50"
-                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'; }}
+                                        className="w-10 h-10 rounded-lg"
+                                        iconClass="fa-solid fa-box-open text-base"
                                       />
                                       <div>
                                         <span className="font-bold text-slate-900 block">{item.product || 'Unspecified Product'}</span>
@@ -19686,12 +19702,13 @@
                             </label>
 
                             <div className="flex items-center space-x-3">
-                              <div className="w-16 h-16 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group">
-                                {masterFormData.imgUrl ? (
-                                  <img src={masterFormData.imgUrl} alt="Product Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                  <i className="fi fi-rr-picture text-2xl text-slate-300"></i>
-                                )}
+                              <div className="w-16 h-16 rounded-xl bg-indigo-50/70 border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group">
+                                <ProductImageOrIcon
+                                  src={masterFormData.imgUrl}
+                                  alt="Product Preview"
+                                  className="w-full h-full rounded-xl"
+                                  iconClass="fa-solid fa-box-open text-2xl"
+                                />
                               </div>
 
                               <div className="flex-1 space-y-1.5">
@@ -20481,15 +20498,15 @@
                       const selectedProd = (masterProducts || []).find(p => p.name === lineItemModalState.itemData.product);
                       const prodName = lineItemModalState.itemData.product;
                       const hasProduct = Boolean(prodName);
-                      const displayImg = selectedProd?.imgUrl || lineItemModalState.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
+                      const displayImg = selectedProd?.imgUrl || lineItemModalState.itemData.imgUrl;
                       
                       return (
                         <div className="flex items-center space-x-3.5 p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
-                          <img
+                          <ProductImageOrIcon
                             src={displayImg}
                             alt={prodName || "Product Template"}
-                            className="w-14 h-14 object-cover rounded-xl border border-slate-200 shadow-2xs shrink-0 bg-slate-50"
-                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'; }}
+                            className="w-14 h-14 rounded-xl"
+                            iconClass="fa-solid fa-box-open text-2xl"
                           />
                           <div className="flex-1 min-w-0">
                             {hasProduct ? (

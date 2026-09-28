@@ -499,6 +499,27 @@ const getProductImage = (itemTitle, masterProductsList = []) => {
   if (clean.includes('cumin') || clean.includes('jeera') || clean.includes('seed') || clean.includes('fennel')) return 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=150&q=80';
   return null;
 };
+const ProductImageOrIcon = ({
+  src,
+  alt = "Product",
+  className = "w-10 h-10 rounded-lg",
+  iconClass = "fa-solid fa-box-open text-base"
+}) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (src && !imgFailed) {
+    return /*#__PURE__*/React.createElement("img", {
+      src: src,
+      alt: alt,
+      className: `${className} object-cover border border-slate-200 shadow-2xs shrink-0 bg-white`,
+      onError: () => setImgFailed(true)
+    });
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: `${className} bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shadow-2xs shrink-0`
+  }, /*#__PURE__*/React.createElement("i", {
+    className: iconClass
+  }));
+};
 const ProductThumbnailsList = ({
   products,
   masterProductsList = []
@@ -529,13 +550,12 @@ const ProductThumbnailsList = ({
       key: idx,
       className: "group relative",
       title: cleanTitle
-    }, img ? /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
       src: img,
       alt: cleanTitle,
-      className: "w-7 h-7 rounded-lg object-cover border border-slate-200 shadow-2xs group-hover:scale-110 transition-transform bg-white shrink-0"
-    }) : /*#__PURE__*/React.createElement("div", {
-      className: "w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[9px] group-hover:scale-110 transition-transform shadow-2xs shrink-0 uppercase tracking-tighter"
-    }, cleanTitle.slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("div", {
+      className: "w-7 h-7 rounded-lg group-hover:scale-110 transition-transform",
+      iconClass: "fa-solid fa-box-open text-[10px]"
+    }), /*#__PURE__*/React.createElement("div", {
       className: "absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md whitespace-nowrap z-50 shadow-lg pointer-events-none"
     }, cleanTitle));
   }), remainingCount > 0 && /*#__PURE__*/React.createElement("span", {
@@ -6668,7 +6688,7 @@ function App() {
           netWeight: calcNet,
           grossWeight: calcGross,
           packageCap: foundProduct ? foundProduct.packageCapacity || foundProduct.pkgCap || prev.itemData.packageCap : prev.itemData.packageCap,
-          imgUrl: foundProduct ? foundProduct.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80' : prev.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'
+          imgUrl: foundProduct ? foundProduct.imgUrl || '' : prev.itemData.imgUrl || ''
         }
       };
     });
@@ -7360,7 +7380,7 @@ function App() {
                 sku: `SKU-${item.hsn || Math.floor(1000 + Math.random() * 9000)}`,
                 hsn: item.hsn || '09093100',
                 gstRate: String(item.gstPercent || '18'),
-                imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+                imgUrl: '',
                 description: item.productDescription || '',
                 inventoryType: 'Finished Goods',
                 productTag: 'Bulk Uploaded',
@@ -7935,7 +7955,7 @@ function App() {
         unit: item.unit || 'KG',
         rate: Number(item.price || 0),
         total: Number(item.quantity || 0) * Number(item.price || 0),
-        imgUrl: item.imgUrl || item.img || findImg(item.product) || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'
+        imgUrl: item.imgUrl || item.img || findImg(item.product) || ''
       }));
     }
     if (qt.products) {
@@ -7968,7 +7988,7 @@ function App() {
       unit: 'TON',
       rate: 5000,
       total: 500000,
-      imgUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80'
+      imgUrl: ''
     }];
   };
   const handleDownloadQuotationPdfFile = qt => {
@@ -12276,20 +12296,12 @@ function App() {
     className: "p-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2"
-  }, r.imgUrl ? /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
     src: r.imgUrl,
     alt: r.name,
-    className: "w-10 h-10 rounded-lg object-cover border border-slate-300 shadow-xs cursor-pointer hover:scale-105 transition-transform",
-    onClick: () => setDriveLightboxAsset({
-      title: r.name,
-      url: r.imgUrl,
-      category: 'Product Photo'
-    })
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400"
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-picture text-base"
-  })), /*#__PURE__*/React.createElement("button", {
+    className: "w-10 h-10 rounded-lg cursor-pointer hover:scale-105 transition-transform",
+    iconClass: "fa-solid fa-box-open text-base"
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setMasterFormData(r);
       setEditingRecord(r);
@@ -17129,13 +17141,12 @@ function App() {
       className: "py-2.5 px-3"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-3"
-    }, item.imgUrl ? /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
       src: item.imgUrl,
       alt: item.name,
-      className: "w-9 h-9 rounded-md object-cover border border-slate-200 shrink-0"
-    }) : /*#__PURE__*/React.createElement("div", {
-      className: "w-9 h-9 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs shrink-0"
-    }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "w-9 h-9 rounded-md",
+      iconClass: "fa-solid fa-box-open text-xs"
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "font-extrabold text-slate-900"
     }, item.name), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-slate-500 italic mt-0.5"
@@ -17960,14 +17971,11 @@ function App() {
       className: "py-3 px-3"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-3"
-    }, /*#__PURE__*/React.createElement("img", {
-      src: item.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+    }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
+      src: item.imgUrl,
       alt: item.product || 'Product',
-      className: "w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs shrink-0 bg-slate-50",
-      onError: e => {
-        e.target.onerror = null;
-        e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
-      }
+      className: "w-10 h-10 rounded-lg",
+      iconClass: "fa-solid fa-box-open text-base"
     }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
       className: "font-bold text-slate-900 block"
     }, item.product || 'Unspecified Product'), /*#__PURE__*/React.createElement("span", {
@@ -18714,14 +18722,11 @@ function App() {
       className: "py-3 px-3"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-3"
-    }, /*#__PURE__*/React.createElement("img", {
-      src: item.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80',
+    }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
+      src: item.imgUrl,
       alt: item.product || 'Product',
-      className: "w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs shrink-0 bg-slate-50",
-      onError: e => {
-        e.target.onerror = null;
-        e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
-      }
+      className: "w-10 h-10 rounded-lg",
+      iconClass: "fa-solid fa-box-open text-base"
     }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
       className: "font-bold text-slate-900 block"
     }, item.product || 'Unspecified Product'), /*#__PURE__*/React.createElement("span", {
@@ -21715,13 +21720,12 @@ function App() {
   }, "Cloudinary Integrated")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "w-16 h-16 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group"
-  }, masterFormData.imgUrl ? /*#__PURE__*/React.createElement("img", {
+    className: "w-16 h-16 rounded-xl bg-indigo-50/70 border border-slate-300 shadow-xs shrink-0 overflow-hidden flex items-center justify-center relative group"
+  }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
     src: masterFormData.imgUrl,
     alt: "Product Preview",
-    className: "w-full h-full object-cover"
-  }) : /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-picture text-2xl text-slate-300"
+    className: "w-full h-full rounded-xl",
+    iconClass: "fa-solid fa-box-open text-2xl"
   })), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 space-y-1.5"
   }, /*#__PURE__*/React.createElement("input", {
@@ -22543,17 +22547,14 @@ function App() {
     const selectedProd = (masterProducts || []).find(p => p.name === lineItemModalState.itemData.product);
     const prodName = lineItemModalState.itemData.product;
     const hasProduct = Boolean(prodName);
-    const displayImg = selectedProd?.imgUrl || lineItemModalState.itemData.imgUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
+    const displayImg = selectedProd?.imgUrl || lineItemModalState.itemData.imgUrl;
     return /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-3.5 p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs"
-    }, /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/React.createElement(ProductImageOrIcon, {
       src: displayImg,
       alt: prodName || "Product Template",
-      className: "w-14 h-14 object-cover rounded-xl border border-slate-200 shadow-2xs shrink-0 bg-slate-50",
-      onError: e => {
-        e.target.onerror = null;
-        e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&auto=format&fit=crop&q=80';
-      }
+      className: "w-14 h-14 rounded-xl",
+      iconClass: "fa-solid fa-box-open text-2xl"
     }), /*#__PURE__*/React.createElement("div", {
       className: "flex-1 min-w-0"
     }, hasProduct ? /*#__PURE__*/React.createElement("div", {
