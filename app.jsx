@@ -2549,32 +2549,61 @@
       // ==========================================
       // CHROME PWA DESKTOP APP CONTROLLER
       // ==========================================
+      const [isStandaloneApp, setIsStandaloneApp] = useState(() => {
+        try {
+          return (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true ||
+            document.referrer.includes('android-app://')
+          );
+        } catch (e) {
+          return false;
+        }
+      });
       const [canInstallPwa, setCanInstallPwa] = useState(false);
+
       React.useEffect(() => {
+        const mq = window.matchMedia('(display-mode: standalone)');
+        const handleMqChange = (e) => setIsStandaloneApp(e.matches);
+        if (mq.addEventListener) {
+          mq.addEventListener('change', handleMqChange);
+        }
+
+        const handleInstalled = () => {
+          setIsStandaloneApp(true);
+          setCanInstallPwa(false);
+          window.__SHIPZ_DEFERRED_PROMPT__ = null;
+        };
+        window.addEventListener('appinstalled', handleInstalled);
+
         const checkInstallable = () => {
-          if (window.__SHIPZ_DEFERRED_PROMPT__) setCanInstallPwa(true);
+          if (!isStandaloneApp && window.__SHIPZ_DEFERRED_PROMPT__) {
+            setCanInstallPwa(true);
+          }
         };
         checkInstallable();
         window.addEventListener('shipz-pwa-installable', checkInstallable);
-        return () => window.removeEventListener('shipz-pwa-installable', checkInstallable);
-      }, []);
+
+        return () => {
+          if (mq.removeEventListener) mq.removeEventListener('change', handleMqChange);
+          window.removeEventListener('appinstalled', handleInstalled);
+          window.removeEventListener('shipz-pwa-installable', checkInstallable);
+        };
+      }, [isStandaloneApp]);
 
       const handleInstallPwaApp = async () => {
+        if (isStandaloneApp) return;
         if (window.__SHIPZ_DEFERRED_PROMPT__) {
           window.__SHIPZ_DEFERRED_PROMPT__.prompt();
           const choice = await window.__SHIPZ_DEFERRED_PROMPT__.userChoice;
           if (choice && choice.outcome === 'accepted') {
             setToastNotice('Shipz Desktop Chrome App installed successfully!');
+            setIsStandaloneApp(true);
             setCanInstallPwa(false);
             window.__SHIPZ_DEFERRED_PROMPT__ = null;
           }
         } else {
-          const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-          if (isStandalone) {
-            alert('Shipz ERP is already running as a standalone Chrome Desktop App!');
-          } else {
-            alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
-          }
+          alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
         }
       };
 
@@ -8372,15 +8401,17 @@
                     <span>Enterprise Security (256-Bit SSL)</span>
                   </span>
                   <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={handleInstallPwaApp}
-                      className="text-[10px] text-indigo-300 hover:text-white font-bold flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-lg border border-white/20 transition-all cursor-pointer"
-                      title="Install Shipz as a standalone Chrome Desktop App"
-                    >
-                      <i className="fi fi-rr-download text-[9px]"></i>
-                      <span>Install App</span>
-                    </button>
+                    {!isStandaloneApp && (
+                      <button
+                        type="button"
+                        onClick={handleInstallPwaApp}
+                        className="text-[10px] text-indigo-300 hover:text-white font-bold flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-lg border border-white/20 transition-all cursor-pointer"
+                        title="Install Shipz as a standalone Chrome Desktop App"
+                      >
+                        <i className="fi fi-rr-download text-[9px]"></i>
+                        <span>Install App</span>
+                      </button>
+                    )}
                     <span className="text-[10px] text-slate-400 font-mono font-medium">v2.5</span>
                   </div>
                 </div>
@@ -8605,19 +8636,21 @@
                 </span>
               </div>
 
-              {/* CHROME PWA DESKTOP APP INSTALL BUTTON */}
-              <button
-                type="button"
-                onClick={handleInstallPwaApp}
-                className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg font-bold text-xs bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600/50 hover:to-purple-600/50 transition-all cursor-pointer group"
-                title="Install Shipz as a standalone Chrome desktop application"
-              >
-                <div className="flex items-center space-x-2">
-                  <i className="fi fi-rr-download text-xs text-indigo-400 group-hover:scale-110 transition-transform"></i>
-                  <span>Install Chrome App</span>
-                </div>
-                <span className="text-[9px] bg-indigo-500/30 px-1.5 py-0.5 rounded text-indigo-200 uppercase font-mono font-bold">PWA</span>
-              </button>
+              {/* CHROME PWA DESKTOP APP INSTALL BUTTON (HIDDEN WHEN RUNNING INSIDE INSTALLED CHROME APP) */}
+              {!isStandaloneApp && (
+                <button
+                  type="button"
+                  onClick={handleInstallPwaApp}
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg font-bold text-xs bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600/50 hover:to-purple-600/50 transition-all cursor-pointer group"
+                  title="Install Shipz as a standalone Chrome desktop application"
+                >
+                  <div className="flex items-center space-x-2">
+                    <i className="fi fi-rr-download text-xs text-indigo-400 group-hover:scale-110 transition-transform"></i>
+                    <span>Install Chrome App</span>
+                  </div>
+                  <span className="text-[9px] bg-indigo-500/30 px-1.5 py-0.5 rounded text-indigo-200 uppercase font-mono font-bold">PWA</span>
+                </button>
+              )}
               <button
                 onClick={() => { setActiveEngine('supportHelpdesk'); setIsMobileSidebarOpen(false); }}
                 className={`w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${activeEngine === 'supportHelpdesk' ? 'sidebar-item-active font-bold text-white bg-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-white/5'

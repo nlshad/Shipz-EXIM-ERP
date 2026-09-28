@@ -2910,31 +2910,52 @@ function App() {
   // ==========================================
   // CHROME PWA DESKTOP APP CONTROLLER
   // ==========================================
+  const [isStandaloneApp, setIsStandaloneApp] = useState(() => {
+    try {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.includes('android-app://');
+    } catch (e) {
+      return false;
+    }
+  });
   const [canInstallPwa, setCanInstallPwa] = useState(false);
   React.useEffect(() => {
+    const mq = window.matchMedia('(display-mode: standalone)');
+    const handleMqChange = e => setIsStandaloneApp(e.matches);
+    if (mq.addEventListener) {
+      mq.addEventListener('change', handleMqChange);
+    }
+    const handleInstalled = () => {
+      setIsStandaloneApp(true);
+      setCanInstallPwa(false);
+      window.__SHIPZ_DEFERRED_PROMPT__ = null;
+    };
+    window.addEventListener('appinstalled', handleInstalled);
     const checkInstallable = () => {
-      if (window.__SHIPZ_DEFERRED_PROMPT__) setCanInstallPwa(true);
+      if (!isStandaloneApp && window.__SHIPZ_DEFERRED_PROMPT__) {
+        setCanInstallPwa(true);
+      }
     };
     checkInstallable();
     window.addEventListener('shipz-pwa-installable', checkInstallable);
-    return () => window.removeEventListener('shipz-pwa-installable', checkInstallable);
-  }, []);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', handleMqChange);
+      window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener('shipz-pwa-installable', checkInstallable);
+    };
+  }, [isStandaloneApp]);
   const handleInstallPwaApp = async () => {
+    if (isStandaloneApp) return;
     if (window.__SHIPZ_DEFERRED_PROMPT__) {
       window.__SHIPZ_DEFERRED_PROMPT__.prompt();
       const choice = await window.__SHIPZ_DEFERRED_PROMPT__.userChoice;
       if (choice && choice.outcome === 'accepted') {
         setToastNotice('Shipz Desktop Chrome App installed successfully!');
+        setIsStandaloneApp(true);
         setCanInstallPwa(false);
         window.__SHIPZ_DEFERRED_PROMPT__ = null;
       }
     } else {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      if (isStandalone) {
-        alert('Shipz ERP is already running as a standalone Chrome Desktop App!');
-      } else {
-        alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
-      }
+      alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
     }
   };
   const handleLoginSubmit = e => {
@@ -9905,7 +9926,7 @@ function App() {
       className: "fi fi-rr-shield-check text-xs text-emerald-400"
     }), /*#__PURE__*/React.createElement("span", null, "Enterprise Security (256-Bit SSL)")), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, !isStandaloneApp && /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: handleInstallPwaApp,
       className: "text-[10px] text-indigo-300 hover:text-white font-bold flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-lg border border-white/20 transition-all cursor-pointer",
@@ -10122,7 +10143,7 @@ function App() {
     className: "fi fi-rr-settings text-sm text-slate-400 flex items-center"
   }), /*#__PURE__*/React.createElement("span", null, "Settings")), /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] font-mono text-slate-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap ml-1 shadow-2xs"
-  }, "v2.7")), /*#__PURE__*/React.createElement("button", {
+  }, "v2.7")), !isStandaloneApp && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: handleInstallPwaApp,
     className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg font-bold text-xs bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600/50 hover:to-purple-600/50 transition-all cursor-pointer group",
