@@ -2623,6 +2623,289 @@ function App() {
   });
   const [loginError, setLoginError] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // ==========================================
+  // ENTERPRISE PASSWORD RESET CONTROLLER
+  // ==========================================
+  const [resetPasswordModal, setResetPasswordModal] = useState({
+    isOpen: false,
+    userId: null,
+    targetEmail: '',
+    targetName: '',
+    newPassword: '',
+    confirmPassword: '',
+    showPassword: false,
+    isAdminReset: false,
+    errorMsg: '',
+    successMsg: '',
+    isSubmitting: false
+  });
+  const handleOpenForgotPassword = () => {
+    setResetPasswordModal({
+      isOpen: true,
+      userId: null,
+      targetEmail: loginFormData.email || '',
+      targetName: '',
+      newPassword: '',
+      confirmPassword: '',
+      showPassword: false,
+      isAdminReset: false,
+      errorMsg: '',
+      successMsg: '',
+      isSubmitting: false
+    });
+  };
+  const handleOpenAdminPasswordReset = user => {
+    if (!user) return;
+    setResetPasswordModal({
+      isOpen: true,
+      userId: user.id,
+      targetEmail: user.email || '',
+      targetName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+      newPassword: '',
+      confirmPassword: '',
+      showPassword: true,
+      isAdminReset: true,
+      errorMsg: '',
+      successMsg: '',
+      isSubmitting: false
+    });
+  };
+  const handleGenerateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let generated = '';
+    for (let i = 0; i < 10; i++) {
+      generated += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setResetPasswordModal(prev => ({
+      ...prev,
+      newPassword: generated,
+      confirmPassword: generated,
+      showPassword: true,
+      errorMsg: ''
+    }));
+  };
+  const handleExecutePasswordReset = e => {
+    if (e) e.preventDefault();
+    setResetPasswordModal(prev => ({
+      ...prev,
+      errorMsg: '',
+      successMsg: ''
+    }));
+    const cleanEmail = (resetPasswordModal.targetEmail || '').trim().toLowerCase();
+    const newPass = (resetPasswordModal.newPassword || '').trim();
+    const confPass = (resetPasswordModal.confirmPassword || '').trim();
+    if (!cleanEmail) {
+      setResetPasswordModal(prev => ({
+        ...prev,
+        errorMsg: 'Please enter your registered work email address.'
+      }));
+      return;
+    }
+    const matchedUser = systemUsers.find(u => resetPasswordModal.userId && u.id === resetPasswordModal.userId || u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (!matchedUser) {
+      setResetPasswordModal(prev => ({
+        ...prev,
+        errorMsg: `No active account found for email "${cleanEmail}". Please check spelling.`
+      }));
+      return;
+    }
+    if (!newPass || newPass.length < 6) {
+      setResetPasswordModal(prev => ({
+        ...prev,
+        errorMsg: 'New password must be at least 6 characters long.'
+      }));
+      return;
+    }
+    if (newPass !== confPass) {
+      setResetPasswordModal(prev => ({
+        ...prev,
+        errorMsg: 'Passwords do not match! Please re-type to confirm.'
+      }));
+      return;
+    }
+    setResetPasswordModal(prev => ({
+      ...prev,
+      isSubmitting: true
+    }));
+
+    // Update in state, localStorage, and MySQL backend
+    setSystemUsers(prev => {
+      const updated = prev.map(u => {
+        if (u.id === matchedUser.id || u.email && u.email.trim().toLowerCase() === cleanEmail) {
+          return {
+            ...u,
+            password: newPass
+          };
+        }
+        return u;
+      });
+      try {
+        localStorage.setItem('shipz_system_users_v2', JSON.stringify(updated));
+      } catch (err) {}
+      fetch(getApiUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          key: 'shipz_system_users_v2',
+          data: updated
+        })
+      }).catch(() => {});
+      return updated;
+    });
+
+    // Also update loginFormData so user can log in immediately
+    setLoginFormData(prev => ({
+      ...prev,
+      email: matchedUser.email,
+      password: newPass
+    }));
+    setResetPasswordModal(prev => ({
+      ...prev,
+      isSubmitting: false,
+      successMsg: `Password for ${matchedUser.first_name || 'Account'} (${matchedUser.email}) has been successfully updated! You can now sign in.`
+    }));
+    setToastNotice(`Password updated for ${matchedUser.email}`);
+    setTimeout(() => setToastNotice(null), 4000);
+  };
+  const renderResetPasswordModal = () => {
+    if (!resetPasswordModal.isOpen) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fadeIn"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-slate-900 border border-white/20 text-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setResetPasswordModal(prev => ({
+        ...prev,
+        isOpen: false
+      })),
+      className: "absolute top-5 right-5 text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer transition-colors"
+    }, "\u2715"), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center text-lg mb-2"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-key"
+    })), /*#__PURE__*/React.createElement("h3", {
+      className: "text-xl font-black text-white tracking-tight"
+    }, resetPasswordModal.isAdminReset ? `Reset Password: ${resetPasswordModal.targetName}` : 'Reset Account Password'), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-300"
+    }, resetPasswordModal.isAdminReset ? 'Set a new password for this team member below.' : 'Enter your registered work email to verify your account and set a new password.')), resetPasswordModal.errorMsg && /*#__PURE__*/React.createElement("div", {
+      className: "p-3 bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs rounded-xl flex items-start space-x-2 animate-shake"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-triangle-warning text-sm shrink-0 mt-0.5 text-rose-400"
+    }), /*#__PURE__*/React.createElement("span", null, resetPasswordModal.errorMsg)), resetPasswordModal.successMsg ? /*#__PURE__*/React.createElement("div", {
+      className: "space-y-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "p-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-xs rounded-xl flex items-start space-x-2.5"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-check-circle text-base shrink-0 mt-0.5 text-emerald-400"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-1"
+    }, /*#__PURE__*/React.createElement("strong", {
+      className: "block text-emerald-100 font-bold"
+    }, "Password Successfully Updated!"), /*#__PURE__*/React.createElement("span", null, resetPasswordModal.successMsg))), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setResetPasswordModal(prev => ({
+        ...prev,
+        isOpen: false
+      })),
+      className: "w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg cursor-pointer"
+    }, resetPasswordModal.isAdminReset ? 'Done' : 'Back to Sign In (Auto-Filled)')) : /*#__PURE__*/React.createElement("form", {
+      onSubmit: handleExecutePasswordReset,
+      className: "space-y-4 text-left"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1"
+    }, "Work Email Address ", /*#__PURE__*/React.createElement("span", {
+      className: "text-rose-400"
+    }, "*")), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-envelope absolute left-3.5 top-2.5 text-slate-400 text-xs"
+    }), /*#__PURE__*/React.createElement("input", {
+      type: "email",
+      placeholder: "e.g. jafer@mglobalindia.com",
+      value: resetPasswordModal.targetEmail,
+      readOnly: resetPasswordModal.isAdminReset,
+      onChange: e => setResetPasswordModal(prev => ({
+        ...prev,
+        targetEmail: e.target.value
+      })),
+      className: `w-full bg-slate-800/80 border border-white/20 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 font-bold ${resetPasswordModal.isAdminReset ? 'opacity-80 cursor-not-allowed' : ''}`,
+      required: true
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between mb-1"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-[11px] font-bold text-slate-300 uppercase tracking-wider"
+    }, "New Password ", /*#__PURE__*/React.createElement("span", {
+      className: "text-rose-400"
+    }, "*")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleGenerateRandomPassword,
+      className: "text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer"
+    }, "\u26A1 Generate Password")), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-lock absolute left-3.5 top-2.5 text-slate-400 text-xs"
+    }), /*#__PURE__*/React.createElement("input", {
+      type: resetPasswordModal.showPassword ? 'text' : 'password',
+      placeholder: "At least 6 characters...",
+      value: resetPasswordModal.newPassword,
+      onChange: e => setResetPasswordModal(prev => ({
+        ...prev,
+        newPassword: e.target.value
+      })),
+      className: "w-full bg-slate-800/80 border border-white/20 rounded-xl pl-9 pr-10 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 font-mono font-bold",
+      required: true
+    }), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setResetPasswordModal(prev => ({
+        ...prev,
+        showPassword: !prev.showPassword
+      })),
+      className: "absolute right-3 top-2.5 text-slate-400 hover:text-white cursor-pointer"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: `fi fi-rr-${resetPasswordModal.showPassword ? 'eye-crossed' : 'eye'} text-xs`
+    })))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1"
+    }, "Confirm New Password ", /*#__PURE__*/React.createElement("span", {
+      className: "text-rose-400"
+    }, "*")), /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-shield-check absolute left-3.5 top-2.5 text-slate-400 text-xs"
+    }), /*#__PURE__*/React.createElement("input", {
+      type: resetPasswordModal.showPassword ? 'text' : 'password',
+      placeholder: "Re-type new password...",
+      value: resetPasswordModal.confirmPassword,
+      onChange: e => setResetPasswordModal(prev => ({
+        ...prev,
+        confirmPassword: e.target.value
+      })),
+      className: "w-full bg-slate-800/80 border border-white/20 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 font-mono font-bold",
+      required: true
+    })), resetPasswordModal.confirmPassword && /*#__PURE__*/React.createElement("p", {
+      className: `text-[10px] font-bold mt-1 ${resetPasswordModal.newPassword === resetPasswordModal.confirmPassword ? 'text-emerald-400' : 'text-rose-400'}`
+    }, resetPasswordModal.newPassword === resetPasswordModal.confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match')), /*#__PURE__*/React.createElement("div", {
+      className: "pt-2 flex items-center space-x-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setResetPasswordModal(prev => ({
+        ...prev,
+        isOpen: false
+      })),
+      className: "w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+    }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+      type: "submit",
+      disabled: resetPasswordModal.isSubmitting,
+      className: "w-2/3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-check text-xs"
+    }), /*#__PURE__*/React.createElement("span", null, resetPasswordModal.isSubmitting ? 'Updating...' : 'Save New Password'))))));
+  };
   const handleLoginSubmit = e => {
     if (e) e.preventDefault();
     setLoginError('');
@@ -9656,13 +9939,10 @@ function App() {
         rememberMe: e.target.checked
       }),
       className: "rounded border-white/20 bg-slate-900/60 text-indigo-500 focus:ring-0"
-    }), /*#__PURE__*/React.createElement("span", null, "Remember session")), /*#__PURE__*/React.createElement("a", {
-      href: "#forgot",
-      onClick: e => {
-        e.preventDefault();
-        alert('Please contact your EXIM Administrator (admin@shipzerp.com) for password reset.');
-      },
-      className: "text-indigo-300 hover:text-indigo-200"
+    }), /*#__PURE__*/React.createElement("span", null, "Remember session")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleOpenForgotPassword,
+      className: "text-indigo-300 hover:text-white underline cursor-pointer text-xs transition-colors"
     }, "Forgot Password?")), /*#__PURE__*/React.createElement("button", {
       type: "submit",
       className: "w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer"
@@ -9676,7 +9956,7 @@ function App() {
       className: "text-[11px] text-slate-400 flex items-center justify-center space-x-1.5"
     }, /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-lock text-[10px] text-slate-500"
-    }), /*#__PURE__*/React.createElement("span", null, "Protected by MGlobal Enterprise Security Protocol"))))));
+    }), /*#__PURE__*/React.createElement("span", null, "Protected by MGlobal Enterprise Security Protocol"))))), renderResetPasswordModal());
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row h-screen bg-[#EEF4FF] overflow-hidden relative"
@@ -11133,7 +11413,7 @@ function App() {
     className: "fi fi-rr-user-check text-xs text-emerald-600"
   }), /*#__PURE__*/React.createElement("span", null, "Toggle Salesperson")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      alert(`Password reset link dispatched to ${u.email}`);
+      handleOpenAdminPasswordReset(u);
       setUserActionMenuId(null);
     },
     className: "w-full px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold"
@@ -15600,7 +15880,7 @@ function App() {
     className: "fi fi-rr-user-check text-xs text-emerald-600"
   }), /*#__PURE__*/React.createElement("span", null, "Toggle Salesperson")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      alert(`Password reset link dispatched to ${u.email}`);
+      handleOpenAdminPasswordReset(u);
       setUserActionMenuId(null);
     },
     className: "w-full px-3 py-1.5 hover:bg-slate-100 flex items-center space-x-2 font-bold"
@@ -24821,7 +25101,7 @@ function App() {
       fontFamily: "'Inter', Arial, sans-serif",
       fontVariantNumeric: 'tabular-nums'
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCDE ", labelPrinterData.exporterPhone), /*#__PURE__*/React.createElement("span", null, "\uD83C\uDF10 ", labelPrinterData.exporterWebsite))))));
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCDE ", labelPrinterData.exporterPhone), /*#__PURE__*/React.createElement("span", null, "\uD83C\uDF10 ", labelPrinterData.exporterWebsite))))), renderResetPasswordModal());
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
 window.__SHIPZ_LOADED__ = true;
