@@ -1,5 +1,9 @@
 const {
-  useState
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef
 } = React;
 const PRE_SHIPMENT_DOCS = [{
   id: 'drawback',
@@ -5451,7 +5455,7 @@ function App() {
   const [toastNotice, setToastNotice] = useState(null);
   const [confirmCloseModal, setConfirmCloseModal] = useState(false);
   const [themeAlertModal, setThemeAlertModal] = useState(null);
-  const showThemeAlert = useCallback(({
+  const showThemeAlert = ({
     type = 'info',
     title = 'Notice',
     message,
@@ -5474,7 +5478,7 @@ function App() {
       cancelText,
       onCancel
     });
-  }, []);
+  };
 
   // ShipzyDrive Assets State & Drive Image Picker Modal State
   const [isDrivePickerOpen, setIsDrivePickerOpen] = useState(false);

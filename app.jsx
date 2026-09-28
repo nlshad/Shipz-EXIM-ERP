@@ -1,5 +1,5 @@
 
-    const { useState } = React;
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
     const PRE_SHIPMENT_DOCS = [
       { id: 'drawback', label: 'Drawback Declaration (APPENDIX-III)', category: 'Incentives' },
@@ -4298,7 +4298,7 @@
       const [confirmCloseModal, setConfirmCloseModal] = useState(false);
       const [themeAlertModal, setThemeAlertModal] = useState(null);
 
-      const showThemeAlert = useCallback(({ type = 'info', title = 'Notice', message, subtitle = '', badge = '', confirmText = 'OK', onConfirm = null, cancelText = '', onCancel = null }) => {
+      const showThemeAlert = ({ type = 'info', title = 'Notice', message, subtitle = '', badge = '', confirmText = 'OK', onConfirm = null, cancelText = '', onCancel = null }) => {
         setThemeAlertModal({
           isOpen: true,
           type,
@@ -4311,7 +4311,7 @@
           cancelText,
           onCancel
         });
-      }, []);
+      };
 
       // ShipzyDrive Assets State & Drive Image Picker Modal State
       const [isDrivePickerOpen, setIsDrivePickerOpen] = useState(false);
