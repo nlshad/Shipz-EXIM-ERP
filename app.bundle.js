@@ -2605,13 +2605,7 @@ function App() {
   }, [recentActivities]);
 
   // AUTHENTICATION SESSION STATE & HANDLERS
-  const [isProductionSecurityMode, setIsProductionSecurityMode] = useState(() => {
-    try {
-      return localStorage.setItem ? localStorage.getItem('shipz_prod_security_mode') === 'true' : false;
-    } catch (e) {
-      return false;
-    }
-  });
+  const [isProductionSecurityMode, setIsProductionSecurityMode] = useState(true);
   const [isSessionLocked, setIsSessionLocked] = useState(false);
   const [lockPasswordInput, setLockPasswordInput] = useState('');
   const [lockPasswordError, setLockPasswordError] = useState('');
@@ -2623,8 +2617,8 @@ function App() {
     }
   });
   const [loginFormData, setLoginFormData] = useState({
-    email: 'jafer@mglobalindia.com',
-    password: 'password123',
+    email: '',
+    password: '',
     rememberMe: true
   });
   const [loginError, setLoginError] = useState('');
@@ -9592,15 +9586,12 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between"
     }, /*#__PURE__*/React.createElement("span", {
-      className: `px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center space-x-1 border ${isProductionSecurityMode ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`
+      className: "px-3 py-1 rounded-full text-[10px] font-bold flex items-center space-x-1.5 border bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
     }, /*#__PURE__*/React.createElement("i", {
-      className: `fi fi-rr-${isProductionSecurityMode ? 'lock' : 'bolt'} text-xs`
-    }), /*#__PURE__*/React.createElement("span", null, isProductionSecurityMode ? 'Production Security Mode Active' : 'Demo Testing Mode Active')), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: handleToggleProductionSecurityMode,
-      className: "text-[10px] text-slate-400 hover:text-white underline font-semibold cursor-pointer",
-      title: "Toggle Security Policy Mode (Super Admin)"
-    }, isProductionSecurityMode ? 'Switch to Demo' : 'Enable Production Mode')), /*#__PURE__*/React.createElement("div", {
+      className: "fi fi-rr-shield-check text-xs text-emerald-400"
+    }), /*#__PURE__*/React.createElement("span", null, "Enterprise Security (256-Bit SSL)")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-400 font-mono font-medium"
+    }, "v2.5 Production")), /*#__PURE__*/React.createElement("div", {
       className: "text-center space-y-1"
     }, /*#__PURE__*/React.createElement("h2", {
       className: "text-2xl font-bold text-white tracking-tight"
@@ -9680,76 +9671,12 @@ function App() {
     }), /*#__PURE__*/React.createElement("span", null, "Sign In to Workspace"), /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-arrow-right text-xs"
     }))), /*#__PURE__*/React.createElement("div", {
-      className: "pt-3 border-t border-white/10 space-y-2.5"
-    }, isProductionSecurityMode ? /*#__PURE__*/React.createElement("div", {
-      className: "p-3 bg-indigo-950/60 border border-indigo-500/30 rounded-xl text-center space-y-1"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-center space-x-1.5 text-xs font-bold text-indigo-300"
+      className: "pt-3 border-t border-white/10 text-center"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-slate-400 flex items-center justify-center space-x-1.5"
     }, /*#__PURE__*/React.createElement("i", {
-      className: "fi fi-rr-shield-check text-emerald-400"
-    }), /*#__PURE__*/React.createElement("span", null, "Production Security Directive Active")), /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-slate-300 leading-snug"
-    }, "Quick 1-Click Demo sign-in is disabled. Enter your verified work email address and password above to authenticate.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      className: "text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center"
-    }, "\u26A1 Quick Demo One-Click Sign In"), /*#__PURE__*/React.createElement("div", {
-      className: "grid grid-cols-2 gap-2"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => handleQuickDemoLogin('usr-001'),
-      className: "p-2 bg-white/5 hover:bg-white/15 border border-white/10 rounded-xl text-left transition-all group cursor-pointer"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-2"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "w-2 h-2 rounded-full bg-emerald-400"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "truncate"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "font-bold text-xs text-white group-hover:text-indigo-300"
-    }, "Jafer Avaran"), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400 truncate"
-    }, "EXIM Lead")))), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => handleQuickDemoLogin('usr-003'),
-      className: "p-2 bg-white/5 hover:bg-white/15 border border-white/10 rounded-xl text-left transition-all group cursor-pointer"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-2"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "w-2 h-2 rounded-full bg-indigo-400"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "truncate"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "font-bold text-xs text-white group-hover:text-indigo-300"
-    }, "Super Admin"), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400 truncate"
-    }, "Administrator")))), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => handleQuickDemoLogin('usr-004'),
-      className: "p-2 bg-white/5 hover:bg-white/15 border border-white/10 rounded-xl text-left transition-all group cursor-pointer"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-2"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "w-2 h-2 rounded-full bg-purple-400"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "truncate"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "font-bold text-xs text-white group-hover:text-indigo-300"
-    }, "Ananya Patel"), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400 truncate"
-    }, "Sales Exec")))), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => handleQuickDemoLogin('usr-002'),
-      className: "p-2 bg-white/5 hover:bg-white/15 border border-white/10 rounded-xl text-left transition-all group cursor-pointer"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-2"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "w-2 h-2 rounded-full bg-amber-400"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "truncate"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "font-bold text-xs text-white group-hover:text-indigo-300"
-    }, "Rajesh Sharma"), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400 truncate"
-    }, "Finance Lead"))))))))));
+      className: "fi fi-rr-lock text-[10px] text-slate-500"
+    }), /*#__PURE__*/React.createElement("span", null, "Protected by MGlobal Enterprise Security Protocol"))))));
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row h-screen bg-[#EEF4FF] overflow-hidden relative"
