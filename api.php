@@ -511,7 +511,7 @@ if ($requestMethod === 'GET') {
 function buildFullBackupData($pdo, $DB_HOST, $DB_NAME) {
     $backup = [
         'schema_version'   => '1.0',
-        'app_name'         => 'Shipz EXIM ERP',
+        'app_name'         => 'MGlobal Operations',
         'backup_timestamp' => date('c'),
         'server'           => [
             'host'     => $DB_HOST,

@@ -1,5 +1,5 @@
-// Shipz EXIM ERP - Enterprise Service Worker
-const CACHE_NAME = 'shipz-erp-v1';
+// MGlobal Operations - Enterprise Service Worker
+const CACHE_NAME = 'mglobal-operations-v1';
 
 const STATIC_ASSETS = [
   './',

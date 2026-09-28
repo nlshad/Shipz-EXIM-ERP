@@ -1,7 +1,7 @@
 {
-  "name": "Shipz EXIM ERP",
-  "short_name": "Shipz ERP",
-  "description": "Integrated Export-Import ERP & Documentation Platform - MGlobal India",
+  "name": "MGlobal Operations",
+  "short_name": "MGlobal Operations",
+  "description": "Integrated Export-Import ERP & Documentation Platform - MGlobal Operations",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

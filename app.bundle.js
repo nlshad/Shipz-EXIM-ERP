@@ -1814,7 +1814,7 @@ function App() {
     id: 'msg-1',
     sender: 'bot',
     time: 'Just now',
-    text: 'Hello! I am your ExportFlow AI Assistant 🤖. Ask me anything about creating Quotations, Proforma Invoices, Shipping Docs, or database setup. For urgent support, call +91 9747331641!'
+    text: 'Hello! I am your MGlobal Operations Assistant 🤖. Ask me anything about creating Quotations, Proforma Invoices, Shipping Docs, or database setup. For urgent support, call +91 9747331641!'
   }]));
   const [chatInput, setChatInput] = useState('');
   const [isChatTyping, setIsChatTyping] = useState(false);
@@ -1866,9 +1866,9 @@ function App() {
       } else if (lower.includes('bl') || lower.includes('lading') || lower.includes('bill of lading')) {
         botReplyText = "To generate a BL Draft (Bill of Lading), click 'BL Draft' under Export Documents. Select an existing Proforma Invoice to import Vessel Name, Voyage No, Container Movement, and Notify Party automatically.";
       } else if (lower.includes('packing') || lower.includes('pkl')) {
-        botReplyText = "Select 'Packing List' under Export Documents. ExportFlow ERP automatically calculates Total Net/Gross Weights, Package Types, Container Volumes, and Export Package Marks!";
+        botReplyText = "Select 'Packing List' under Export Documents. MGlobal Operations automatically calculates Total Net/Gross Weights, Package Types, Container Volumes, and Export Package Marks!";
       } else if (lower.includes('database') || lower.includes('mysql') || lower.includes('xampp') || lower.includes('lan') || lower.includes('server')) {
-        botReplyText = "ExportFlow ERP connects directly to your local XAMPP MySQL database (`shipz_db`) via `api.php`. If you are on a LAN office network, access `http://<HOST_LOCAL_IP>/Shipz/index.html` on any PC to sync data live in real time!";
+        botReplyText = "MGlobal Operations connects directly to your live MySQL database (`shipz_db`) via `api.php`. If you are on a LAN office network, access `http://<HOST_LOCAL_IP>/Shipz/index.html` on any PC to sync data live in real time!";
       } else if (lower.includes('contact') || lower.includes('phone') || lower.includes('number') || lower.includes('call') || lower.includes('help') || lower.includes('support') || lower.includes('hotline')) {
         botReplyText = "Our EXIM Technical Help Desk hotline is **+91 9747331641**. You can also launch a direct WhatsApp chat by clicking the WhatsApp button on the Support page!";
       } else if (lower.includes('consignee') || lower.includes('customer') || lower.includes('product') || lower.includes('master')) {
@@ -1876,7 +1876,7 @@ function App() {
       } else if (lower.includes('logo') || lower.includes('seal') || lower.includes('signature') || lower.includes('letterhead')) {
         botReplyText = "Company Branding, Signatures, Seals, and Letterheads can be configured under 'Settings' > 'Company Info'. Upload your CDN or local images to embed them on all generated PDFs!";
       } else {
-        botReplyText = `Thank you for reaching out! Regarding "${queryText}", ExportFlow ERP helps you manage full EXIM workflows from Quotation -> PI -> BL Draft -> Packing List -> Payments. For immediate assistance, call our Helpdesk at +91 9747331641.`;
+        botReplyText = `Thank you for reaching out! Regarding "${queryText}", MGlobal Operations helps you manage full EXIM workflows from Quotation -> PI -> BL Draft -> Packing List -> Payments. For immediate assistance, call our Helpdesk at +91 9747331641.`;
       }
       const botMsg = {
         id: `msg-${Date.now() + 1}`,
@@ -2949,13 +2949,13 @@ function App() {
       window.__SHIPZ_DEFERRED_PROMPT__.prompt();
       const choice = await window.__SHIPZ_DEFERRED_PROMPT__.userChoice;
       if (choice && choice.outcome === 'accepted') {
-        setToastNotice('Shipz Desktop Chrome App installed successfully!');
+        setToastNotice('MGlobal Operations Desktop Chrome App installed successfully!');
         setIsStandaloneApp(true);
         setCanInstallPwa(false);
         window.__SHIPZ_DEFERRED_PROMPT__ = null;
       }
     } else {
-      alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
+      alert('To install MGlobal Operations as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install MGlobal Operations" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nMGlobal Operations will launch in its own dedicated, borderless desktop window with a desktop icon.');
     }
   };
   const handleLoginSubmit = e => {
@@ -9876,7 +9876,7 @@ function App() {
       className: "inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 rounded-full text-indigo-300 text-xs font-semibold"
     }, /*#__PURE__*/React.createElement("span", {
       className: "w-2 h-2 rounded-full bg-emerald-400 animate-pulse"
-    }), /*#__PURE__*/React.createElement("span", null, "ExportFlow ERP \u2022 Enterprise EXIM Suite")), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("span", null, "MGlobal Operations \u2022 Enterprise EXIM Suite")), /*#__PURE__*/React.createElement("div", {
       className: "space-y-2"
     }, /*#__PURE__*/React.createElement("h1", {
       className: "text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"
@@ -9930,7 +9930,7 @@ function App() {
       type: "button",
       onClick: handleInstallPwaApp,
       className: "text-[10px] text-indigo-300 hover:text-white font-bold flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-lg border border-white/20 transition-all cursor-pointer",
-      title: "Install Shipz as a standalone Chrome Desktop App"
+      title: "Install MGlobal Operations as a standalone Chrome Desktop App"
     }, /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-download text-[9px]"
     }), /*#__PURE__*/React.createElement("span", null, "Install App")), /*#__PURE__*/React.createElement("span", {
@@ -10044,7 +10044,7 @@ function App() {
     className: "max-h-7 object-contain"
   }) : /*#__PURE__*/React.createElement("span", {
     className: "font-black text-sm text-white tracking-tight"
-  }, "EXPORTFLOW ERP"))), /*#__PURE__*/React.createElement("div", {
+  }, "MGLOBAL OPERATIONS"))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30"
@@ -10073,7 +10073,7 @@ function App() {
     className: "cursor-pointer"
   }, /*#__PURE__*/React.createElement("h1", {
     className: "text-sm font-black text-white tracking-tight leading-tight truncate max-w-[180px]"
-  }, masterAddresses?.[0]?.label || 'ExportFlow ERP'), /*#__PURE__*/React.createElement("p", {
+  }, masterAddresses?.[0]?.label || 'MGlobal Operations'), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5"
   }, "EXIM Logistics")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setIsMobileSidebarOpen(false),
@@ -10147,7 +10147,7 @@ function App() {
     type: "button",
     onClick: handleInstallPwaApp,
     className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg font-bold text-xs bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600/50 hover:to-purple-600/50 transition-all cursor-pointer group",
-    title: "Install Shipz as a standalone Chrome desktop application"
+    title: "Install MGlobal Operations as a standalone Chrome desktop application"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2"
   }, /*#__PURE__*/React.createElement("i", {
@@ -10445,7 +10445,7 @@ function App() {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 text-xs font-semibold text-indigo-600"
-  }, /*#__PURE__*/React.createElement("span", null, "ExportFlow ERP"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "MGlobal Operations"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500 font-medium"
   }, "Dashboard Overview")), /*#__PURE__*/React.createElement("h2", {
     className: "text-2xl font-bold text-slate-900 mt-1"
@@ -10686,7 +10686,7 @@ function App() {
     className: "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 text-xs font-bold text-indigo-600 uppercase tracking-wider"
-  }, /*#__PURE__*/React.createElement("span", null, "ExportFlow ERP"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "MGlobal Operations"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-900"
   }, "Settings Menu")), /*#__PURE__*/React.createElement("h2", {
     className: "text-xl font-black text-slate-900 flex items-center space-x-2 mt-0.5"
@@ -13012,7 +13012,7 @@ function App() {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 text-xs font-bold text-indigo-600 uppercase tracking-wider"
-  }, /*#__PURE__*/React.createElement("span", null, "ExportFlow ERP"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "MGlobal Operations"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500 font-medium"
   }, "Support Center")), /*#__PURE__*/React.createElement("h2", {
     className: "text-2xl font-black text-slate-900 mt-1 flex items-center space-x-2"
@@ -13129,11 +13129,11 @@ function App() {
     className: "w-9 h-9 rounded-xl bg-indigo-500/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 text-lg shadow-sm"
   }, "\uD83E\uDD16"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "font-extrabold text-sm text-white flex items-center space-x-2"
-  }, /*#__PURE__*/React.createElement("span", null, "ExportFlow AI Assistant"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "MGlobal Operations AI Assistant"), /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full bg-emerald-400 animate-pulse"
   })), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-slate-300 font-medium"
-  }, "Ask me anything about ExportFlow ERP features, documents & database"))), /*#__PURE__*/React.createElement("span", {
+  }, "Ask me anything about MGlobal Operations features, documents & database"))), /*#__PURE__*/React.createElement("span", {
     className: "px-2.5 py-1 bg-white/10 text-indigo-200 rounded-lg text-[10px] font-bold border border-white/10"
   }, "AI ERP v3.2")), /*#__PURE__*/React.createElement("div", {
     className: "p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-1.5 shrink-0"
@@ -13162,7 +13162,7 @@ function App() {
     className: "flex items-center justify-between space-x-4 mb-1 border-b border-black/5 pb-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-extrabold text-[10px] opacity-75"
-  }, msg.sender === 'user' ? 'You' : 'ExportFlow AI Bot 🤖'), /*#__PURE__*/React.createElement("span", {
+  }, msg.sender === 'user' ? 'You' : 'MGlobal Operations AI Bot 🤖'), /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] opacity-60 font-mono"
   }, msg.time)), /*#__PURE__*/React.createElement("div", {
     className: "leading-relaxed whitespace-pre-wrap"
