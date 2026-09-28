@@ -6573,6 +6573,8 @@ function App() {
       const totalPkgs = parseInt(findField(normObj, ['totalpackages', 'totalpkgs', 'packages', 'pkgs', 'boxes']), 10) || cleanQty;
       const cbmVal = cleanNumber(findField(normObj, ['cbm', 'dimensionm3', 'volumem3', 'volume', 'dimension'])) || (existingMaster ? cleanNumber(existingMaster.dimensionM3 || existingMaster.cbm) : 0.045) || 0.045;
       const pDesc = findField(normObj, ['productdescription', 'description', 'details', 'specs', 'specification']) || (existingMaster ? existingMaster.description : '') || '';
+      const profitPct = cleanNumber(findField(normObj, ['profitmargin', 'profitpercent', 'profitpct', 'profit', 'margin', 'markup'])) || 0;
+      const gstPct = cleanNumber(findField(normObj, ['gstrate', 'gstpercent', 'gstpct', 'gst', 'taxrate', 'tax'])) || 0;
       normalizedRows.push({
         id: `bulk-li-${Date.now()}-${idx}`,
         product: cleanName,
@@ -6584,7 +6586,7 @@ function App() {
         priceInr: inrPrice > 0 ? String(inrPrice) : '',
         profitPercent: String(profitPct),
         gstPercent: String(gstPct),
-        conversionRate: String(docExchangeRate),
+        conversionRate: String(activeConvRate),
         netWeight: totalNet,
         grossWeight: totalGross,
         unitNetWeight: uNetWeight,
@@ -6628,18 +6630,39 @@ function App() {
           const workbook = window.XLSX.read(data, {
             type: 'array'
           });
+          if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+            setBulkUploadModalState(prev => ({
+              ...prev,
+              errorMsg: 'Excel workbook contains no sheets.'
+            }));
+            return;
+          }
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
+          if (!worksheet) {
+            setBulkUploadModalState(prev => ({
+              ...prev,
+              errorMsg: 'The selected Excel sheet has no content.'
+            }));
+            return;
+          }
           const jsonData = window.XLSX.utils.sheet_to_json(worksheet, {
             defval: '',
             raw: false
           });
+          if (!jsonData || jsonData.length === 0) {
+            setBulkUploadModalState(prev => ({
+              ...prev,
+              errorMsg: 'No data rows found in the uploaded Excel file.'
+            }));
+            return;
+          }
           processExtractedRows(jsonData, bulkUploadModalState.targetContext);
         } catch (err) {
           console.error('Excel parse error:', err);
           setBulkUploadModalState(prev => ({
             ...prev,
-            errorMsg: 'Failed to parse Excel file. Please check file format.'
+            errorMsg: err.message ? `Excel Parse Error: ${err.message}` : 'Failed to parse Excel file. Please check file format.'
           }));
         } finally {
           setBulkUploadModalState(prev => ({
