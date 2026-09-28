@@ -1299,32 +1299,136 @@
         setIsRatesLoading(true);
         setRatesError(null);
         try {
-          let res = await fetch('https://open.er-api.com/v6/latest/USD');
-          if (!res.ok) {
-            res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-          }
-          const data = await res.json();
-          if (data && data.rates && data.rates.INR) {
-            const inr = data.rates.INR;
-            const eur = data.rates.EUR;
-            const gbp = data.rates.GBP;
-            const aed = data.rates.AED;
-            const sar = data.rates.SAR;
-            const cny = data.rates.CNY;
+          let updatedRates = null;
+          let sourceName = 'Live Forex API';
 
-            const updatedRates = {
-              USD_INR: parseFloat(inr.toFixed(2)),
-              EUR_INR: eur ? parseFloat((inr / eur).toFixed(2)) : 109.13,
-              GBP_INR: gbp ? parseFloat((inr / gbp).toFixed(2)) : 126.86,
-              AED_INR: aed ? parseFloat((inr / aed).toFixed(2)) : 26.12,
-              SAR_INR: sar ? parseFloat((inr / sar).toFixed(2)) : 25.58,
-              CNY_INR: cny ? parseFloat((inr / cny).toFixed(2)) : 13.52,
-              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              source: 'Live Bank Feed'
-            };
+          // Strategy 1: Server-side proxy with multi-API fallback and local cache
+          try {
+            const serverUrl = isManual ? 'api.php?action=get_forex_rates&refresh=1' : 'api.php?action=get_forex_rates';
+            const sRes = await fetch(serverUrl);
+            if (sRes.ok) {
+              const sData = await sRes.json();
+              if (sData && sData.rates && sData.rates.USD_INR) {
+                updatedRates = {
+                  ...sData.rates,
+                  lastUpdated: sData.lastUpdated || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  source: sData.source || 'Live Forex Engine'
+                };
+                sourceName = sData.source || 'Server Live Forex Feed';
+              }
+            }
+          } catch (e) {
+            console.warn('Server forex proxy notice:', e);
+          }
+
+          // Strategy 2: Direct browser fallback via open.er-api.com
+          if (!updatedRates) {
+            try {
+              const res = await fetch('https://open.er-api.com/v6/latest/USD');
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.rates && data.rates.INR) {
+                  const inr = data.rates.INR;
+                  const eur = data.rates.EUR || 0.88;
+                  const gbp = data.rates.GBP || 0.75;
+                  const aed = data.rates.AED || 3.67;
+                  const sar = data.rates.SAR || 3.75;
+                  const cny = data.rates.CNY || 6.72;
+                  updatedRates = {
+                    USD_INR: parseFloat(inr.toFixed(2)),
+                    EUR_INR: parseFloat((inr / eur).toFixed(2)),
+                    GBP_INR: parseFloat((inr / gbp).toFixed(2)),
+                    AED_INR: parseFloat((inr / aed).toFixed(2)),
+                    SAR_INR: parseFloat((inr / sar).toFixed(2)),
+                    CNY_INR: parseFloat((inr / cny).toFixed(2)),
+                    USD_USD: 1.0,
+                    EUR_USD: parseFloat((1 / eur).toFixed(4)),
+                    GBP_USD: parseFloat((1 / gbp).toFixed(4)),
+                    AED_USD: parseFloat((1 / aed).toFixed(4)),
+                    SAR_USD: parseFloat((1 / sar).toFixed(4)),
+                    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    source: 'Open Forex API'
+                  };
+                  sourceName = 'Open Forex API';
+                }
+              }
+            } catch (e) { }
+          }
+
+          // Strategy 3: Direct browser fallback via Fawaz Ahmed Currency API (Global CDN)
+          if (!updatedRates) {
+            try {
+              const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.usd && data.usd.inr) {
+                  const inr = data.usd.inr;
+                  const eur = data.usd.eur || 0.88;
+                  const gbp = data.usd.gbp || 0.75;
+                  const aed = data.usd.aed || 3.67;
+                  const sar = data.usd.sar || 3.75;
+                  const cny = data.usd.cny || 6.72;
+                  updatedRates = {
+                    USD_INR: parseFloat(inr.toFixed(2)),
+                    EUR_INR: parseFloat((inr / eur).toFixed(2)),
+                    GBP_INR: parseFloat((inr / gbp).toFixed(2)),
+                    AED_INR: parseFloat((inr / aed).toFixed(2)),
+                    SAR_INR: parseFloat((inr / sar).toFixed(2)),
+                    CNY_INR: parseFloat((inr / cny).toFixed(2)),
+                    USD_USD: 1.0,
+                    EUR_USD: parseFloat((1 / eur).toFixed(4)),
+                    GBP_USD: parseFloat((1 / gbp).toFixed(4)),
+                    AED_USD: parseFloat((1 / aed).toFixed(4)),
+                    SAR_USD: parseFloat((1 / sar).toFixed(4)),
+                    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    source: 'Global CDN Forex Feed'
+                  };
+                  sourceName = 'Global CDN Currency API';
+                }
+              }
+            } catch (e) { }
+          }
+
+          // Strategy 4: Direct browser fallback via ExchangeRate-API V4
+          if (!updatedRates) {
+            try {
+              const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.rates && data.rates.INR) {
+                  const inr = data.rates.INR;
+                  const eur = data.rates.EUR || 0.88;
+                  const gbp = data.rates.GBP || 0.75;
+                  const aed = data.rates.AED || 3.67;
+                  const sar = data.rates.SAR || 3.75;
+                  const cny = data.rates.CNY || 6.72;
+                  updatedRates = {
+                    USD_INR: parseFloat(inr.toFixed(2)),
+                    EUR_INR: parseFloat((inr / eur).toFixed(2)),
+                    GBP_INR: parseFloat((inr / gbp).toFixed(2)),
+                    AED_INR: parseFloat((inr / aed).toFixed(2)),
+                    SAR_INR: parseFloat((inr / sar).toFixed(2)),
+                    CNY_INR: parseFloat((inr / cny).toFixed(2)),
+                    USD_USD: 1.0,
+                    EUR_USD: parseFloat((1 / eur).toFixed(4)),
+                    GBP_USD: parseFloat((1 / gbp).toFixed(4)),
+                    AED_USD: parseFloat((1 / aed).toFixed(4)),
+                    SAR_USD: parseFloat((1 / sar).toFixed(4)),
+                    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    source: 'ExchangeRate-API V4'
+                  };
+                  sourceName = 'ExchangeRate-API V4';
+                }
+              }
+            } catch (e) { }
+          }
+
+          if (updatedRates) {
             setLiveExchangeRates(updatedRates);
             localStorage.setItem('mglobal_live_exchange_rates', JSON.stringify(updatedRates));
-            if (isManual) setToastNotice('Live exchange rates refreshed successfully!');
+            if (isManual) setToastNotice(`Live forex rates updated successfully via ${sourceName}!`);
+          } else {
+            setRatesError('Offline - using cached rates');
           }
         } catch (err) {
           console.warn('Currency API fetch notice:', err);
@@ -1336,7 +1440,7 @@
 
       React.useEffect(() => {
         fetchLiveExchangeRates(false);
-        const interval = setInterval(() => fetchLiveExchangeRates(false), 30 * 60 * 1000);
+        const interval = setInterval(() => fetchLiveExchangeRates(false), 15 * 60 * 1000);
         return () => clearInterval(interval);
       }, []);
 
@@ -9475,15 +9579,16 @@
                         <i className="fi fi-rr-coins text-indigo-600"></i>
                         <span>Live Currency Exchange Rates (INR)</span>
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1.5 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <i className="fi fi-rr-cloud-check text-[9px]"></i>
-                        <span>{isRatesLoading ? 'Fetching Live Rates...' : (ratesError || 'Live Forex API')}</span>
+                        <span>{isRatesLoading ? 'Fetching Live Rates...' : (ratesError || liveExchangeRates.source || 'Live Forex API')}</span>
                       </span>
                     </div>
 
                     <div className="flex items-center space-x-2 text-xs">
                       <span className="text-[11px] text-slate-400 font-medium">
-                        Last synced: <span className="font-mono font-bold text-slate-600">{liveExchangeRates.lastUpdated || 'Today'}</span>
+                        Last synced: <span className="font-mono font-bold text-slate-600">{liveExchangeRates.lastUpdated || 'Live'}</span>
                       </span>
                       <button
                         type="button"

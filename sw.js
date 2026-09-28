@@ -1,5 +1,5 @@
 // MGlobal Operations - Enterprise Service Worker
-const CACHE_NAME = 'mglobal-operations-v1';
+const CACHE_NAME = 'mglobal-operations-v2';
 
 const STATIC_ASSETS = [
   './',
@@ -40,9 +40,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event - Network first, fallback to cache (Bypass API and PHP endpoints)
+// Fetch Event - Network first, fallback to cache (Bypass API, PHP endpoints, and external URLs)
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Always bypass external cross-origin requests (Forex APIs, CDNs, Fonts)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   // Always use network directly for database and API requests
   if (url.pathname.endsWith('.php') || url.search.includes('action=') || event.request.method !== 'GET') {

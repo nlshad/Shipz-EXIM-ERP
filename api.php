@@ -223,6 +223,177 @@ function createErpTables($db) {
     ");
 }
 
+// 3.5. Real-Time Forex Exchange Rates Provider with Multi-API Fallback & Local Caching
+if ($action === 'get_forex_rates') {
+    $cacheFile = __DIR__ . '/backups/forex_rates_cache.json';
+    $forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] == '1';
+
+    // Check 15-minute cache
+    if (!$forceRefresh && file_exists($cacheFile) && (time() - filemtime($cacheFile) < 900)) {
+        $cachedData = @json_decode(file_get_contents($cacheFile), true);
+        if ($cachedData && !empty($cachedData['rates']['USD_INR'])) {
+            echo json_encode([
+                'status' => 'success',
+                'source' => 'Server Cache (' . ($cachedData['source'] ?? 'Live Forex API') . ')',
+                'cached' => true,
+                'rates' => $cachedData['rates'],
+                'lastUpdated' => date('h:i A', filemtime($cacheFile)),
+                'timestamp' => filemtime($cacheFile)
+            ]);
+            exit;
+        }
+    }
+
+    $fetchUrl = function($url) {
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'ShipzERP/2.0 (Forex Engine)');
+            $out = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($code === 200 && $out) return $out;
+        }
+        $ctx = stream_context_create([
+            'http' => ['timeout' => 6, 'header' => "User-Agent: ShipzERP/2.0\r\n"],
+            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
+        ]);
+        return @file_get_contents($url, false, $ctx);
+    };
+
+    $rates = null;
+    $sourceUsed = 'Live Open Forex API';
+
+    // Provider 1: open.er-api.com
+    $raw = $fetchUrl('https://open.er-api.com/v6/latest/USD');
+    if ($raw) {
+        $data = @json_decode($raw, true);
+        if (!empty($data['rates']['INR'])) {
+            $inr = (float)$data['rates']['INR'];
+            $eur = (float)($data['rates']['EUR'] ?? 0.88);
+            $gbp = (float)($data['rates']['GBP'] ?? 0.75);
+            $aed = (float)($data['rates']['AED'] ?? 3.67);
+            $sar = (float)($data['rates']['SAR'] ?? 3.75);
+            $cny = (float)($data['rates']['CNY'] ?? 6.72);
+            $rates = [
+                'USD_INR' => round($inr, 2),
+                'EUR_INR' => $eur > 0 ? round($inr / $eur, 2) : 109.13,
+                'GBP_INR' => $gbp > 0 ? round($inr / $gbp, 2) : 126.86,
+                'AED_INR' => $aed > 0 ? round($inr / $aed, 2) : 26.12,
+                'SAR_INR' => $sar > 0 ? round($inr / $sar, 2) : 25.58,
+                'CNY_INR' => $cny > 0 ? round($inr / $cny, 2) : 13.52,
+                'USD_USD' => 1.0,
+                'EUR_USD' => $eur > 0 ? round(1 / $eur, 4) : 1.136,
+                'GBP_USD' => $gbp > 0 ? round(1 / $gbp, 4) : 1.323,
+                'AED_USD' => $aed > 0 ? round(1 / $aed, 4) : 0.272,
+                'SAR_USD' => $sar > 0 ? round(1 / $sar, 4) : 0.266
+            ];
+            $sourceUsed = 'Open Forex Feed (ER-API)';
+        }
+    }
+
+    // Provider 2: jsdelivr Currency API (Fawaz Ahmed global CDN)
+    if (!$rates) {
+        $raw = $fetchUrl('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+        if ($raw) {
+            $data = @json_decode($raw, true);
+            if (!empty($data['usd']['inr'])) {
+                $inr = (float)$data['usd']['inr'];
+                $eur = (float)($data['usd']['eur'] ?? 0.88);
+                $gbp = (float)($data['usd']['gbp'] ?? 0.75);
+                $aed = (float)($data['usd']['aed'] ?? 3.67);
+                $sar = (float)($data['usd']['sar'] ?? 3.75);
+                $cny = (float)($data['usd']['cny'] ?? 6.72);
+                $rates = [
+                    'USD_INR' => round($inr, 2),
+                    'EUR_INR' => $eur > 0 ? round($inr / $eur, 2) : 109.13,
+                    'GBP_INR' => $gbp > 0 ? round($inr / $gbp, 2) : 126.86,
+                    'AED_INR' => $aed > 0 ? round($inr / $aed, 2) : 26.12,
+                    'SAR_INR' => $sar > 0 ? round($inr / $sar, 2) : 25.58,
+                    'CNY_INR' => $cny > 0 ? round($inr / $cny, 2) : 13.52,
+                    'USD_USD' => 1.0,
+                    'EUR_USD' => $eur > 0 ? round(1 / $eur, 4) : 1.136,
+                    'GBP_USD' => $gbp > 0 ? round(1 / $gbp, 4) : 1.323,
+                    'AED_USD' => $aed > 0 ? round(1 / $aed, 4) : 0.272,
+                    'SAR_USD' => $sar > 0 ? round(1 / $sar, 4) : 0.266
+                ];
+                $sourceUsed = 'Global CDN Currency API';
+            }
+        }
+    }
+
+    // Provider 3: exchangerate-api.com
+    if (!$rates) {
+        $raw = $fetchUrl('https://api.exchangerate-api.com/v4/latest/USD');
+        if ($raw) {
+            $data = @json_decode($raw, true);
+            if (!empty($data['rates']['INR'])) {
+                $inr = (float)$data['rates']['INR'];
+                $eur = (float)($data['rates']['EUR'] ?? 0.88);
+                $gbp = (float)($data['rates']['GBP'] ?? 0.75);
+                $aed = (float)($data['rates']['AED'] ?? 3.67);
+                $sar = (float)($data['rates']['SAR'] ?? 3.75);
+                $cny = (float)($data['rates']['CNY'] ?? 6.72);
+                $rates = [
+                    'USD_INR' => round($inr, 2),
+                    'EUR_INR' => $eur > 0 ? round($inr / $eur, 2) : 109.13,
+                    'GBP_INR' => $gbp > 0 ? round($inr / $gbp, 2) : 126.86,
+                    'AED_INR' => $aed > 0 ? round($inr / $aed, 2) : 26.12,
+                    'SAR_INR' => $sar > 0 ? round($inr / $sar, 2) : 25.58,
+                    'CNY_INR' => $cny > 0 ? round($inr / $cny, 2) : 13.52,
+                    'USD_USD' => 1.0,
+                    'EUR_USD' => $eur > 0 ? round(1 / $eur, 4) : 1.136,
+                    'GBP_USD' => $gbp > 0 ? round(1 / $gbp, 4) : 1.323,
+                    'AED_USD' => $aed > 0 ? round(1 / $aed, 4) : 0.272,
+                    'SAR_USD' => $sar > 0 ? round(1 / $sar, 4) : 0.266
+                ];
+                $sourceUsed = 'ExchangeRate-API V4';
+            }
+        }
+    }
+
+    if ($rates) {
+        if (!is_dir(__DIR__ . '/backups')) {
+            @mkdir(__DIR__ . '/backups', 0777, true);
+        }
+        @file_put_contents($cacheFile, json_encode(['rates' => $rates, 'source' => $sourceUsed, 'time' => time()]));
+        echo json_encode([
+            'status' => 'success',
+            'source' => $sourceUsed,
+            'cached' => false,
+            'rates' => $rates,
+            'lastUpdated' => date('h:i A'),
+            'timestamp' => time()
+        ]);
+        exit;
+    }
+
+    // Fallback Reserve Rates
+    echo json_encode([
+        'status' => 'fallback',
+        'source' => 'Standard Reserve Rates',
+        'rates' => [
+            'USD_INR' => 95.93,
+            'EUR_INR' => 109.13,
+            'GBP_INR' => 126.86,
+            'AED_INR' => 26.12,
+            'SAR_INR' => 25.58,
+            'CNY_INR' => 13.52,
+            'USD_USD' => 1.0,
+            'EUR_USD' => 1.136,
+            'GBP_USD' => 1.323,
+            'AED_USD' => 0.272,
+            'SAR_USD' => 0.266
+        ],
+        'lastUpdated' => date('h:i A'),
+        'timestamp' => time()
+    ]);
+    exit;
+}
+
 // 4. If Database Connection Failed, Return Diagnostic Response
 if (!$pdo) {
     echo json_encode([
