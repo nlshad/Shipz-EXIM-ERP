@@ -1,0 +1,60 @@
+{
+  "name": "Shipz EXIM ERP",
+  "short_name": "Shipz ERP",
+  "description": "Integrated Export-Import ERP & Documentation Platform - MGlobal India",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B132B",
+  "theme_color": "#4F46E5",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "icons/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Quotation",
+      "short_name": "Quotation",
+      "description": "Create new commercial quotation",
+      "url": "./index.html#quotation",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Proforma Invoice",
+      "short_name": "Proforma",
+      "description": "Generate export proforma invoice",
+      "url": "./index.html#proforma",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Commercial Invoices",
+      "short_name": "Invoices",
+      "description": "View commercial invoices & packing lists",
+      "url": "./index.html#commercial",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

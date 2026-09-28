@@ -3,8 +3,18 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ExportFlow ERP - Integrated EXIM Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Shipz EXIM ERP - Integrated Enterprise Platform</title>
+
+  <!-- PWA & Chrome App Manifest / Meta -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Shipz ERP" />
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -329,6 +339,25 @@
         }, 600);
       });
     }
+
+    // Register Service Worker for Chrome PWA Installation
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').then(function(reg) {
+          console.log('Shipz PWA Service Worker Registered. Scope:', reg.scope);
+        }).catch(function(err) {
+          console.warn('PWA Service Worker Registration notice:', err);
+        });
+      });
+    }
+
+    // Capture Chrome App Install Prompt
+    window.__SHIPZ_DEFERRED_PROMPT__ = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__SHIPZ_DEFERRED_PROMPT__ = e;
+      window.dispatchEvent(new CustomEvent('shipz-pwa-installable'));
+    });
   </script>
 </body>
 

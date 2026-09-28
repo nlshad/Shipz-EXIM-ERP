@@ -2906,6 +2906,37 @@ function App() {
       className: "fi fi-rr-check text-xs"
     }), /*#__PURE__*/React.createElement("span", null, resetPasswordModal.isSubmitting ? 'Updating...' : 'Save New Password'))))));
   };
+
+  // ==========================================
+  // CHROME PWA DESKTOP APP CONTROLLER
+  // ==========================================
+  const [canInstallPwa, setCanInstallPwa] = useState(false);
+  React.useEffect(() => {
+    const checkInstallable = () => {
+      if (window.__SHIPZ_DEFERRED_PROMPT__) setCanInstallPwa(true);
+    };
+    checkInstallable();
+    window.addEventListener('shipz-pwa-installable', checkInstallable);
+    return () => window.removeEventListener('shipz-pwa-installable', checkInstallable);
+  }, []);
+  const handleInstallPwaApp = async () => {
+    if (window.__SHIPZ_DEFERRED_PROMPT__) {
+      window.__SHIPZ_DEFERRED_PROMPT__.prompt();
+      const choice = await window.__SHIPZ_DEFERRED_PROMPT__.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        setToastNotice('Shipz Desktop Chrome App installed successfully!');
+        setCanInstallPwa(false);
+        window.__SHIPZ_DEFERRED_PROMPT__ = null;
+      }
+    } else {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        alert('Shipz ERP is already running as a standalone Chrome Desktop App!');
+      } else {
+        alert('To install Shipz as a Chrome Desktop App:\n\n1. Look at the right side of your Chrome URL address bar.\n2. Click the "Install Shipz ERP" icon (computer with down arrow 💻 ⬇️).\n3. Click "Install"!\n\nShipz will launch in its own dedicated, borderless desktop window with a desktop icon.');
+      }
+    }
+  };
   const handleLoginSubmit = e => {
     if (e) e.preventDefault();
     setLoginError('');
@@ -9872,9 +9903,18 @@ function App() {
       className: "px-3 py-1 rounded-full text-[10px] font-bold flex items-center space-x-1.5 border bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
     }, /*#__PURE__*/React.createElement("i", {
       className: "fi fi-rr-shield-check text-xs text-emerald-400"
-    }), /*#__PURE__*/React.createElement("span", null, "Enterprise Security (256-Bit SSL)")), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", null, "Enterprise Security (256-Bit SSL)")), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center space-x-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleInstallPwaApp,
+      className: "text-[10px] text-indigo-300 hover:text-white font-bold flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-lg border border-white/20 transition-all cursor-pointer",
+      title: "Install Shipz as a standalone Chrome Desktop App"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-download text-[9px]"
+    }), /*#__PURE__*/React.createElement("span", null, "Install App")), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-slate-400 font-mono font-medium"
-    }, "v2.5 Production")), /*#__PURE__*/React.createElement("div", {
+    }, "v2.5"))), /*#__PURE__*/React.createElement("div", {
       className: "text-center space-y-1"
     }, /*#__PURE__*/React.createElement("h2", {
       className: "text-2xl font-bold text-white tracking-tight"
@@ -10083,6 +10123,17 @@ function App() {
   }), /*#__PURE__*/React.createElement("span", null, "Settings")), /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] font-mono text-slate-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap ml-1 shadow-2xs"
   }, "v2.7")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleInstallPwaApp,
+    className: "w-full flex items-center justify-between px-3 py-1.5 rounded-lg font-bold text-xs bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600/50 hover:to-purple-600/50 transition-all cursor-pointer group",
+    title: "Install Shipz as a standalone Chrome desktop application"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-download text-xs text-indigo-400 group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", null, "Install Chrome App")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] bg-indigo-500/30 px-1.5 py-0.5 rounded text-indigo-200 uppercase font-mono font-bold"
+  }, "PWA")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setActiveEngine('supportHelpdesk');
       setIsMobileSidebarOpen(false);
