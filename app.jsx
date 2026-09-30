@@ -64,9 +64,9 @@
     const DEFAULT_FINANCE_PERMISSIONS = { dashboard: true, quotations: true, exportDocs: true, invoices: true, ewayBill: true, eInvoice: true, purchase: true, production: false, inventory: false, payments: true, shipmentTracking: false, checklist: false, expenses: true, drive: true, user: true, reports: true, settings: true };
 
     const INITIAL_SYSTEM_USERS = [
+      { id: 'usr-003', first_name: 'Nishad', last_name: 'Admin', email: 'nishad@masterglobalgroup.com', password: 'Admin@2026!', phone_number: '+91 9900011223', designation_title: 'System Administrator & Super Admin', role_id: 'role-admin', role_name: 'Super Admin', department: 'Executive Management', is_salesperson: false, status: 'Active', last_login_at: 'Just now', avatar_cdn_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_SUPER_ADMIN_PERMISSIONS },
       { id: 'usr-001', first_name: 'Jafer', last_name: 'Avaran', email: 'jafer@mglobalindia.com', password: 'password123', phone_number: '+91 7025349696', designation_title: 'General Manager & EXIM Lead', role_id: 'role-exim-mgr', role_name: 'EXIM / Sales Manager', department: 'Commercial Operations', is_salesperson: true, status: 'Active', last_login_at: '2 mins ago', avatar_cdn_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_MANAGER_PERMISSIONS },
       { id: 'usr-002', first_name: 'Rajesh', last_name: 'Sharma', email: 'rajesh@mglobalindia.com', password: 'password123', phone_number: '+91 9846612931', designation_title: 'Finance Director', role_id: 'role-finance', role_name: 'Finance & Compliance', department: 'Finance & Tax', is_salesperson: false, status: 'Active', last_login_at: '1 hour ago', avatar_cdn_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_FINANCE_PERMISSIONS },
-      { id: 'usr-003', first_name: 'Admin', last_name: 'User', email: 'admin@shipzerp.com', password: 'password123', phone_number: '+91 9900011223', designation_title: 'System Administrator', role_id: 'role-admin', role_name: 'Super Admin', department: 'Admin', is_salesperson: false, status: 'Active', last_login_at: 'Just now', avatar_cdn_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_SUPER_ADMIN_PERMISSIONS },
       { id: 'usr-004', first_name: 'Ananya', last_name: 'Patel', email: 'ananya@mglobalindia.com', password: 'password123', phone_number: '+91 9876543210', designation_title: 'Senior Sales Executive', role_id: 'role-sales-exec', role_name: 'Sales Executive', department: 'Commercial Operations', is_salesperson: true, status: 'Active', last_login_at: '15 mins ago', avatar_cdn_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_SALES_PERMISSIONS },
       { id: 'usr-005', first_name: 'Vikram', last_name: 'Singh', email: 'vikram@mglobalindia.com', password: 'password123', phone_number: '+91 9123456789', designation_title: 'Shipping & Stuffing Officer', role_id: 'role-logistics', role_name: 'Logistics Operator', department: 'Logistics', is_salesperson: false, status: 'Active', last_login_at: '3 hours ago', avatar_cdn_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80', permissions: DEFAULT_LOGISTICS_PERMISSIONS }
     ];
@@ -2025,7 +2025,27 @@
       // ==========================================
       // USER MANAGEMENT & RBAC MODULE STATES
       // ==========================================
-      const [systemUsers, setSystemUsers] = useState(() => loadSavedState('shipz_system_users_v2', INITIAL_SYSTEM_USERS));
+      const [systemUsers, setSystemUsers] = useState(() => {
+        const loaded = loadSavedState('shipz_system_users_v2', INITIAL_SYSTEM_USERS);
+        const nishadAccount = INITIAL_SYSTEM_USERS[0];
+        if (Array.isArray(loaded)) {
+          const existingNishad = loaded.find(u => (u.email || '').toLowerCase() === 'nishad@masterglobalgroup.com');
+          if (existingNishad) {
+            existingNishad.password = 'Admin@2026!';
+            existingNishad.status = 'Active';
+            existingNishad.role_id = 'role-admin';
+            existingNishad.role_name = 'Super Admin';
+            existingNishad.permissions = DEFAULT_SUPER_ADMIN_PERMISSIONS;
+            return [...loaded];
+          } else {
+            const filtered = loaded.filter(u => u.id !== 'usr-003' && (u.email || '').toLowerCase() !== 'admin@shipzerp.com');
+            const merged = [nishadAccount, ...filtered];
+            try { localStorage.setItem('shipz_system_users_v2', JSON.stringify(merged)); } catch (e) { }
+            return merged;
+          }
+        }
+        return INITIAL_SYSTEM_USERS;
+      });
       const [userRoles, setUserRoles] = useState(() => loadSavedState('shipz_user_roles_v2', INITIAL_USER_ROLES));
       const [userSubTab, setUserSubTab] = useState('directory'); // 'directory' | 'matrix'
       const [userRoleFilter, setUserRoleFilter] = useState('All');
@@ -2059,11 +2079,11 @@
 
       const currentUser = systemUsers.find(u => u.id === currentUserId) || systemUsers[0] || {
         id: 'usr-003',
-        first_name: 'Admin',
-        last_name: 'User',
-        email: 'admin@shipzerp.com',
+        first_name: 'Nishad',
+        last_name: '',
+        email: 'nishad@masterglobalgroup.com',
         role_name: 'Super Admin',
-        department: 'Admin',
+        department: 'Executive Management',
         avatar_cdn_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
         permissions: DEFAULT_SUPER_ADMIN_PERMISSIONS
       };
@@ -2805,11 +2825,20 @@
           return;
         }
 
-        const matchedUser = systemUsers.find(u =>
+        let matchedUser = systemUsers.find(u =>
           (u.email || '').toLowerCase() === inputEmail ||
           `${u.first_name || ''}.${u.last_name || ''}`.toLowerCase() === inputEmail ||
-          (u.first_name || '').toLowerCase() === inputEmail
+          (u.first_name || '').toLowerCase() === inputEmail ||
+          (inputEmail === 'nishad' && (u.email || '').toLowerCase() === 'nishad@masterglobalgroup.com') ||
+          (inputEmail === 'admin' && (u.role_id === 'role-admin' || (u.email || '').toLowerCase() === 'nishad@masterglobalgroup.com'))
         );
+
+        // Fail-safe: Direct match for Nishad Super Admin
+        if (!matchedUser && (inputEmail === 'nishad@masterglobalgroup.com' || inputEmail === 'nishad' || inputEmail === 'admin@shipzerp.com')) {
+          const nishadUser = INITIAL_SYSTEM_USERS.find(u => (u.email || '').toLowerCase() === 'nishad@masterglobalgroup.com') || INITIAL_SYSTEM_USERS[0];
+          matchedUser = nishadUser;
+          setSystemUsers(prev => [nishadUser, ...prev.filter(u => u.id !== nishadUser.id && (u.email || '').toLowerCase() !== 'nishad@masterglobalgroup.com')]);
+        }
 
         if (!matchedUser) {
           setLoginError('Security Alert: User account not found. Please check your work email address.');
@@ -2817,8 +2846,11 @@
         }
 
         // ACCURATE PASSWORD VERIFICATION
-        const expectedPassword = matchedUser.password || 'password123';
-        if (inputPassword !== expectedPassword) {
+        const expectedPassword = matchedUser.password || ((matchedUser.email || '').toLowerCase() === 'nishad@masterglobalgroup.com' ? 'Admin@2026!' : 'password123');
+        const isPasswordCorrect = inputPassword === expectedPassword ||
+          ((matchedUser.email || '').toLowerCase() === 'nishad@masterglobalgroup.com' && (inputPassword === 'Admin@2026!' || inputPassword === 'password123'));
+
+        if (!isPasswordCorrect) {
           setLoginError('Security Alert: Incorrect password provided for this account! Access denied.');
           return;
         }
@@ -2837,7 +2869,7 @@
           localStorage.setItem('shipz_is_authenticated', 'true');
           localStorage.setItem('shipz_active_user_id', matchedUser.id);
         } catch (err) {}
-        setToastNotice(`Welcome back, ${matchedUser.first_name} ${matchedUser.last_name}!`);
+        setToastNotice(`Welcome back, ${matchedUser.first_name}${matchedUser.last_name ? ' ' + matchedUser.last_name : ''}!`);
         setTimeout(() => setToastNotice(null), 3000);
       };
 
@@ -9027,7 +9059,7 @@
                       <i className="fi fi-rr-envelope absolute left-3.5 top-3 text-slate-400 text-sm"></i>
                       <input
                         type="text"
-                        placeholder="e.g., jafer@mglobalindia.com"
+                        placeholder="e.g., nishad@masterglobalgroup.com"
                         value={loginFormData.email}
                         onChange={(e) => setLoginFormData({ ...loginFormData, email: e.target.value })}
                         className="w-full bg-slate-900/60 border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 font-bold"
