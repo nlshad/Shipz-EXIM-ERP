@@ -8775,7 +8775,7 @@
         } else if (notif.actionTarget === 'quotations') {
           setActiveEngine('quotations');
         } else if (notif.actionTarget === 'commercial') {
-          setActiveEngine('commercial');
+          setActiveEngine('invoices');
         } else if (notif.actionTarget) {
           setActiveEngine(notif.actionTarget);
         }
@@ -9159,14 +9159,28 @@
                 <span className="text-[10px] bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold uppercase truncate max-w-[120px]">
                   {activeEngine === 'dashboard' ? 'Dashboard' :
                    activeEngine === 'quotations' ? 'Quotations' :
-                   activeEngine === 'invoices' ? 'Invoices' :
+                   (activeEngine === 'invoices' || activeEngine === 'commercial') ? 'Invoices' :
                    activeEngine === 'proforma' ? 'Proforma PI' :
                    activeEngine === 'packingList' ? 'Packing List' :
                    activeEngine === 'blDraft' ? 'BL Draft' :
+                   activeEngine === 'preShipment' ? 'Pre-Shipment' :
+                   activeEngine === 'postShipment' ? 'Post-Shipment' :
                    activeEngine === 'settings' ? 'Settings' :
                    activeEngine === 'supportHelpdesk' ? 'Helpdesk' :
                    activeEngine === 'drive' ? 'Drive' :
-                   activeEngine === 'user' ? 'Users' : 'Shipz ERP'}
+                   activeEngine === 'user' ? 'Users' :
+                   activeEngine === 'ewayBill' ? 'E-Way Bill' :
+                   activeEngine === 'eInvoice' ? 'E-Invoice' :
+                   activeEngine === 'purchase' ? 'Purchase' :
+                   activeEngine === 'production' ? 'Production' :
+                   activeEngine === 'inventory' ? 'Inventory' :
+                   activeEngine === 'payments' ? 'Payments' :
+                   activeEngine === 'shipmentTracking' ? 'Tracking' :
+                   activeEngine === 'checklist' ? 'Checklist' :
+                   activeEngine === 'expenses' ? 'Expenses' :
+                   activeEngine === 'reports' ? 'Reports' :
+                   activeEngine === 'coaSettings' ? 'COA' :
+                   activeEngine === 'labelParameters' ? 'Labels' : 'Shipz ERP'}
                 </span>
               </div>
             </div>
@@ -9183,7 +9197,7 @@
           {isMobileSidebarOpen && (
             <div
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 md:hidden transition-opacity"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 md:hidden transition-opacity cursor-pointer"
             ></div>
           )}
 
@@ -9393,7 +9407,7 @@
           )}
 
           {/* MAIN CONTAINER */}
-          <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col relative">
+          <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col relative bg-[#F8FAFC]">
 
             {/* EXECUTIVE DASHBOARD ENGINE (CLEAN, MINIMAL & ELEGANT UI) */}
             {activeEngine === 'dashboard' && (
@@ -12877,7 +12891,7 @@
             )}
 
             {/* VIEW 2: PROFORMA INVOICES ENGINE (PRD STRICT SCHEMA & KPI CARDS) */}
-            {(activeEngine === 'proforma' || activeEngine === 'invoices') && (
+            {(activeEngine === 'proforma' || activeEngine === 'invoices' || activeEngine === 'commercial') && (
               <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24">
                 {/* GLOBAL HEADER BAR WITH CONTROLS */}
                 <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
@@ -14048,7 +14062,7 @@
               });
 
               return (
-                <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
+                <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC]">
                   {/* TOP HEADER */}
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
@@ -14297,7 +14311,7 @@
 
             {/* SHIPZY DRIVE • CLOUDINARY MEDIA VAULT & DRIVE ENGINE (MODULE B PRD) */}
             {activeEngine === 'drive' && (
-              <div className="flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#F8FAFC] text-slate-800 pb-28">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC] text-slate-800">
                 {/* TOP BAR: DRIVE DIRECTORY & ACTIONS */}
                 <div className="drive-canvas-container p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center space-x-3 w-full md:w-auto">
@@ -14963,7 +14977,7 @@
 
             {/* USER MANAGEMENT & RBAC ENGINE (LEFT SIDEBAR 'USER' MENU ITEM) */}
             {activeEngine === 'user' && (
-              <div className="flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#F8FAFC] text-slate-800 pb-28">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC] text-slate-800">
                 {/* TOP HEADER CARD */}
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center space-x-3">
@@ -16618,9 +16632,9 @@
 
           {/* CREATE PROFORMA INVOICE MODAL (ALL 41 FIELDS ACROSS 5 SECTIONS) */}
           {isCreatePiModalOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-20">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-20">
                   <div>
                     <h3 className="text-lg font-black text-slate-900 tracking-tight">
                       {editingPiId
@@ -17265,9 +17279,9 @@
 
           {/* CREATE / UPDATE BL DRAFT MODAL (ALL 12 FIELDS) */}
           {isBlModalOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] overflow-y-auto flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-10">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[96vh] overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-10">
                   <h3 className="text-lg font-black text-slate-900 tracking-tight">{editingBlId ? 'Update BL Draft' : 'Create Bill of Lading (BL) Draft'}</h3>
                   <button onClick={() => setIsBlModalOpen(false)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
                 </div>

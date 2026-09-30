@@ -10307,7 +10307,7 @@ function App() {
     } else if (notif.actionTarget === 'quotations') {
       setActiveEngine('quotations');
     } else if (notif.actionTarget === 'commercial') {
-      setActiveEngine('commercial');
+      setActiveEngine('invoices');
     } else if (notif.actionTarget) {
       setActiveEngine(notif.actionTarget);
     }
@@ -10612,7 +10612,7 @@ function App() {
     className: "font-black text-xs sm:text-sm text-white tracking-tight"
   }, "MGLOBAL"), /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold uppercase truncate max-w-[120px]"
-  }, activeEngine === 'dashboard' ? 'Dashboard' : activeEngine === 'quotations' ? 'Quotations' : activeEngine === 'invoices' ? 'Invoices' : activeEngine === 'proforma' ? 'Proforma PI' : activeEngine === 'packingList' ? 'Packing List' : activeEngine === 'blDraft' ? 'BL Draft' : activeEngine === 'settings' ? 'Settings' : activeEngine === 'supportHelpdesk' ? 'Helpdesk' : activeEngine === 'drive' ? 'Drive' : activeEngine === 'user' ? 'Users' : 'Shipz ERP'))), /*#__PURE__*/React.createElement("div", {
+  }, activeEngine === 'dashboard' ? 'Dashboard' : activeEngine === 'quotations' ? 'Quotations' : activeEngine === 'invoices' || activeEngine === 'commercial' ? 'Invoices' : activeEngine === 'proforma' ? 'Proforma PI' : activeEngine === 'packingList' ? 'Packing List' : activeEngine === 'blDraft' ? 'BL Draft' : activeEngine === 'preShipment' ? 'Pre-Shipment' : activeEngine === 'postShipment' ? 'Post-Shipment' : activeEngine === 'settings' ? 'Settings' : activeEngine === 'supportHelpdesk' ? 'Helpdesk' : activeEngine === 'drive' ? 'Drive' : activeEngine === 'user' ? 'Users' : activeEngine === 'ewayBill' ? 'E-Way Bill' : activeEngine === 'eInvoice' ? 'E-Invoice' : activeEngine === 'purchase' ? 'Purchase' : activeEngine === 'production' ? 'Production' : activeEngine === 'inventory' ? 'Inventory' : activeEngine === 'payments' ? 'Payments' : activeEngine === 'shipmentTracking' ? 'Tracking' : activeEngine === 'checklist' ? 'Checklist' : activeEngine === 'expenses' ? 'Expenses' : activeEngine === 'reports' ? 'Reports' : activeEngine === 'coaSettings' ? 'COA' : activeEngine === 'labelParameters' ? 'Labels' : 'Shipz ERP'))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 shrink-0"
   }, renderNotificationsBell(), /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30 flex items-center gap-1"
@@ -10620,7 +10620,7 @@ function App() {
     className: "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
   }), /*#__PURE__*/React.createElement("span", null, "LIVE")))), isMobileSidebarOpen && /*#__PURE__*/React.createElement("div", {
     onClick: () => setIsMobileSidebarOpen(false),
-    className: "fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 md:hidden transition-opacity"
+    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 md:hidden transition-opacity cursor-pointer"
   }), /*#__PURE__*/React.createElement("aside", {
     className: `fixed md:static inset-y-0 left-0 z-50 w-72 sm:w-80 md:w-64 sidebar-navy flex flex-col shrink-0 h-screen supports-[height:100dvh]:h-[100dvh] px-3 py-2.5 select-none border-r border-white/10 overflow-hidden transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -10811,7 +10811,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-unlock text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "Unlock Workspace")))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 min-h-0 h-full overflow-hidden flex flex-col relative"
+    className: "flex-1 min-h-0 h-full overflow-hidden flex flex-col relative bg-[#F8FAFC]"
   }, activeEngine === 'dashboard' && /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 bg-[#F8FAFC] text-slate-800 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
@@ -14383,7 +14383,7 @@ function App() {
         className: "fi fi-rr-comment-alt text-xs"
       }), /*#__PURE__*/React.createElement("span", null, "Add Note")))))));
     })());
-  })))))), (activeEngine === 'proforma' || activeEngine === 'invoices') && /*#__PURE__*/React.createElement("div", {
+  })))))), (activeEngine === 'proforma' || activeEngine === 'invoices' || activeEngine === 'commercial') && /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3"
@@ -15740,7 +15740,7 @@ function App() {
       return name.includes(q) || exp.includes(q);
     });
     return /*#__PURE__*/React.createElement("div", {
-      className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24"
+      className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC]"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
@@ -15933,7 +15933,7 @@ function App() {
       className: "fi fi-rr-download text-xs"
     }), /*#__PURE__*/React.createElement("span", null, "Download ZIP"))))))))));
   })(), activeEngine === 'drive' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#F8FAFC] text-slate-800 pb-28"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC] text-slate-800"
   }, /*#__PURE__*/React.createElement("div", {
     className: "drive-canvas-container p-4 flex flex-col md:flex-row items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -16473,7 +16473,7 @@ function App() {
     },
     className: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md"
   }, "Create Folder"))))), activeEngine === 'user' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#F8FAFC] text-slate-800 pb-28"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC] text-slate-800"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -18249,11 +18249,11 @@ function App() {
     onClick: () => setIsCreateQtModalOpen(false),
     className: "px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md transition-colors"
   }, "Close")))), isCreatePiModalOpen && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col"
+    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-20"
+    className: "flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-20"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-black text-slate-900 tracking-tight"
   }, editingPiId ? activeEngine === 'invoices' ? 'Edit Commercial Invoice' : 'Edit Proforma Invoice' : activeEngine === 'invoices' ? 'Create Commercial Invoice' : 'Create Proforma Invoice'), /*#__PURE__*/React.createElement("p", {
@@ -18993,11 +18993,11 @@ function App() {
     onClick: () => setIsCreatePiModalOpen(false),
     className: "px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm"
   }, "Close")))), isBlModalOpen && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] overflow-y-auto flex flex-col"
+    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[96vh] overflow-y-auto flex flex-col"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-10"
+    className: "flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-10"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-black text-slate-900 tracking-tight"
   }, editingBlId ? 'Update BL Draft' : 'Create Bill of Lading (BL) Draft'), /*#__PURE__*/React.createElement("button", {
