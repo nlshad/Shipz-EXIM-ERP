@@ -7543,7 +7543,7 @@ function App() {
   }]);
 
   // Active List for Commercial Invoices vs Proforma Invoices Engine
-  const activeInvoicesList = activeEngine === 'invoices' ? commercialInvoices : proformaInvoices;
+  const activeInvoicesList = activeEngine === 'invoices' || activeEngine === 'commercial' ? commercialInvoices : proformaInvoices;
 
   // Calculate Top KPI Metrics for Invoices / Proforma Invoice
   const piTotalSalesInr = (activeInvoicesList || []).reduce((acc, pi) => acc + (pi.amountFx || 0) * (pi.convRate || 85), 0);
@@ -7778,7 +7778,7 @@ function App() {
     const q = tableSearch.toLowerCase();
     const matchesStatus = statusFilter === 'ALL' || (p.status || '').toUpperCase() === statusFilter.toUpperCase();
     const matchesDate = checkDocumentDateInRange(p, dateFilterStart, dateFilterEnd);
-    const matchesQuery = (p.pklNo || '').toLowerCase().includes(q) || (p.piInvoiceNo || '').toLowerCase().includes(q) || (p.consignee || '').toLowerCase().includes(q) || (p.createdBy || '').toLowerCase().includes(q) || (p.totalPackages || '').toLowerCase().includes(q);
+    const matchesQuery = String(p.pklNo || '').toLowerCase().includes(q) || String(p.piInvoiceNo || '').toLowerCase().includes(q) || String(p.consignee || '').toLowerCase().includes(q) || String(p.createdBy || '').toLowerCase().includes(q) || String(p.totalPackages || '').toLowerCase().includes(q);
     return matchesStatus && matchesDate && matchesQuery;
   }).sort((a, b) => {
     if (sortField) {
@@ -14028,7 +14028,7 @@ function App() {
     className: "fi fi-rr-arrows-h text-emerald-600 text-xs"
   }), " Swipe sideways to see all columns & actions"), /*#__PURE__*/React.createElement("span", {
     className: "font-bold text-slate-600 font-mono"
-  }, filteredQuotations.length, " records")), /*#__PURE__*/React.createElement("div", {
+  }, sortedAndFilteredQuotations.length, " records")), /*#__PURE__*/React.createElement("div", {
     className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, (openActionMenuId || openDocMenuId) && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-30 bg-transparent",
@@ -14601,7 +14601,7 @@ function App() {
     className: "fi fi-rr-arrows-h text-indigo-600 text-xs"
   }), " Swipe sideways to see all 13 columns & actions"), /*#__PURE__*/React.createElement("span", {
     className: "font-bold text-slate-600 font-mono"
-  }, filteredInvoices.length, " records")), /*#__PURE__*/React.createElement("div", {
+  }, filteredAndSortedPi.length, " records")), /*#__PURE__*/React.createElement("div", {
     className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, (openActionMenuId || openDocMenuId) && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-30 bg-transparent",
@@ -15494,7 +15494,18 @@ function App() {
     className: "py-3 px-3"
   }, "Created By"))), /*#__PURE__*/React.createElement("tbody", {
     className: "divide-y divide-slate-100 text-slate-800 text-[11px]"
-  }, filteredAndSortedPkl.map((p, idx) => {
+  }, filteredAndSortedPkl.length === 0 && /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 11,
+    className: "py-12 text-center text-slate-400"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center justify-center space-y-2"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-box text-3xl text-slate-300"
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-semibold text-slate-600"
+  }, "No Packing Lists Found"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-400"
+  }, "Create a new packing list or convert from Proforma/Commercial Invoice.")))), filteredAndSortedPkl.map((p, idx) => {
     const rowKey = `pkl-${p.id || 'id'}-${idx}`;
     const isActionOpen = openActionMenuId === rowKey;
     return /*#__PURE__*/React.createElement(React.Fragment, {

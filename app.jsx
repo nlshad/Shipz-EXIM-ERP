@@ -6015,7 +6015,7 @@
       ]);
 
       // Active List for Commercial Invoices vs Proforma Invoices Engine
-      const activeInvoicesList = activeEngine === 'invoices' ? commercialInvoices : proformaInvoices;
+      const activeInvoicesList = (activeEngine === 'invoices' || activeEngine === 'commercial') ? commercialInvoices : proformaInvoices;
 
       // Calculate Top KPI Metrics for Invoices / Proforma Invoice
       const piTotalSalesInr = (activeInvoicesList || []).reduce((acc, pi) => acc + ((pi.amountFx || 0) * (pi.convRate || 85)), 0);
@@ -6287,11 +6287,11 @@
           const matchesStatus = statusFilter === 'ALL' || (p.status || '').toUpperCase() === statusFilter.toUpperCase();
           const matchesDate = checkDocumentDateInRange(p, dateFilterStart, dateFilterEnd);
           const matchesQuery = (
-            (p.pklNo || '').toLowerCase().includes(q) ||
-            (p.piInvoiceNo || '').toLowerCase().includes(q) ||
-            (p.consignee || '').toLowerCase().includes(q) ||
-            (p.createdBy || '').toLowerCase().includes(q) ||
-            (p.totalPackages || '').toLowerCase().includes(q)
+            String(p.pklNo || '').toLowerCase().includes(q) ||
+            String(p.piInvoiceNo || '').toLowerCase().includes(q) ||
+            String(p.consignee || '').toLowerCase().includes(q) ||
+            String(p.createdBy || '').toLowerCase().includes(q) ||
+            String(p.totalPackages || '').toLowerCase().includes(q)
           );
           return matchesStatus && matchesDate && matchesQuery;
         })
@@ -12618,7 +12618,7 @@
                   {/* Mobile horizontal swipe hint */}
                   <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
                     <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-emerald-600 text-xs"></i> Swipe sideways to see all columns & actions</span>
-                    <span className="font-bold text-slate-600 font-mono">{filteredQuotations.length} records</span>
+                    <span className="font-bold text-slate-600 font-mono">{sortedAndFilteredQuotations.length} records</span>
                   </div>
 
                   <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative">
@@ -13062,7 +13062,7 @@
                     {/* Mobile horizontal swipe hint */}
                     <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1 py-1">
                       <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-indigo-600 text-xs"></i> Swipe sideways to see all 13 columns & actions</span>
-                      <span className="font-bold text-slate-600 font-mono">{filteredInvoices.length} records</span>
+                      <span className="font-bold text-slate-600 font-mono">{filteredAndSortedPi.length} records</span>
                     </div>
 
                     {/* 3. STRICT 13 DATA GRID COLUMNS TABLE */}
@@ -13833,6 +13833,17 @@
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-800 text-[11px]">
+                        {filteredAndSortedPkl.length === 0 && (
+                          <tr>
+                            <td colSpan={11} className="py-12 text-center text-slate-400">
+                              <div className="flex flex-col items-center justify-center space-y-2">
+                                <i className="fi fi-rr-box text-3xl text-slate-300"></i>
+                                <p className="text-sm font-semibold text-slate-600">No Packing Lists Found</p>
+                                <p className="text-xs text-slate-400">Create a new packing list or convert from Proforma/Commercial Invoice.</p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                         {filteredAndSortedPkl.map((p, idx) => {
                           const rowKey = `pkl-${p.id || 'id'}-${idx}`;
                           const isActionOpen = openActionMenuId === rowKey;
