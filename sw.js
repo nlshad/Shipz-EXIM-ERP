@@ -1,5 +1,5 @@
 // MGlobal Operations - Enterprise Service Worker
-const CACHE_NAME = 'mglobal-operations-v3';
+const CACHE_NAME = 'mglobal-operations-v4';
 
 const STATIC_ASSETS = [
   './',

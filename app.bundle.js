@@ -7621,7 +7621,9 @@ function App() {
     const iconColor = accent === 'emerald' ? 'text-emerald-600' : accent === 'blue' ? 'text-blue-600' : 'text-indigo-600';
     const activeBg = isFiltered ? accent === 'emerald' ? 'bg-emerald-50/50 border-emerald-300' : accent === 'blue' ? 'bg-blue-50/50 border-blue-300' : 'bg-indigo-50/50 border-indigo-300' : 'bg-white border-slate-300';
     return /*#__PURE__*/React.createElement("div", {
-      className: `flex items-center gap-1.5 ${activeBg} border rounded-md px-2 py-1 text-xs shadow-2xs transition-all`
+      className: `flex flex-wrap sm:flex-nowrap items-center gap-1.5 ${activeBg} border rounded-md px-2 py-1 text-xs shadow-2xs transition-all max-w-full`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 shrink-0"
     }, /*#__PURE__*/React.createElement("i", {
       className: `fi fi-rr-calendar ${iconColor} text-xs shrink-0`
     }), /*#__PURE__*/React.createElement("span", {
@@ -7646,8 +7648,8 @@ function App() {
       value: "THIS_YEAR"
     }, "This Year"), /*#__PURE__*/React.createElement("option", {
       value: "CUSTOM"
-    }, "Custom Range")), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-1 border-l border-slate-200 pl-1.5"
+    }, "Custom Range"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1 border-t sm:border-t-0 sm:border-l border-slate-200 pt-1 sm:pt-0 sm:pl-1.5 shrink-0"
     }, /*#__PURE__*/React.createElement("input", {
       type: "date",
       value: dateFilterStart,
@@ -10554,39 +10556,43 @@ function App() {
     }), /*#__PURE__*/React.createElement("span", null, "Protected by MGlobal Enterprise Security Protocol"))))), renderResetPasswordModal());
   }
   return /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col md:flex-row h-screen bg-[#EEF4FF] overflow-hidden relative"
+    className: "flex flex-col md:flex-row h-screen supports-[height:100dvh]:h-[100dvh] bg-[#EEF4FF] overflow-hidden relative"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "md:hidden flex items-center justify-between bg-[#0B132B] text-white px-4 py-3 border-b border-white/10 z-40 shrink-0"
+    className: "md:hidden flex items-center justify-between bg-[#0B132B] text-white px-3 sm:px-4 py-2.5 border-b border-white/10 z-40 shrink-0"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-3"
+    className: "flex items-center space-x-2.5 min-w-0"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setIsMobileSidebarOpen(!isMobileSidebarOpen),
-    className: "p-2 text-slate-300 hover:text-white rounded-lg bg-white/10 flex items-center focus:outline-none",
+    className: "p-2 text-slate-300 hover:text-white rounded-lg bg-white/10 flex items-center focus:outline-none cursor-pointer active:scale-95 transition-transform",
     "aria-label": "Toggle Mobile Menu"
   }, /*#__PURE__*/React.createElement("i", {
-    className: "fi fi-rr-menu-burger text-lg"
+    className: "fi fi-rr-menu-burger text-base"
   })), /*#__PURE__*/React.createElement("div", {
     onClick: () => {
       setActiveEngine('dashboard');
       setIsMobileSidebarOpen(false);
     },
-    className: "cursor-pointer flex items-center space-x-2"
+    className: "cursor-pointer flex items-center space-x-2 min-w-0"
   }, darkCompanyLogo || companyLogo ? /*#__PURE__*/React.createElement("img", {
     src: darkCompanyLogo || companyLogo,
     alt: "Logo",
     className: "max-h-7 object-contain"
   }) : /*#__PURE__*/React.createElement("span", {
-    className: "font-black text-sm text-white tracking-tight"
-  }, "MGLOBAL OPERATIONS"))), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-2"
+    className: "font-black text-xs sm:text-sm text-white tracking-tight"
+  }, "MGLOBAL"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold uppercase truncate max-w-[120px]"
+  }, activeEngine === 'dashboard' ? 'Dashboard' : activeEngine === 'quotations' ? 'Quotations' : activeEngine === 'invoices' ? 'Invoices' : activeEngine === 'proforma' ? 'Proforma PI' : activeEngine === 'packingList' ? 'Packing List' : activeEngine === 'blDraft' ? 'BL Draft' : activeEngine === 'settings' ? 'Settings' : activeEngine === 'supportHelpdesk' ? 'Helpdesk' : activeEngine === 'drive' ? 'Drive' : activeEngine === 'user' ? 'Users' : 'Shipz ERP'))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-2 shrink-0"
+  }, renderNotificationsBell(), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30"
-  }, "ONLINE"))), isMobileSidebarOpen && /*#__PURE__*/React.createElement("div", {
+    className: "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
+  }), /*#__PURE__*/React.createElement("span", null, "LIVE")))), isMobileSidebarOpen && /*#__PURE__*/React.createElement("div", {
     onClick: () => setIsMobileSidebarOpen(false),
-    className: "fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-40 md:hidden transition-opacity"
+    className: "fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 md:hidden transition-opacity"
   }), /*#__PURE__*/React.createElement("aside", {
-    className: `fixed md:static inset-y-0 left-0 z-50 w-64 sidebar-navy flex flex-col shrink-0 h-screen px-3 py-2.5 select-none border-r border-white/10 overflow-hidden transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`
+    className: `fixed md:static inset-y-0 left-0 z-50 w-72 sm:w-80 md:w-64 sidebar-navy flex flex-col shrink-0 h-screen supports-[height:100dvh]:h-[100dvh] px-3 py-2.5 select-none border-r border-white/10 overflow-hidden transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "px-2 py-1 shrink-0 flex items-center justify-between min-h-[52px] border-b border-white/10 mb-1"
   }, darkCompanyLogo || companyLogo ? /*#__PURE__*/React.createElement("div", {
@@ -10775,9 +10781,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-unlock text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "Unlock Workspace")))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-hidden flex flex-col"
+    className: "flex-1 min-h-0 h-full overflow-hidden flex flex-col relative"
   }, activeEngine === 'dashboard' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 bg-[#F8FAFC] text-slate-800 pb-28"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 bg-[#F8FAFC] text-slate-800 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -11277,7 +11283,7 @@ function App() {
   }, "AED"), /*#__PURE__*/React.createElement("span", {
     className: "font-bold text-slate-900 tabular-nums"
   }, "\u20B923.14"))))))), activeEngine === 'settings' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24 bg-[#EEF4FF]"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#EEF4FF]"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -11290,13 +11296,33 @@ function App() {
     className: "fi fi-rr-settings text-indigo-600 text-lg"
   }), /*#__PURE__*/React.createElement("span", null, "System Settings & Operational Configurations"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => alert(`Saved changes for ${currentSettingsSubMenu.label}!`),
-    className: "px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all"
+    className: "px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all cursor-pointer"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-disk text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "Save Changes"))), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col md:flex-row gap-6 items-start"
-  }, /*#__PURE__*/React.createElement("aside", {
-    className: "w-full md:w-80 bg-[#0B0F19] text-white p-5 rounded-2xl shadow-xl border border-white/10 flex flex-col flex-shrink-0 sticky top-4 max-h-[calc(100vh-230px)] space-y-4"
+    className: "flex flex-col md:flex-row gap-4 sm:gap-6 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "md:hidden w-full bg-[#0B0F19] text-white p-3.5 rounded-2xl shadow-md border border-white/10 space-y-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-settings text-indigo-400"
+  }), /*#__PURE__*/React.createElement("span", null, "Settings Module (21 Modules):")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30 font-mono"
+  }, currentSettingsSubMenu.category)), /*#__PURE__*/React.createElement("select", {
+    value: activeSettingsSubMenu,
+    onChange: e => setActiveSettingsSubMenu(e.target.value),
+    className: "w-full bg-slate-900 border border-white/20 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-400 cursor-pointer"
+  }, ['Corporate', 'Masters', 'Logistics', 'Financial', 'System', 'Integrations'].map(catName => /*#__PURE__*/React.createElement("optgroup", {
+    key: catName,
+    label: `--- ${catName} ---`
+  }, SETTINGS_SUB_MENUS.filter(s => s.category === catName).map(sub => /*#__PURE__*/React.createElement("option", {
+    key: sub.id,
+    value: sub.id
+  }, sub.label)))))), /*#__PURE__*/React.createElement("aside", {
+    className: "hidden md:flex md:w-80 bg-[#0B0F19] text-white p-5 rounded-2xl shadow-xl border border-white/10 flex-col flex-shrink-0 sticky top-4 max-h-[calc(100vh-230px)] space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between border-b border-white/10 pb-3"
   }, /*#__PURE__*/React.createElement("div", {
@@ -11973,9 +11999,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-user-delete text-rose-500 text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "Bulk Deactivate")))), /*#__PURE__*/React.createElement("div", {
-    className: "overflow-visible rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[360px]"
+    className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[360px] relative"
   }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left border-collapse text-xs"
+    className: "w-full min-w-[760px] text-left border-collapse text-xs"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider"
   }, /*#__PURE__*/React.createElement("th", {
@@ -13595,9 +13621,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-trash text-xs"
   })))))))))))))), activeEngine === 'supportHelpdesk' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-28 bg-[#F8FAFC]"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC]"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs"
+    className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 text-xs font-bold text-indigo-600 uppercase tracking-wider"
   }, /*#__PURE__*/React.createElement("span", null, "MGlobal Operations"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", {
@@ -13609,17 +13635,17 @@ function App() {
   }), /*#__PURE__*/React.createElement("span", null, "Support & Helpdesk Hub")), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-500 mt-0.5"
   }, "24/7 Priority EXIM Technical Support, Direct Contact & Interactive AI Chatbot Assistant.")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-3"
+    className: "flex flex-wrap items-center gap-2 sm:gap-3"
   }, /*#__PURE__*/React.createElement("a", {
     href: "tel:9747331641",
-    className: "px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-indigo-600/20 transition-colors"
+    className: "px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-indigo-600/20 transition-colors"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-phone-call text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "Call Help Desk: +91 9747331641")), /*#__PURE__*/React.createElement("a", {
     href: "https://wa.me/919747331641?text=Hello%20ExportFlow%20ERP%20Support,%20I%20need%20assistance",
     target: "_blank",
     rel: "noopener noreferrer",
-    className: "px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-emerald-600/20 transition-colors"
+    className: "px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-emerald-600/20 transition-colors"
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-comment-alt text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "WhatsApp Support")))), /*#__PURE__*/React.createElement("div", {
@@ -13859,11 +13885,11 @@ function App() {
   })), openFaqId === 'faq-3' && /*#__PURE__*/React.createElement("div", {
     className: "p-3 text-slate-600 text-[11px] leading-relaxed bg-white border-t border-slate-200"
   }, "ExportFlow ERP connects directly to your local MySQL database (", /*#__PURE__*/React.createElement("code", null, "shipz_db"), ") using ", /*#__PURE__*/React.createElement("code", null, "api.php"), ". All created Quotations, Proforma Invoices, and Master Data are saved locally. If offline, data is safely cached in LocalStorage."))))))), activeEngine === 'quotations' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4"
+    className: "bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "relative flex-1 min-w-[240px] max-w-md"
+    className: "relative flex-1 min-w-[200px] max-w-md"
   }, /*#__PURE__*/React.createElement("input", {
     type: "text",
     placeholder: "Search across invoices, products, settings...",
@@ -13873,7 +13899,7 @@ function App() {
   }), /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-3 text-xs"
+    className: "flex items-center space-x-2 sm:space-x-3 text-xs"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700"
   }, /*#__PURE__*/React.createElement("span", null, "FY:"), /*#__PURE__*/React.createElement("select", {
@@ -13901,7 +13927,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-link text-sm"
   })), renderNotificationsBell())), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
+    className: "bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
@@ -13965,7 +13991,15 @@ function App() {
     },
     className: "px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1 transition-all"
   }, /*#__PURE__*/React.createElement("span", null, "+ Add New")))), /*#__PURE__*/React.createElement("div", {
-    className: "overflow-visible min-h-[380px] relative"
+    className: "md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-arrows-h text-emerald-600 text-xs"
+  }), " Swipe sideways to see all columns & actions"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-600 font-mono"
+  }, filteredQuotations.length, " records")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, (openActionMenuId || openDocMenuId) && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-30 bg-transparent",
     onClick: () => {
@@ -13973,7 +14007,7 @@ function App() {
       setOpenDocMenuId(null);
     }
   }), /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full min-w-[960px] text-left text-xs border-collapse"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]"
   }, /*#__PURE__*/React.createElement("th", {
@@ -14320,11 +14354,11 @@ function App() {
       }), /*#__PURE__*/React.createElement("span", null, "Add Note")))))));
     })());
   })))))), (activeEngine === 'proforma' || activeEngine === 'invoices') && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4"
+    className: "bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "relative flex-1 min-w-[240px] max-w-md"
+    className: "relative flex-1 min-w-[200px] max-w-md"
   }, /*#__PURE__*/React.createElement("input", {
     type: "text",
     id: "global_search",
@@ -14335,7 +14369,7 @@ function App() {
   }), /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center space-x-3 text-xs"
+    className: "flex items-center space-x-2 sm:space-x-3 text-xs"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700"
   }, /*#__PURE__*/React.createElement("span", null, "FY:"), /*#__PURE__*/React.createElement("select", {
@@ -14530,7 +14564,15 @@ function App() {
     },
     className: "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1"
   }, /*#__PURE__*/React.createElement("span", null, "+ Add New")))), /*#__PURE__*/React.createElement("div", {
-    className: "overflow-visible min-h-[380px] relative"
+    className: "md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1 py-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-arrows-h text-indigo-600 text-xs"
+  }), " Swipe sideways to see all 13 columns & actions"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-600 font-mono"
+  }, filteredInvoices.length, " records")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, (openActionMenuId || openDocMenuId) && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-30 bg-transparent",
     onClick: () => {
@@ -14538,7 +14580,7 @@ function App() {
       setOpenDocMenuId(null);
     }
   }), /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full min-w-[1100px] text-left text-xs border-collapse"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]"
   }, /*#__PURE__*/React.createElement("th", {
@@ -15048,9 +15090,9 @@ function App() {
   }, "$", p.rate.toFixed(2)), /*#__PURE__*/React.createElement("td", {
     className: "py-2.5 px-3 text-right font-mono font-bold text-slate-900"
   }, "$", p.total.toFixed(2)))))))))))), activeEngine === 'blDraft' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+    className: "bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2"
   }, /*#__PURE__*/React.createElement("span", null, "Bill of Lading (BL) Draft Management Engine"), /*#__PURE__*/React.createElement("span", {
@@ -15061,14 +15103,14 @@ function App() {
     className: "flex items-center space-x-3"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => alert('Exporting BL Draft register as .xlsx Excel file...'),
-    className: "px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs text-slate-700"
+    className: "px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs text-slate-700"
   }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCA Download Excel (.xlsx)")), /*#__PURE__*/React.createElement("button", {
     onClick: handleOpenAddBlModal,
-    className: "px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg"
+    className: "px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg"
   }, /*#__PURE__*/React.createElement("span", null, "+ Add New")))), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
+    className: "bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/80 p-3 rounded-xl border border-slate-200"
+    className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-2 text-xs font-bold text-slate-600"
   }, /*#__PURE__*/React.createElement("span", null, "Show"), /*#__PURE__*/React.createElement("select", {
@@ -15094,9 +15136,17 @@ function App() {
     placeholder: "Filter BL drafts...",
     className: "bg-white border border-slate-300 rounded-md px-3 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none w-36 sm:w-48 shadow-2xs"
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "overflow-visible min-h-[380px]"
+    className: "md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-arrows-h text-blue-600 text-xs"
+  }), " Swipe sideways to see all columns & actions"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-600 font-mono"
+  }, filteredAndSortedBl.length, " records")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full min-w-[960px] text-left text-xs border-collapse"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]"
   }, /*#__PURE__*/React.createElement("th", {
@@ -15325,9 +15375,9 @@ function App() {
       }), /*#__PURE__*/React.createElement("span", null, "Add Note")))))));
     })());
   })))))), activeEngine === 'packingList' && /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24"
+    className: "flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+    className: "bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2"
   }, /*#__PURE__*/React.createElement("span", null, "Packing List Management Engine"), /*#__PURE__*/React.createElement("span", {
@@ -15341,17 +15391,17 @@ function App() {
       handleResetPklFormData();
       setIsCreatePklModalOpen(true);
     },
-    className: "px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg"
+    className: "px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg"
   }, /*#__PURE__*/React.createElement("span", null, "+ Create Packing List")))), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
+    className: "bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+    className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center space-x-3 text-xs font-bold text-slate-600"
   }, /*#__PURE__*/React.createElement("span", null, "Show"), /*#__PURE__*/React.createElement("select", {
     value: entriesPerPage,
     onChange: e => setEntriesPerPage(e.target.value),
-    className: "bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold"
+    className: "bg-white border border-slate-300 rounded-md px-2 py-1 font-bold"
   }, /*#__PURE__*/React.createElement("option", {
     value: "10"
   }, "10"), /*#__PURE__*/React.createElement("option", {
@@ -15377,9 +15427,17 @@ function App() {
     },
     className: "px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm flex items-center space-x-1"
   }, /*#__PURE__*/React.createElement("span", null, "+ Add New")))), /*#__PURE__*/React.createElement("div", {
-    className: "overflow-visible min-h-[380px]"
+    className: "md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "fi fi-rr-arrows-h text-emerald-600 text-xs"
+  }), " Swipe sideways to see all columns & actions"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-600 font-mono"
+  }, filteredAndSortedPkl.length, " records")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative"
   }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full min-w-[960px] text-left text-xs border-collapse"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]"
   }, /*#__PURE__*/React.createElement("th", {
@@ -16737,15 +16795,15 @@ function App() {
     const editedUser = selectedPiView.lastEditedBy || selectedPiView.createdBy || selectedPiView.salesperson || 'System Admin';
     const editedDate = selectedPiView.updatedAt || selectedPiView.createdAt || selectedPiView.date || '2026-08-04';
     return /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+      className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]"
+      className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[96vh]"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0"
+      className: "flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-3"
+      className: "flex items-center space-x-2.5 sm:space-x-3"
     }, /*#__PURE__*/React.createElement("span", {
-      className: `w-9 h-9 rounded-xl font-black flex items-center justify-center text-xs shadow-md ${isCi ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'}`
+      className: `w-8 sm:w-9 h-8 sm:h-9 rounded-xl font-black flex items-center justify-center text-xs shadow-md shrink-0 ${isCi ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'}`
     }, isCi ? 'CI' : 'PI'), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2"
     }, /*#__PURE__*/React.createElement("h3", {
@@ -16766,7 +16824,7 @@ function App() {
       onClick: () => setSelectedPiView(null),
       className: "w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all cursor-pointer"
     }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-      className: "p-6 space-y-5 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50"
+      className: "p-3 sm:p-6 space-y-4 sm:space-y-5 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50"
     }, /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs"
     }, /*#__PURE__*/React.createElement("div", {
@@ -16965,21 +17023,23 @@ function App() {
     const editedUser = selectedQuotationView.lastEditedBy || selectedQuotationView.createdBy || selectedQuotationView.salesperson || 'System Admin';
     const editedDate = selectedQuotationView.updatedAt || selectedQuotationView.createdAt || selectedQuotationView.date || '2026-08-04';
     return /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+      className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]"
+      className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[96vh]"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0"
+      className: "flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center space-x-3"
+      className: "flex items-center space-x-2.5 sm:space-x-3 min-w-0"
     }, /*#__PURE__*/React.createElement("span", {
-      className: "w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-md"
-    }, "QT"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-md shrink-0"
+    }, "QT"), /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2"
     }, /*#__PURE__*/React.createElement("h3", {
-      className: "text-lg font-black tracking-tight text-white"
+      className: "text-base sm:text-lg font-black tracking-tight text-white truncate"
     }, "Quotation Details - ", selectedQuotationView.quotationNo), /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold uppercase tracking-wider"
+      className: "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold uppercase tracking-wider shrink-0"
     }, selectedQuotationView.status || 'Accepted')), /*#__PURE__*/React.createElement("div", {
       className: "flex flex-wrap items-center gap-2 mt-1"
     }, /*#__PURE__*/React.createElement("span", {
@@ -16992,9 +17052,9 @@ function App() {
       className: "fi fi-rr-edit text-xs"
     }), /*#__PURE__*/React.createElement("span", null, "Last Edited: ", editedUser, " (", formatRelativeTime(editedDate), ")"))))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setSelectedQuotationView(null),
-      className: "w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all"
+      className: "w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all shrink-0 ml-2"
     }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-      className: "p-6 space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50"
+      className: "p-3 sm:p-6 space-y-4 sm:space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50"
     }, /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs"
     }, /*#__PURE__*/React.createElement("div", {
@@ -17424,25 +17484,27 @@ function App() {
       className: "fi fi-rr-copy text-xs"
     }), /*#__PURE__*/React.createElement("span", null, "Copy Formatted Share Summary"))))));
   })(), isCreateQtModalOpen && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col relative"
+    className: "bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col relative"
   }, toastNotice && /*#__PURE__*/React.createElement("div", {
-    className: "bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold text-center flex items-center justify-between sticky top-0 z-30 shadow-md"
+    className: "bg-emerald-600 text-white px-3 sm:px-4 py-2 text-xs font-bold text-center flex items-center justify-between sticky top-0 z-30 shadow-md"
   }, /*#__PURE__*/React.createElement("span", null, "\u2728 ", toastNotice), /*#__PURE__*/React.createElement("button", {
     onClick: () => setToastNotice(null),
     className: "text-white hover:text-emerald-200 font-bold ml-4"
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-20"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-black text-slate-900 tracking-tight"
+    className: "flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-20"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0 pr-2"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-base sm:text-lg font-black text-slate-900 tracking-tight"
   }, "Create Quotation"), /*#__PURE__*/React.createElement("p", {
-    className: "text-[11px] text-slate-500 font-medium"
-  }, "End-to-End EXIM Engine \u2022 Real-time Calculations \u2022 Cascading Dependencies")), /*#__PURE__*/React.createElement("button", {
+    className: "text-[10px] sm:text-[11px] text-slate-500 font-medium truncate"
+  }, "End-to-End EXIM Engine \u2022 Real-time Calculations")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setIsCreateQtModalOpen(false),
-    className: "text-slate-400 hover:text-slate-800 text-xl font-bold p-1"
+    className: "text-slate-400 hover:text-slate-800 text-xl font-bold p-1 shrink-0"
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-    className: "p-6 space-y-8 text-xs text-slate-700"
+    className: "p-3 sm:p-6 space-y-6 sm:space-y-8 text-xs text-slate-700"
   }, /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -18019,9 +18081,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("i", {
     className: "fi fi-rr-plus text-xs"
   }), /*#__PURE__*/React.createElement("span", null, "+ Add Line Item")))), /*#__PURE__*/React.createElement("div", {
-    className: "border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white"
+    className: "border border-slate-200 rounded-xl overflow-x-auto shadow-xs bg-white"
   }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full text-left text-xs border-collapse min-w-[600px] sm:min-w-0"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold text-[11px]"
   }, /*#__PURE__*/React.createElement("th", {
@@ -20009,11 +20071,11 @@ function App() {
     const pklActivities = getDocumentActivities(pkl, 'pkl');
     return /*#__PURE__*/React.createElement("div", {
       id: "pkl-pdf-modal-container",
-      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto"
+      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
+      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0"
+      className: "no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2.5 min-w-0"
     }, /*#__PURE__*/React.createElement("span", {
@@ -20118,10 +20180,10 @@ function App() {
       onClick: () => handleAddDocumentAuditNote(pkl.pklNo, pkl.id, 'pkl'),
       className: "px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg cursor-pointer shrink-0"
     }, "Log Note"))), /*#__PURE__*/React.createElement("div", {
-      className: "p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
+      className: "p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
     }, /*#__PURE__*/React.createElement("div", {
       id: "pkl-pdf-canvas",
-      className: "bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+      className: "bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white pb-3 border-b border-slate-300 flex justify-between items-start"
     }, /*#__PURE__*/React.createElement("div", {
@@ -20423,11 +20485,11 @@ function App() {
     const activeSignatoryDesignation = resolvedCompanyEntity?.signatoryDesignation || signatoryDesignation || 'Director';
     return /*#__PURE__*/React.createElement("div", {
       id: "quotation-pdf-modal-container",
-      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto"
+      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
+      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0"
+      className: "no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2.5 min-w-0"
     }, /*#__PURE__*/React.createElement("span", {
@@ -20458,10 +20520,10 @@ function App() {
       className: "w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1",
       title: "Close Modal"
     }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
-      className: "p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
+      className: "p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
     }, /*#__PURE__*/React.createElement("div", {
       id: "quotation-pdf-canvas",
-      className: "bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+      className: "bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white pb-3 border-b border-slate-300 flex justify-between items-start"
     }, /*#__PURE__*/React.createElement("div", {
@@ -20834,11 +20896,11 @@ function App() {
     const isCommercialDoc = pi && (pi.invoiceType === 'Commercial Invoice' || (pi.invNumber || '').toUpperCase().startsWith('INV/') || (pi.invNumber || '').toUpperCase().startsWith('CI/') || pi.status === 'Finalized' || pi.status === 'Commercial Invoice') || activeEngine === 'invoices';
     return /*#__PURE__*/React.createElement("div", {
       id: "proforma-pdf-modal-container",
-      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto"
+      className: "fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
+      className: "bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0"
+      className: "no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center space-x-2.5 min-w-0"
     }, /*#__PURE__*/React.createElement("span", {
@@ -20879,10 +20941,10 @@ function App() {
       className: "w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs border border-slate-700 transition-all cursor-pointer ml-1",
       title: "Close Modal"
     }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
-      className: "p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
+      className: "p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0"
     }, /*#__PURE__*/React.createElement("div", {
       id: "proforma-pdf-canvas",
-      className: "bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+      className: "bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white pb-3 border-b border-slate-300 flex justify-between items-start"
     }, /*#__PURE__*/React.createElement("div", {
@@ -23480,9 +23542,9 @@ function App() {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "border border-slate-200 rounded-xl overflow-hidden shadow-2xs max-h-56 overflow-y-auto bg-white"
+    className: "border border-slate-200 rounded-xl overflow-x-auto shadow-2xs max-h-56 overflow-y-auto bg-white"
   }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-left text-xs border-collapse"
+    className: "w-full text-left text-xs border-collapse min-w-[540px] sm:min-w-0"
   }, /*#__PURE__*/React.createElement("thead", {
     className: "sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold text-[11px] z-10"
   }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {

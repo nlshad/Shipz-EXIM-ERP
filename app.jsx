@@ -6104,24 +6104,26 @@
         const activeBg = isFiltered ? (accent === 'emerald' ? 'bg-emerald-50/50 border-emerald-300' : accent === 'blue' ? 'bg-blue-50/50 border-blue-300' : 'bg-indigo-50/50 border-indigo-300') : 'bg-white border-slate-300';
 
         return (
-          <div className={`flex items-center gap-1.5 ${activeBg} border rounded-md px-2 py-1 text-xs shadow-2xs transition-all`}>
-            <i className={`fi fi-rr-calendar ${iconColor} text-xs shrink-0`}></i>
-            <span className="font-bold text-slate-600 text-xs shrink-0">Date:</span>
-            <select
-              value={dateFilterPreset}
-              onChange={(e) => handleDatePresetChange(e.target.value)}
-              className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">All Dates</option>
-              <option value="TODAY">Today</option>
-              <option value="YESTERDAY">Yesterday</option>
-              <option value="LAST_7_DAYS">Last 7 Days</option>
-              <option value="THIS_MONTH">This Month</option>
-              <option value="LAST_30_DAYS">Last 30 Days</option>
-              <option value="THIS_YEAR">This Year</option>
-              <option value="CUSTOM">Custom Range</option>
-            </select>
-            <div className="flex items-center gap-1 border-l border-slate-200 pl-1.5">
+          <div className={`flex flex-wrap sm:flex-nowrap items-center gap-1.5 ${activeBg} border rounded-md px-2 py-1 text-xs shadow-2xs transition-all max-w-full`}>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <i className={`fi fi-rr-calendar ${iconColor} text-xs shrink-0`}></i>
+              <span className="font-bold text-slate-600 text-xs shrink-0">Date:</span>
+              <select
+                value={dateFilterPreset}
+                onChange={(e) => handleDatePresetChange(e.target.value)}
+                className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="ALL">All Dates</option>
+                <option value="TODAY">Today</option>
+                <option value="YESTERDAY">Yesterday</option>
+                <option value="LAST_7_DAYS">Last 7 Days</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_30_DAYS">Last 30 Days</option>
+                <option value="THIS_YEAR">This Year</option>
+                <option value="CUSTOM">Custom Range</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-1 border-t sm:border-t-0 sm:border-l border-slate-200 pt-1 sm:pt-0 sm:pl-1.5 shrink-0">
               <input
                 type="date"
                 value={dateFilterStart}
@@ -9104,28 +9106,44 @@
       }
 
       return (
-        <div className="flex flex-col md:flex-row h-screen bg-[#EEF4FF] overflow-hidden relative">
+        <div className="flex flex-col md:flex-row h-screen supports-[height:100dvh]:h-[100dvh] bg-[#EEF4FF] overflow-hidden relative">
           {/* MOBILE TOP HEADER BAR */}
-          <div className="md:hidden flex items-center justify-between bg-[#0B132B] text-white px-4 py-3 border-b border-white/10 z-40 shrink-0">
-            <div className="flex items-center space-x-3">
+          <div className="md:hidden flex items-center justify-between bg-[#0B132B] text-white px-3 sm:px-4 py-2.5 border-b border-white/10 z-40 shrink-0">
+            <div className="flex items-center space-x-2.5 min-w-0">
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="p-2 text-slate-300 hover:text-white rounded-lg bg-white/10 flex items-center focus:outline-none"
+                className="p-2 text-slate-300 hover:text-white rounded-lg bg-white/10 flex items-center focus:outline-none cursor-pointer active:scale-95 transition-transform"
                 aria-label="Toggle Mobile Menu"
               >
-                <i className="fi fi-rr-menu-burger text-lg"></i>
+                <i className="fi fi-rr-menu-burger text-base"></i>
               </button>
-              <div onClick={() => { setActiveEngine('dashboard'); setIsMobileSidebarOpen(false); }} className="cursor-pointer flex items-center space-x-2">
+              <div onClick={() => { setActiveEngine('dashboard'); setIsMobileSidebarOpen(false); }} className="cursor-pointer flex items-center space-x-2 min-w-0">
                 {(darkCompanyLogo || companyLogo) ? (
                   <img src={darkCompanyLogo || companyLogo} alt="Logo" className="max-h-7 object-contain" />
                 ) : (
-                  <span className="font-black text-sm text-white tracking-tight">MGLOBAL OPERATIONS</span>
+                  <span className="font-black text-xs sm:text-sm text-white tracking-tight">MGLOBAL</span>
                 )}
+                <span className="text-[10px] bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold uppercase truncate max-w-[120px]">
+                  {activeEngine === 'dashboard' ? 'Dashboard' :
+                   activeEngine === 'quotations' ? 'Quotations' :
+                   activeEngine === 'invoices' ? 'Invoices' :
+                   activeEngine === 'proforma' ? 'Proforma PI' :
+                   activeEngine === 'packingList' ? 'Packing List' :
+                   activeEngine === 'blDraft' ? 'BL Draft' :
+                   activeEngine === 'settings' ? 'Settings' :
+                   activeEngine === 'supportHelpdesk' ? 'Helpdesk' :
+                   activeEngine === 'drive' ? 'Drive' :
+                   activeEngine === 'user' ? 'Users' : 'Shipz ERP'}
+                </span>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">ONLINE</span>
+            <div className="flex items-center space-x-2 shrink-0">
+              {renderNotificationsBell()}
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>LIVE</span>
+              </span>
             </div>
           </div>
 
@@ -9133,12 +9151,12 @@
           {isMobileSidebarOpen && (
             <div
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-40 md:hidden transition-opacity"
+              className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 md:hidden transition-opacity"
             ></div>
           )}
 
           {/* SIDEBAR */}
-          <aside className={`fixed md:static inset-y-0 left-0 z-50 w-64 sidebar-navy flex flex-col shrink-0 h-screen px-3 py-2.5 select-none border-r border-white/10 overflow-hidden transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+          <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 sm:w-80 md:w-64 sidebar-navy flex flex-col shrink-0 h-screen supports-[height:100dvh]:h-[100dvh] px-3 py-2.5 select-none border-r border-white/10 overflow-hidden transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             {/* TOP BRAND HEADER */}
             <div className="px-2 py-1 shrink-0 flex items-center justify-between min-h-[52px] border-b border-white/10 mb-1">
               {(darkCompanyLogo || companyLogo) ? (
@@ -9343,11 +9361,11 @@
           )}
 
           {/* MAIN CONTAINER */}
-          <div className="flex-1 h-screen overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col relative">
 
             {/* EXECUTIVE DASHBOARD ENGINE (CLEAN, MINIMAL & ELEGANT UI) */}
             {activeEngine === 'dashboard' && (
-              <div className="flex-1 h-screen overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 bg-[#F8FAFC] text-slate-800 pb-28">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 bg-[#F8FAFC] text-slate-800 pb-28 md:pb-24">
 
                 {/* TOP HEADER & CONTROL BAR */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
@@ -9909,7 +9927,7 @@
 
             {/* MASTER SETTINGS PAGE (NAVY SIDEBAR MENU STYLE) */}
             {activeEngine === 'settings' && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24 bg-[#EEF4FF]">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#EEF4FF]">
 
                 {/* TOP HEADER BAR */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
@@ -9927,7 +9945,7 @@
 
                   <button
                     onClick={() => alert(`Saved changes for ${currentSettingsSubMenu.label}!`)}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all"
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all cursor-pointer"
                   >
                     <i className="fi fi-rr-disk text-xs"></i>
                     <span>Save Changes</span>
@@ -9935,10 +9953,36 @@
                 </div>
 
                 {/* TWO-COLUMN LAYOUT: LEFT NAVY SIDEBAR MENU + RIGHT CONTENT */}
-                <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
 
-                  {/* LEFT ASIDE NAVY SIDEBAR-STYLE MENU (CONSTRAINED ABOVE TASKBAR POSITION) */}
-                  <aside className="w-full md:w-80 bg-[#0B0F19] text-white p-5 rounded-2xl shadow-xl border border-white/10 flex flex-col flex-shrink-0 sticky top-4 max-h-[calc(100vh-230px)] space-y-4">
+                  {/* MOBILE COMPACT SETTINGS MODULE SELECTOR */}
+                  <div className="md:hidden w-full bg-[#0B0F19] text-white p-3.5 rounded-2xl shadow-md border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i className="fi fi-rr-settings text-indigo-400"></i>
+                        <span>Settings Module (21 Modules):</span>
+                      </span>
+                      <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30 font-mono">
+                        {currentSettingsSubMenu.category}
+                      </span>
+                    </div>
+                    <select
+                      value={activeSettingsSubMenu}
+                      onChange={(e) => setActiveSettingsSubMenu(e.target.value)}
+                      className="w-full bg-slate-900 border border-white/20 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-400 cursor-pointer"
+                    >
+                      {['Corporate', 'Masters', 'Logistics', 'Financial', 'System', 'Integrations'].map((catName) => (
+                        <optgroup key={catName} label={`--- ${catName} ---`}>
+                          {SETTINGS_SUB_MENUS.filter(s => s.category === catName).map((sub) => (
+                            <option key={sub.id} value={sub.id}>{sub.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* LEFT ASIDE NAVY SIDEBAR-STYLE MENU (CONSTRAINED ABOVE TASKBAR POSITION - DESKTOP ONLY) */}
+                  <aside className="hidden md:flex md:w-80 bg-[#0B0F19] text-white p-5 rounded-2xl shadow-xl border border-white/10 flex-col flex-shrink-0 sticky top-4 max-h-[calc(100vh-230px)] space-y-4">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                       <div className="flex items-center space-x-2">
                         <i className="fi fi-rr-settings text-lg text-indigo-400"></i>
@@ -10602,8 +10646,8 @@
                             </div>
 
                             {/* ZONE 3: USERS DATA GRID TABLE */}
-                            <div className="overflow-visible rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[360px]">
-                              <table className="w-full text-left border-collapse text-xs">
+                            <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[360px] relative">
+                              <table className="w-full min-w-[760px] text-left border-collapse text-xs">
                                 <thead>
                                   <tr className="bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider">
                                     <th className="p-3.5 w-10 text-center"><input type="checkbox" className="rounded text-indigo-600 focus:ring-0" /></th>
@@ -12134,9 +12178,9 @@
 
             {/* SUPPORT & HELPDESK ENGINE WITH AI CHATBOT & DIRECT CONTACT (PHONE: 9747331641) */}
             {activeEngine === 'supportHelpdesk' && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-28 bg-[#F8FAFC]">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24 bg-[#F8FAFC]">
                 {/* TOP HEADER */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs">
                   <div>
                     <div className="flex items-center space-x-2 text-xs font-bold text-indigo-600 uppercase tracking-wider">
                       <span>MGlobal Operations</span>
@@ -12150,10 +12194,10 @@
                     <p className="text-xs text-slate-500 mt-0.5">24/7 Priority EXIM Technical Support, Direct Contact & Interactive AI Chatbot Assistant.</p>
                   </div>
 
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <a
                       href="tel:9747331641"
-                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-indigo-600/20 transition-colors"
+                      className="px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-indigo-600/20 transition-colors"
                     >
                       <i className="fi fi-rr-phone-call text-xs"></i>
                       <span>Call Help Desk: +91 9747331641</span>
@@ -12162,7 +12206,7 @@
                       href="https://wa.me/919747331641?text=Hello%20ExportFlow%20ERP%20Support,%20I%20need%20assistance"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-emerald-600/20 transition-colors"
+                      className="px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center space-x-2 shadow-md shadow-emerald-600/20 transition-colors"
                     >
                       <i className="fi fi-rr-comment-alt text-xs"></i>
                       <span>WhatsApp Support</span>
@@ -12445,14 +12489,14 @@
 
             {/* VIEW 1: QUOTATIONS LISTING ENGINE */}
             {activeEngine === 'quotations' && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                  <div className="relative flex-1 min-w-[240px] max-w-md">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24">
+                <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                  <div className="relative flex-1 min-w-[200px] max-w-md">
                     <input type="text" placeholder="Search across invoices, products, settings..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white" />
                     <i className="fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"></i>
                   </div>
 
-                  <div className="flex items-center space-x-3 text-xs">
+                  <div className="flex items-center space-x-2 sm:space-x-3 text-xs">
                     <div className="flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700">
                       <span>FY:</span>
                       <select value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} className="bg-transparent font-bold text-indigo-600 focus:outline-none">
@@ -12477,7 +12521,7 @@
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div className="bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
                     <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
                       <span>Show</span>
@@ -12525,12 +12569,18 @@
                     </div>
                   </div>
 
-                  <div className="overflow-visible min-h-[380px] relative">
+                  {/* Mobile horizontal swipe hint */}
+                  <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
+                    <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-emerald-600 text-xs"></i> Swipe sideways to see all columns & actions</span>
+                    <span className="font-bold text-slate-600 font-mono">{filteredQuotations.length} records</span>
+                  </div>
+
+                  <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative">
                     {(openActionMenuId || openDocMenuId) && (
                       <div className="fixed inset-0 z-30 bg-transparent" onClick={() => { setOpenActionMenuId(null); setOpenDocMenuId(null); }} />
                     )}
 
-                    <table className="w-full text-left text-xs border-collapse">
+                    <table className="w-full min-w-[960px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
                           <th className="py-3 px-2 text-center">Expand</th>
@@ -12796,15 +12846,15 @@
 
             {/* VIEW 2: PROFORMA INVOICES ENGINE (PRD STRICT SCHEMA & KPI CARDS) */}
             {(activeEngine === 'proforma' || activeEngine === 'invoices') && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24">
                 {/* GLOBAL HEADER BAR WITH CONTROLS */}
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                  <div className="relative flex-1 min-w-[240px] max-w-md">
+                <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                  <div className="relative flex-1 min-w-[200px] max-w-md">
                     <input type="text" id="global_search" placeholder="Search across PI, consignees, products..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white" />
                     <i className="fi fi-rr-search text-slate-400 absolute left-3.5 top-3 text-xs"></i>
                   </div>
 
-                  <div className="flex items-center space-x-3 text-xs">
+                  <div className="flex items-center space-x-2 sm:space-x-3 text-xs">
                     <div className="flex items-center space-x-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700">
                       <span>FY:</span>
                       <select id="financial_year_filter" value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} className="bg-transparent font-bold text-indigo-600 focus:outline-none">
@@ -12963,13 +13013,19 @@
                       </div>
                     </div>
 
+                    {/* Mobile horizontal swipe hint */}
+                    <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1 py-1">
+                      <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-indigo-600 text-xs"></i> Swipe sideways to see all 13 columns & actions</span>
+                      <span className="font-bold text-slate-600 font-mono">{filteredInvoices.length} records</span>
+                    </div>
+
                     {/* 3. STRICT 13 DATA GRID COLUMNS TABLE */}
-                    <div className="overflow-visible min-h-[380px] relative">
+                    <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative">
                       {(openActionMenuId || openDocMenuId) && (
                         <div className="fixed inset-0 z-30 bg-transparent" onClick={() => { setOpenActionMenuId(null); setOpenDocMenuId(null); }} />
                       )}
 
-                      <table className="w-full text-left text-xs border-collapse">
+                      <table className="w-full min-w-[1100px] text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50/80 text-[11px]">
                             <th className="py-3 px-2 text-center">Expand</th>
@@ -13425,8 +13481,8 @@
 
             {/* VIEW 3: BL DRAFT ENGINE */}
             {activeEngine === 'blDraft' && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
                       <span>Bill of Lading (BL) Draft Management Engine</span>
@@ -13436,13 +13492,13 @@
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <button onClick={() => alert('Exporting BL Draft register as .xlsx Excel file...')} className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs text-slate-700"><span>📊 Download Excel (.xlsx)</span></button>
-                    <button onClick={handleOpenAddBlModal} className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg"><span>+ Add New</span></button>
+                    <button onClick={() => alert('Exporting BL Draft register as .xlsx Excel file...')} className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs text-slate-700"><span>📊 Download Excel (.xlsx)</span></button>
+                    <button onClick={handleOpenAddBlModal} className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg"><span>+ Add New</span></button>
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                <div className="bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
                     <div className="flex items-center space-x-2 text-xs font-bold text-slate-600">
                       <span>Show</span>
                       <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(e.target.value)} className="bg-white border border-slate-300 rounded-md px-2 py-1 font-bold">
@@ -13470,8 +13526,14 @@
                     </div>
                   </div>
 
-                  <div className="overflow-visible min-h-[380px]">
-                    <table className="w-full text-left text-xs border-collapse">
+                  {/* Mobile horizontal swipe hint */}
+                  <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
+                    <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-blue-600 text-xs"></i> Swipe sideways to see all columns & actions</span>
+                    <span className="font-bold text-slate-600 font-mono">{filteredAndSortedBl.length} records</span>
+                  </div>
+
+                  <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative">
+                    <table className="w-full min-w-[960px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]">
                           <th className="py-3 px-2 text-center">Expand</th>
@@ -13659,8 +13721,8 @@
 
             {/* VIEW 4: PACKING LIST ENGINE */}
             {activeEngine === 'packingList' && (
-              <div className="flex-1 h-screen overflow-y-auto p-6 space-y-6 pb-24">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1 min-h-0 h-full overflow-y-auto p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-6 pb-28 md:pb-24">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
                       <span>Packing List Management Engine</span>
@@ -13670,15 +13732,15 @@
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <button onClick={() => { handleResetPklFormData(); setIsCreatePklModalOpen(true); }} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg"><span>+ Create Packing List</span></button>
+                    <button onClick={() => { handleResetPklFormData(); setIsCreatePklModalOpen(true); }} className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg"><span>+ Create Packing List</span></button>
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="bg-white p-3 sm:p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
                     <div className="flex items-center space-x-3 text-xs font-bold text-slate-600">
                       <span>Show</span>
-                      <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-bold">
+                      <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(e.target.value)} className="bg-white border border-slate-300 rounded-md px-2 py-1 font-bold">
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -13701,8 +13763,14 @@
                     </div>
                   </div>
 
-                  <div className="overflow-visible min-h-[380px]">
-                    <table className="w-full text-left text-xs border-collapse">
+                  {/* Mobile horizontal swipe hint */}
+                  <div className="md:hidden flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
+                    <span className="flex items-center gap-1.5"><i className="fi fi-rr-arrows-h text-emerald-600 text-xs"></i> Swipe sideways to see all columns & actions</span>
+                    <span className="font-bold text-slate-600 font-mono">{filteredAndSortedPkl.length} records</span>
+                  </div>
+
+                  <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[380px] pb-16 relative">
+                    <table className="w-full min-w-[960px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 text-slate-600 font-bold bg-slate-50 text-[11px]">
                           <th className="py-3 px-2 text-center">Expand</th>
@@ -15154,12 +15222,12 @@
             const editedDate = selectedPiView.updatedAt || selectedPiView.createdAt || selectedPiView.date || '2026-08-04';
 
             return (
-              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]">
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col max-h-[96vh]">
                   {/* MODAL HEADER */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0">
-                    <div className="flex items-center space-x-3">
-                      <span className={`w-9 h-9 rounded-xl font-black flex items-center justify-center text-xs shadow-md ${isCi ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'}`}>
+                  <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0">
+                    <div className="flex items-center space-x-2.5 sm:space-x-3">
+                      <span className={`w-8 sm:w-9 h-8 sm:h-9 rounded-xl font-black flex items-center justify-center text-xs shadow-md shrink-0 ${isCi ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'}`}>
                         {isCi ? 'CI' : 'PI'}
                       </span>
                       <div>
@@ -15192,7 +15260,7 @@
                   </div>
 
                   {/* MODAL BODY */}
-                  <div className="p-6 space-y-5 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
+                  <div className="p-3 sm:p-6 space-y-4 sm:space-y-5 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
                     {/* CREATED & EDITED LOGO OVERVIEW BADGES */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                       {/* Created Badge */}
@@ -15403,18 +15471,18 @@
             const editedDate = selectedQuotationView.updatedAt || selectedQuotationView.createdAt || selectedQuotationView.date || '2026-08-04';
 
             return (
-              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[96vh]">
                   {/* MODAL HEADER */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0">
-                    <div className="flex items-center space-x-3">
-                      <span className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-md">QT</span>
-                      <div>
+                  <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-900 text-white shrink-0">
+                    <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                      <span className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-md shrink-0">QT</span>
+                      <div className="min-w-0">
                         <div className="flex items-center space-x-2">
-                          <h3 className="text-lg font-black tracking-tight text-white">
+                          <h3 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
                             Quotation Details - {selectedQuotationView.quotationNo}
                           </h3>
-                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold uppercase tracking-wider">
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold uppercase tracking-wider shrink-0">
                             {selectedQuotationView.status || 'Accepted'}
                           </span>
                         </div>
@@ -15432,14 +15500,14 @@
                     </div>
                     <button
                       onClick={() => setSelectedQuotationView(null)}
-                      className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all"
+                      className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-all shrink-0 ml-2"
                     >
                       ✕
                     </button>
                   </div>
 
                   {/* MODAL BODY (SCROLLABLE FULL FIELD DETAILS) */}
-                  <div className="p-6 space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
+                  <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 text-xs text-slate-700 overflow-y-auto flex-1 bg-slate-50/50">
 
                     {/* CREATED & EDITED LOGO OVERVIEW BADGES */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
@@ -15904,28 +15972,28 @@
 
           {/* CREATE QUOTATION MODAL (ADVANCED 41-FIELD FORM ENGINE WITH CASCAIDNG & INLINE MASTER QUICK-ADD) */}
           {isCreateQtModalOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto flex flex-col relative">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col relative">
 
                 {/* TOAST NOTICE BANNER */}
                 {toastNotice && (
-                  <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold text-center flex items-center justify-between sticky top-0 z-30 shadow-md">
+                  <div className="bg-emerald-600 text-white px-3 sm:px-4 py-2 text-xs font-bold text-center flex items-center justify-between sticky top-0 z-30 shadow-md">
                     <span>✨ {toastNotice}</span>
                     <button onClick={() => setToastNotice(null)} className="text-white hover:text-emerald-200 font-bold ml-4">✕</button>
                   </div>
                 )}
 
                 {/* MODAL HEADER */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-20">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Create Quotation</h3>
-                    <p className="text-[11px] text-slate-500 font-medium">End-to-End EXIM Engine • Real-time Calculations • Cascading Dependencies</p>
+                <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 sticky top-0 bg-white z-20">
+                  <div className="min-w-0 pr-2">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Create Quotation</h3>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">End-to-End EXIM Engine • Real-time Calculations</p>
                   </div>
-                  <button onClick={() => setIsCreateQtModalOpen(false)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1">✕</button>
+                  <button onClick={() => setIsCreateQtModalOpen(false)} className="text-slate-400 hover:text-slate-800 text-xl font-bold p-1 shrink-0">✕</button>
                 </div>
 
                 {/* MODAL FORM BODY */}
-                <div className="p-6 space-y-8 text-xs text-slate-700">
+                <div className="p-3 sm:p-6 space-y-6 sm:space-y-8 text-xs text-slate-700">
                   {/* SECTION 1: HEADER & GENERAL INFORMATION */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2 border-b border-slate-200 pb-2">
@@ -16378,8 +16446,8 @@
                     </div>
 
                     {/* LINE ITEMS SUMMARY TABLE */}
-                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white">
-                      <table className="w-full text-left text-xs border-collapse">
+                    <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs bg-white">
+                      <table className="w-full text-left text-xs border-collapse min-w-[600px] sm:min-w-0">
                         <thead>
                           <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold text-[11px]">
                             <th className="py-2.5 px-3 text-center w-10">#</th>
@@ -18223,10 +18291,10 @@
             const pklActivities = getDocumentActivities(pkl, 'pkl');
 
             return (
-              <div id="pkl-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
+              <div id="pkl-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
                   {/* MODAL HEADER WITH ACTION BUTTONS */}
-                  <div className="no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0">
+                  <div className="no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0">
                     <div className="flex items-center space-x-2.5 min-w-0">
                       <span className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-[10px] shadow-sm shrink-0">PKL</span>
                       <div className="min-w-0">
@@ -18334,10 +18402,10 @@
                   )}
 
                   {/* PRINT / PREVIEW CANVAS (MATCHES COMMERCIAL INVOICE EXACTLY) */}
-                  <div className="p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
+                  <div className="p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
                     <div
                       id="pkl-pdf-canvas"
-                      className="bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+                      className="bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
                     >
                       {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
                       <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
@@ -18601,10 +18669,10 @@
             const activeSignatoryDesignation = resolvedCompanyEntity?.signatoryDesignation || signatoryDesignation || 'Director';
 
             return (
-              <div id="quotation-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
+              <div id="quotation-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
                   {/* MODAL HEADER WITH ACTION BUTTONS (SIMPLIFIED & 100% RESPONSIVE) */}
-                  <div className="no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0">
+                  <div className="no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0">
                     {/* LEFT: DOCUMENT TITLE & NUMBER */}
                     <div className="flex items-center space-x-2.5 min-w-0">
                       <span className="w-7 h-7 rounded-lg bg-sky-500 text-slate-950 font-black flex items-center justify-center text-[10px] shadow-sm shrink-0">PDF</span>
@@ -18646,10 +18714,10 @@
                   </div>
 
                   {/* PRINT / PREVIEW CANVAS (SIMPLIFIED A4 PDF CANVAS) */}
-                  <div className="p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
+                  <div className="p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
                     <div
                       id="quotation-pdf-canvas"
-                      className="bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+                      className="bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
                     >
                       {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
                       <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
@@ -18990,10 +19058,10 @@
             )) || activeEngine === 'invoices';
 
             return (
-              <div id="proforma-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
+              <div id="proforma-pdf-modal-container" className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden print:max-h-none print:bg-transparent print:shadow-none print:border-none">
                   {/* MODAL HEADER WITH ACTION BUTTONS (SIMPLIFIED & 100% RESPONSIVE) */}
-                  <div className="no-print bg-slate-900 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 shrink-0">
+                  <div className="no-print bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-800 shrink-0">
                     {/* LEFT: DOCUMENT TITLE & NUMBER */}
                     <div className="flex items-center space-x-2.5 min-w-0">
                       <span className={`w-7 h-7 rounded-lg ${isCommercialDoc ? 'bg-indigo-500 text-white' : 'bg-emerald-500 text-slate-950'} font-black flex items-center justify-center text-[10px] shadow-sm shrink-0`}>
@@ -19054,10 +19122,10 @@
                   </div>
 
                   {/* PRINT / PREVIEW CANVAS (SIMPLIFIED A4 PDF CANVAS) */}
-                  <div className="p-4 overflow-y-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
+                  <div className="p-2 sm:p-4 overflow-auto flex-1 bg-slate-200/40 print:bg-transparent print:p-0">
                     <div
                       id="proforma-pdf-canvas"
-                      className="bg-white p-7 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none"
+                      className="bg-white p-4 sm:p-7 min-w-[640px] sm:min-w-0 max-w-3xl mx-auto text-slate-900 font-sans text-xs space-y-3.5 relative overflow-visible print:p-0 print:border-none print:shadow-none print:min-w-0"
                     >
                       {/* HEADER: BRAND LOGO & CORPORATE ADDRESS */}
                       <div className="bg-white pb-3 border-b border-slate-300 flex justify-between items-start">
@@ -21466,8 +21534,8 @@
                       </div>
 
                       {/* DATA PREVIEW TABLE */}
-                      <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs max-h-56 overflow-y-auto bg-white">
-                        <table className="w-full text-left text-xs border-collapse">
+                      <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs max-h-56 overflow-y-auto bg-white">
+                        <table className="w-full text-left text-xs border-collapse min-w-[540px] sm:min-w-0">
                           <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold text-[11px] z-10">
                             <tr>
                               <th className="py-2 px-2.5 text-center w-8">#</th>
