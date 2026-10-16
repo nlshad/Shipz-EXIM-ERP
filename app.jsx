@@ -6929,8 +6929,8 @@
           isOpen: true,
           cntrId: `cntr-${Date.now()}`,
           isEdit: false,
-          containerNo: `MSKU-${Math.floor(1000000 + Math.random() * 9000000)}`,
-          sealNo: `SL-SL-${Math.floor(1000 + Math.random() * 9000)}`,
+          containerNo: '',
+          sealNo: '',
           containerType: '20FT FCL (Dry Van)'
         });
       };
@@ -6972,23 +6972,7 @@
               containerNo: pklContainerModal.containerNo,
               sealNo: pklContainerModal.sealNo,
               containerType: pklContainerModal.containerType,
-              items: [
-                {
-                  id: `pkli-${Date.now()}-1`,
-                  boxRange: `Box 01 - 50`,
-                  product: 'Export Goods Item',
-                  packageType: 'HDPE Bag (25KG)',
-                  qtyPerPkg: 50,
-                  unit: 'Bag',
-                  netWtPerPkg: 25.00,
-                  grossWtPerPkg: 26.50,
-                  dimensions: '58 x 58 x 88 cm',
-                  cbmPerPkg: 0.045,
-                  totalNetWt: '1250.00',
-                  totalGrossWt: '1325.00',
-                  totalCbm: '2.25'
-                }
-              ]
+              items: [] // No automatically added package - added manually by user
             };
             return { ...prev, containers: [...containers, newCntr] };
           }
@@ -6999,7 +6983,6 @@
       const handleRemoveContainer = (cntrId) => {
         setPklFormData(prev => {
           const containers = (prev.containers || []).filter(c => c.id !== cntrId);
-          if (containers.length === 0) return prev;
           return { ...prev, containers };
         });
       };
@@ -7007,17 +6990,20 @@
       const handleOpenAddPackageModal = (cntrId) => {
         const cntr = (pklFormData.containers || []).find(c => c.id === cntrId);
         const itemLen = ((cntr && cntr.items) ? cntr.items.length : 0) + 1;
+        const defaultProduct = (pklFormData.items && pklFormData.items.length > 0)
+          ? (pklFormData.items[0]?.product || '')
+          : '';
         setPklPackageModal({
           isOpen: true,
           cntrId: cntrId,
           itemIdx: null,
           isEdit: false,
           boxRange: `Box ${String((itemLen - 1) * 20 + 1).padStart(2, '0')} - ${String(itemLen * 20).padStart(2, '0')}`,
-          product: 'Cumin Seed High Purity',
+          product: defaultProduct,
           packageType: 'HDPE Bag (25KG)',
-          qtyPerPkg: 20,
-          netWtPerPkg: 25,
-          grossWtPerPkg: 26.5,
+          qtyPerPkg: '',
+          netWtPerPkg: '',
+          grossWtPerPkg: '',
           dimensions: '58 x 58 x 88 cm',
           cbmPerPkg: 0.045
         });
@@ -17928,15 +17914,14 @@
                               >
                                 <span>✏️ Edit Container</span>
                               </button>
-                              {(pklFormData.containers || []).length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveContainer(cntr.id)}
-                                  className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg border border-rose-200 transition-colors"
-                                >
-                                  Remove
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                title="Remove this container"
+                                onClick={() => handleRemoveContainer(cntr.id)}
+                                className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg border border-rose-200 transition-colors flex items-center space-x-1"
+                              >
+                                <span>🗑️ Remove</span>
+                              </button>
                             </div>
                           </div>
 
@@ -17946,7 +17931,7 @@
                               <div className="text-xs font-bold text-slate-800 flex items-center space-x-2">
                                 <span>📦 Package Breakdown Entries (Inside Container #{cntrIdx + 1})</span>
                                 <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
-                                  {cntrItems.length} Package Entry{cntrItems.length > 1 ? 's' : ''}
+                                  {cntrItems.length} Package Entry{cntrItems.length !== 1 ? 's' : ''}
                                 </span>
                               </div>
 
@@ -17977,50 +17962,64 @@
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">
-                                  {cntrItems.map((item, itemIdx) => (
-                                    <tr key={item.id || itemIdx} className="hover:bg-indigo-50/20 transition-colors">
-                                      <td className="py-2 px-2 text-center text-slate-400 font-mono text-[10px] font-bold">
-                                        {itemIdx + 1}
+                                  {cntrItems.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={10} className="py-8 text-center text-slate-400 bg-slate-50/60">
+                                        <div className="flex flex-col items-center justify-center space-y-1.5">
+                                          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-base">
+                                            <i className="fi fi-rr-box-alt"></i>
+                                          </div>
+                                          <p className="text-xs font-bold text-slate-700">No Packages in Container #{cntrIdx + 1}</p>
+                                          <p className="text-[11px] text-slate-400 max-w-sm">
+                                            Container is empty. Click <span className="text-emerald-700 font-bold">+ Add Package Entry</span> above to manually add packages.
+                                          </p>
+                                        </div>
                                       </td>
-                                      <td className="py-2 px-3 font-bold text-slate-900 font-mono text-xs">
-                                        {item.boxRange || `Box ${itemIdx + 1}`}
-                                      </td>
-                                      <td className="py-2 px-3 font-semibold text-slate-800">
-                                        {item.product || 'Export Goods Item'}
-                                      </td>
-                                      <td className="py-2 px-3 text-slate-600">
-                                        {item.packageType || 'HDPE Bag (25KG)'}
-                                      </td>
-                                      <td className="py-2 px-3 text-center font-mono font-bold text-slate-900">
-                                        {item.qtyPerPkg || 1}
-                                      </td>
-                                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-700">
-                                        {item.netWtPerPkg || 0} KG
-                                      </td>
-                                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-700">
-                                        {item.grossWtPerPkg || 0} KG
-                                      </td>
-                                      <td className="py-2 px-3 text-right bg-indigo-50/30">
-                                        <span className="font-mono font-black text-indigo-900 text-xs">
-                                          {item.totalNetWt || '0.00'} <span className="text-[9px] text-indigo-600 font-normal">KG</span>
-                                        </span>
-                                      </td>
-                                      <td className="py-2 px-3 text-right bg-emerald-50/30">
-                                        <span className="font-mono font-black text-emerald-900 text-xs">
-                                          {item.totalGrossWt || '0.00'} <span className="text-[9px] text-emerald-600 font-normal">KG</span>
-                                        </span>
-                                      </td>
+                                    </tr>
+                                  ) : (
+                                    cntrItems.map((item, itemIdx) => (
+                                      <tr key={item.id || itemIdx} className="hover:bg-indigo-50/20 transition-colors">
+                                        <td className="py-2 px-2 text-center text-slate-400 font-mono text-[10px] font-bold">
+                                          {itemIdx + 1}
+                                        </td>
+                                        <td className="py-2 px-3 font-bold text-slate-900 font-mono text-xs">
+                                          {item.boxRange || `Box ${itemIdx + 1}`}
+                                        </td>
+                                        <td className="py-2 px-3 font-semibold text-slate-800">
+                                          {item.product || 'Export Goods Item'}
+                                        </td>
+                                        <td className="py-2 px-3 text-slate-600">
+                                          {item.packageType || 'HDPE Bag (25KG)'}
+                                        </td>
+                                        <td className="py-2 px-3 text-center font-mono font-bold text-slate-900">
+                                          {item.qtyPerPkg || 1}
+                                        </td>
+                                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-700">
+                                          {item.netWtPerPkg || 0} KG
+                                        </td>
+                                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-700">
+                                          {item.grossWtPerPkg || 0} KG
+                                        </td>
+                                        <td className="py-2 px-3 text-right bg-indigo-50/30">
+                                          <span className="font-mono font-black text-indigo-900 text-xs">
+                                            {item.totalNetWt || '0.00'} <span className="text-[9px] text-indigo-600 font-normal">KG</span>
+                                          </span>
+                                        </td>
+                                        <td className="py-2 px-3 text-right bg-emerald-50/30">
+                                          <span className="font-mono font-black text-emerald-900 text-xs">
+                                            {item.totalGrossWt || '0.00'} <span className="text-[9px] text-emerald-600 font-normal">KG</span>
+                                          </span>
+                                        </td>
 
-                                      <td className="py-2 px-2 text-center space-x-1">
-                                        <button
-                                          type="button"
-                                          title="Edit Package Entry via Popup"
-                                          onClick={() => handleOpenEditPackageModal(cntr.id, item, itemIdx)}
-                                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition-colors cursor-pointer"
-                                        >
-                                          ✏️ Edit
-                                        </button>
-                                        {cntrItems.length > 1 && (
+                                        <td className="py-2 px-2 text-center space-x-1">
+                                          <button
+                                            type="button"
+                                            title="Edit Package Entry via Popup"
+                                            onClick={() => handleOpenEditPackageModal(cntr.id, item, itemIdx)}
+                                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition-colors cursor-pointer"
+                                          >
+                                            ✏️ Edit
+                                          </button>
                                           <button
                                             type="button"
                                             title="Remove Package Entry"
@@ -18029,10 +18028,10 @@
                                           >
                                             ✕
                                           </button>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
                                 </tbody>
                               </table>
                             </div>
@@ -18041,7 +18040,7 @@
                           {/* CONTAINER SUBTOTAL SUMMARY BAR */}
                           <div className="bg-indigo-50/70 border border-indigo-200 p-2.5 rounded-xl flex flex-wrap justify-between items-center text-xs text-indigo-950 font-bold">
                             <span className="uppercase text-[10px] tracking-wider text-indigo-800 font-black">
-                              Container #{cntrIdx + 1} ({cntr.containerNo || 'MSKU-8820194'}) Subtotal:
+                              Container #{cntrIdx + 1} ({cntr.containerNo || 'Pending'}) Subtotal:
                             </span>
                             <div className="flex flex-wrap gap-4 font-mono text-[11px]">
                               <span>Pkgs: <strong className="text-slate-900">{cntrTotalPkgs}</strong></span>

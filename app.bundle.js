@@ -8393,8 +8393,8 @@ function App() {
       isOpen: true,
       cntrId: `cntr-${Date.now()}`,
       isEdit: false,
-      containerNo: `MSKU-${Math.floor(1000000 + Math.random() * 9000000)}`,
-      sealNo: `SL-SL-${Math.floor(1000 + Math.random() * 9000)}`,
+      containerNo: '',
+      sealNo: '',
       containerType: '20FT FCL (Dry Van)'
     });
   };
@@ -8437,21 +8437,7 @@ function App() {
           containerNo: pklContainerModal.containerNo,
           sealNo: pklContainerModal.sealNo,
           containerType: pklContainerModal.containerType,
-          items: [{
-            id: `pkli-${Date.now()}-1`,
-            boxRange: `Box 01 - 50`,
-            product: 'Export Goods Item',
-            packageType: 'HDPE Bag (25KG)',
-            qtyPerPkg: 50,
-            unit: 'Bag',
-            netWtPerPkg: 25.00,
-            grossWtPerPkg: 26.50,
-            dimensions: '58 x 58 x 88 cm',
-            cbmPerPkg: 0.045,
-            totalNetWt: '1250.00',
-            totalGrossWt: '1325.00',
-            totalCbm: '2.25'
-          }]
+          items: [] // No automatically added package - added manually by user
         };
         return {
           ...prev,
@@ -8467,7 +8453,6 @@ function App() {
   const handleRemoveContainer = cntrId => {
     setPklFormData(prev => {
       const containers = (prev.containers || []).filter(c => c.id !== cntrId);
-      if (containers.length === 0) return prev;
       return {
         ...prev,
         containers
@@ -8477,17 +8462,18 @@ function App() {
   const handleOpenAddPackageModal = cntrId => {
     const cntr = (pklFormData.containers || []).find(c => c.id === cntrId);
     const itemLen = (cntr && cntr.items ? cntr.items.length : 0) + 1;
+    const defaultProduct = pklFormData.items && pklFormData.items.length > 0 ? pklFormData.items[0]?.product || '' : '';
     setPklPackageModal({
       isOpen: true,
       cntrId: cntrId,
       itemIdx: null,
       isEdit: false,
       boxRange: `Box ${String((itemLen - 1) * 20 + 1).padStart(2, '0')} - ${String(itemLen * 20).padStart(2, '0')}`,
-      product: 'Cumin Seed High Purity',
+      product: defaultProduct,
       packageType: 'HDPE Bag (25KG)',
-      qtyPerPkg: 20,
-      netWtPerPkg: 25,
-      grossWtPerPkg: 26.5,
+      qtyPerPkg: '',
+      netWtPerPkg: '',
+      grossWtPerPkg: '',
       dimensions: '58 x 58 x 88 cm',
       cbmPerPkg: 0.045
     });
@@ -19757,11 +19743,12 @@ function App() {
       type: "button",
       onClick: () => handleOpenEditContainerModal(cntr),
       className: "px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg border border-slate-300 transition-colors shadow-2xs flex items-center space-x-1"
-    }, /*#__PURE__*/React.createElement("span", null, "\u270F\uFE0F Edit Container")), (pklFormData.containers || []).length > 1 && /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("span", null, "\u270F\uFE0F Edit Container")), /*#__PURE__*/React.createElement("button", {
       type: "button",
+      title: "Remove this container",
       onClick: () => handleRemoveContainer(cntr.id),
-      className: "px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg border border-rose-200 transition-colors"
-    }, "Remove"))), /*#__PURE__*/React.createElement("div", {
+      className: "px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg border border-rose-200 transition-colors flex items-center space-x-1"
+    }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD1\uFE0F Remove")))), /*#__PURE__*/React.createElement("div", {
       className: "space-y-3"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between border-b border-slate-200 pb-2"
@@ -19769,7 +19756,7 @@ function App() {
       className: "text-xs font-bold text-slate-800 flex items-center space-x-2"
     }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCE6 Package Breakdown Entries (Inside Container #", cntrIdx + 1, ")"), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold"
-    }, cntrItems.length, " Package Entry", cntrItems.length > 1 ? 's' : '')), /*#__PURE__*/React.createElement("button", {
+    }, cntrItems.length, " Package Entry", cntrItems.length !== 1 ? 's' : '')), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: () => handleOpenAddPackageModal(cntr.id),
       className: "px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1.5 cursor-pointer"
@@ -19801,7 +19788,22 @@ function App() {
       className: "py-2.5 px-3 w-20 text-center"
     }, "Actions"))), /*#__PURE__*/React.createElement("tbody", {
       className: "divide-y divide-slate-100 bg-white"
-    }, cntrItems.map((item, itemIdx) => /*#__PURE__*/React.createElement("tr", {
+    }, cntrItems.length === 0 ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+      colSpan: 10,
+      className: "py-8 text-center text-slate-400 bg-slate-50/60"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col items-center justify-center space-y-1.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-base"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "fi fi-rr-box-alt"
+    })), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-bold text-slate-700"
+    }, "No Packages in Container #", cntrIdx + 1), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-slate-400 max-w-sm"
+    }, "Container is empty. Click ", /*#__PURE__*/React.createElement("span", {
+      className: "text-emerald-700 font-bold"
+    }, "+ Add Package Entry"), " above to manually add packages.")))) : cntrItems.map((item, itemIdx) => /*#__PURE__*/React.createElement("tr", {
       key: item.id || itemIdx,
       className: "hover:bg-indigo-50/20 transition-colors"
     }, /*#__PURE__*/React.createElement("td", {
@@ -19837,7 +19839,7 @@ function App() {
       title: "Edit Package Entry via Popup",
       onClick: () => handleOpenEditPackageModal(cntr.id, item, itemIdx),
       className: "px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition-colors cursor-pointer"
-    }, "\u270F\uFE0F Edit"), cntrItems.length > 1 && /*#__PURE__*/React.createElement("button", {
+    }, "\u270F\uFE0F Edit"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       title: "Remove Package Entry",
       onClick: () => handleRemovePackageFromContainer(cntr.id, item.id),
@@ -19846,7 +19848,7 @@ function App() {
       className: "bg-indigo-50/70 border border-indigo-200 p-2.5 rounded-xl flex flex-wrap justify-between items-center text-xs text-indigo-950 font-bold"
     }, /*#__PURE__*/React.createElement("span", {
       className: "uppercase text-[10px] tracking-wider text-indigo-800 font-black"
-    }, "Container #", cntrIdx + 1, " (", cntr.containerNo || 'MSKU-8820194', ") Subtotal:"), /*#__PURE__*/React.createElement("div", {
+    }, "Container #", cntrIdx + 1, " (", cntr.containerNo || 'Pending', ") Subtotal:"), /*#__PURE__*/React.createElement("div", {
       className: "flex flex-wrap gap-4 font-mono text-[11px]"
     }, /*#__PURE__*/React.createElement("span", null, "Pkgs: ", /*#__PURE__*/React.createElement("strong", {
       className: "text-slate-900"
